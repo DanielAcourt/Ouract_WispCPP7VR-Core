@@ -1,0 +1,12 @@
+[21156:34112:0109/210155.589:WARNING:chrome_main_delegate.cc(745)] This is Chrome version 128.0.6613.138 (not a warning)
+[21156:32208:0109/210155.764:ERROR:google_update_settings.cc(265)] Failed opening key Software\Chromium to set usagestats; result: 5
+[21156:34112:0109/210155.843:WARNING:account_consistency_mode_manager.cc(77)] Desktop Identity Consistency cannot be enabled as no OAuth client ID and client secret have been configured.
+[21156:34112:0109/210158.224:WARNING:external_registry_loader_win.cc(232)] Error observing HKLM: 5
+[21156:34112:0109/210201.588:ERROR:device_event_log_impl.cc(196)] [21:02:01.255] USB: usb_service_win.cc:105 SetupDiGetDeviceProperty({{A45C254E-DF1C-4EFD-8020-67D146A850E0}, 6}) failed: Element not found. (0x490)
+[18224:18372:0109/210202.253:WARNING:frame_impl.cc(430)] virtual CefFrameImpl::SendProcessMessage sent to detached frame 5-B7EBD15E469018901DE521EADC05B9E9 will be ignored
+[21156:3444:0109/210203.922:WARNING:browser_info.cc(345)] Returning a speculative frame for [7,9]
+[21156:34112:0109/210204.253:WARNING:browser_info.cc(345)] Returning a speculative frame for [9,9]
+[21156:34112:0109/210204.253:WARNING:browser_info.cc(345)] Returning a speculative frame for [9,9]
+[21156:34112:0109/210204.253:WARNING:browser_info.cc(345)] Returning a speculative frame for [9,9]
+[21156:34112:0109/210204.253:WARNING:browser_info.cc(345)] Returning a speculative frame for [9,9]
+[21156:3444:0109/210204.255:WARNING:browser_info.cc(345)] Returning a speculative frame for [9,9]
