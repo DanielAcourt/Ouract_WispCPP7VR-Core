@@ -64,4 +64,17 @@ public:
     /** Optional secondary interaction */
     virtual void OnSecondaryInteract_Implementation(AActor* Interactor) override;
 
+    /* =========================
+       Possession Interface
+       ========================= */
+
+    /** Can this entity be possessed? */
+    virtual bool CanBePossessed_Implementation() override;
+
+    /** Possess this entity */
+    virtual void RequestPossession_Implementation(AController* RequestingController) override;
+
+    /** Get the component to attach to */
+    virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
+
 };

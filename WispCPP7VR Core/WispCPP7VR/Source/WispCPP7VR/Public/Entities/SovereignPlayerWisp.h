@@ -53,6 +53,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Input")
 	float InteractionDistance = 500.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	float PossessionTraceRadius = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
+	float QiDrainRate = 0.1f;
+
 private:
 	/** Ghostly physics settings */
 	void ConfigureSpiritPhysics();

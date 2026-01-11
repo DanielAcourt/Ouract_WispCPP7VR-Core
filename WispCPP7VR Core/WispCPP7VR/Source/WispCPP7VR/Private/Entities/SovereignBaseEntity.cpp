@@ -7,6 +7,8 @@
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StreamableManager.h"
+#include "Engine/AssetManager.h"
 #include "TimerManager.h"
 
 ASovereignBaseEntity::ASovereignBaseEntity()
@@ -87,7 +89,7 @@ void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
     ASovereignBaseEntity* PartnerActor = Cast<ASovereignBaseEntity>(PotentialPartner);
 
     // Logic: Ready, Compatible, and SpawnerUtils confirms the "Handshake"
-    if (IsReadyToMating() && PartnerActor && PartnerActor->IsReadyToMating() &&
+    if (IsReadyForMating() && PartnerActor && PartnerActor->IsReadyForMating() &&
         USovereignSpawnerUtils::CanBreed(this, PotentialPartner))
     {
         FVector MidPoint = (GetActorLocation() + PotentialPartner->GetActorLocation()) / 2.0f;
@@ -112,7 +114,7 @@ void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
     }
 }
 
-bool ASovereignBaseEntity::IsReadyToMating() const
+bool ASovereignBaseEntity::IsReadyForMating() const
 {
     if (!SaveDataComponent || !GetWorld()) return false;
 
@@ -190,20 +192,24 @@ void ASovereignBaseEntity::RefreshVisuals()
         return;
     }
 
-    // 5. The "Sovereign" Load Strategy:
-    // If we are in the Editor or a critical cutscene, synchronous is fine.
-    // If we are in a high-density simulation (Bees), we should use Async.
+    // 5. The "Sovereign" Load Strategy: Asynchronous Loading
     if (NewMeshPtr.IsPending())
     {
-        // For 1% velocity, we use a Streamable Manager to load in the background
-        // But for now, let's use the 'Safe' Sync load only if not already memory-resident
-        NewMeshPtr.LoadSynchronous();
+        FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
+        StreamableManager.RequestAsyncLoad(NewMeshPtr.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ASovereignBaseEntity::OnMeshLoaded, NewMeshPtr));
     }
-
-    UStaticMesh* LoadedMesh = NewMeshPtr.Get();
-    if (LoadedMesh)
+    else
     {
-        EntityMesh->SetStaticMesh(LoadedMesh);
+        // Mesh is already loaded, so just apply it.
+        OnMeshLoaded(NewMeshPtr);
+    }
+}
+
+void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr)
+{
+    if (LoadedMeshPtr.IsValid())
+    {
+        EntityMesh->SetStaticMesh(LoadedMeshPtr.Get());
 
         // 6. Scale/Physical Logic (The "Symmetry" adjustment)
         // Adjust the scale based on the growth stage defined in the data asset

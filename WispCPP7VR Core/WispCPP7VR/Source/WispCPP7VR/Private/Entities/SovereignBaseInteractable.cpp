@@ -98,3 +98,29 @@ void ASovereignBaseInteractable::OnSecondaryInteract_Implementation(AActor* Inte
 {
     // Optional secondary action (long press, grip, etc.)
 }
+
+bool ASovereignBaseInteractable::CanBePossessed_Implementation()
+{
+    // Note: bCanBePossessed is a protected variable inherited from ASovereignBaseEntity
+    return bCanBePossessed;
+}
+
+void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
+{
+    if (RequestingController && CanBePossessed_Implementation())
+    {
+        // Unpossess the current pawn
+        if (APawn* CurrentPawn = RequestingController->GetPawn())
+        {
+            RequestingController->UnPossess();
+        }
+
+        // Possess this entity
+        RequestingController->Possess(this);
+    }
+}
+
+USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
+{
+    return BaseMesh;
+}

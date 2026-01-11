@@ -55,6 +55,18 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interaction")
 	void OnSecondaryInteract(AActor* Interactor);
 
+	/** NEW: Check if this entity can be inhabited by a Sovereign Spirit */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
+	bool CanBePossessed();
+
+	/** NEW: The command to initiate the Sovereign Trust Handover */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
+	void RequestPossession(AController* RequestingController);
+
+	/** NEW: Returns the component to attach the spirit to when possessed */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
+	USceneComponent* GetPossessionAttachmentComponent();
+
 
 };
 
