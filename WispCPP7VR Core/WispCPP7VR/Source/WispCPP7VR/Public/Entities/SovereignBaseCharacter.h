@@ -66,6 +66,9 @@ protected: // Changed from public to protected for better security
 	/** The main interaction logic triggered by the Input Action */
 	virtual void Interact(const FInputActionValue& Value);
 
+	/** Get the component to attach to */
+	virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
+
 
 protected:
 	virtual void BeginPlay() override;

@@ -72,6 +72,11 @@ void ASovereignBaseCharacter::BeginPlay()
 	}
 }
 
+USceneComponent* ASovereignBaseCharacter::GetPossessionAttachmentComponent_Implementation()
+{
+	return GetMesh();
+}
+
 void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

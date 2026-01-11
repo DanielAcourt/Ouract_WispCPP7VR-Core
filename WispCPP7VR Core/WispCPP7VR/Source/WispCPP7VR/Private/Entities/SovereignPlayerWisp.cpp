@@ -91,7 +91,7 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 	// Special Wisp Drain: Being in the world costs a tiny bit of Qi every second
 	if (QiComponent)
 	{
-		QiComponent->SpendQi(0.1f * DeltaTime);
+		QiComponent->SpendQi(QiDrainRate * DeltaTime);
 	}
 }
 
@@ -99,8 +99,7 @@ void ASovereignPlayerWisp::AttemptPossession()
 {
 	// 1. Setup the Trace parameters
 	FVector Start = GetActorLocation();
-	FVector End = Start + (GetActorForwardVector() * 500.0f); // 5 meters range
-	float Radius = 50.0f;
+	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	TArray<AActor*> ActorsToIgnore;
@@ -109,27 +108,27 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 	// 2. Perform the Trace
 	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(), Start, End, Radius, ObjectTypes, false,
+		GetWorld(), Start, End, PossessionTraceRadius, ObjectTypes, false,
 		ActorsToIgnore, EDrawDebugTrace::ForDuration, OutHit, true
 	);
 
 	if (bHit && OutHit.GetActor())
 	{
-		ASovereignBaseCharacter* TargetVessel = Cast<ASovereignBaseCharacter>(OutHit.GetActor());
-		if (TargetVessel)
+		AActor* HitActor = OutHit.GetActor();
+		if (HitActor->Implements<UInteractionInterface>())
 		{
-			AController* PC = GetController();
-			if (PC)
+			if (IInteractionInterface::Execute_CanBePossessed(HitActor))
 			{
-				// 1. Logic Swap
-					PC->UnPossess();
-				PC->Possess(TargetVessel);
+				IInteractionInterface::Execute_RequestPossession(HitActor, GetController());
 
 				// 2. Physical Snap
 				// We attach to the "Soul_Socket". If it doesn't exist, it defaults to the root.
-				this->AttachToComponent(TargetVessel->GetMesh(),
-					FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-					FName("Soul_Socket"));
+				if (USceneComponent* AttachmentComponent = IInteractionInterface::Execute_GetPossessionAttachmentComponent(HitActor))
+				{
+					this->AttachToComponent(AttachmentComponent,
+						FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+						FName("Soul_Socket"));
+				}
 
 				// 3. Spirit State
 				SetActorHiddenInGame(true);
@@ -139,7 +138,7 @@ void ASovereignPlayerWisp::AttemptPossession()
 				// OR leave it on if you want the "Wisp Drain" to stay active.
 				SetActorTickEnabled(true);
 
-				UE_LOG(LogTemp, Warning, TEXT("Spirit bound to Soul Socket of %s"), *TargetVessel->GetName());;
+				UE_LOG(LogTemp, Warning, TEXT("Spirit bound to Soul Socket of %s"), *HitActor->GetName());;
 			}
 		}
 	}
@@ -186,15 +185,12 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	// 3. EXECUTE SPHERE TRACE
-	float TraceRadius = 25.0f;
-	bool bHit = GetWorld()->SweepSingleByChannel(
+	// 3. EXECUTE LINE TRACE
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Start,
 		End,
-		FQuat::Identity,
 		ECC_Visibility,
-		FCollisionShape::MakeSphere(TraceRadius),
 		Params
 	);
 
@@ -211,7 +207,7 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 			IInteractionInterface::Execute_OnInteract(HitActor, this);
 
 			// SUCCESS DEBUG: Draw a Green Sphere where we hit
-			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, TraceRadius, 12, FColor::Cyan, false, 2.0f);
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.f, 12, FColor::Cyan, false, 2.0f);
 
 			if (GEngine)
 				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan,
@@ -230,82 +226,8 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 	}
 }
 
-/*
-// THE MISSING LINK: This is the function the Linker couldn't find
-void ASovereignPlayerWisp::Interact()
-{
-	if (!GetWorld()) return;
-
-	// 1. Calculate the Raycast (Line Trace)
-	// We trace from the Wisp's center forward
-	FVector Start = GetActorLocation();
-	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
-
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this); // Don't hit yourself
-
-	// 2. Execute Trace
-	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-
-	// 3. DEBUG: Draw a red line in-game so you can see your "reach"
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 2.0f);
-
-	if (bHit && HitResult.GetActor())
-	{
-		// 4. Try to find a Sovereign Entity (Tree, Bee, etc.)
-		// We cast to the BaseEntity which holds the Growth/Evolve logic
-		ASovereignBaseEntity* Target = Cast<ASovereignBaseEntity>(HitResult.GetActor());
-
-		if (Target)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Wisp interacted with %s"), *Target->GetName());
-
-			// Trigger the 8-stage growth logic!
-			Target->Evolve();
-		}
-	}
-}
-*/
 // Ensure your bridge function looks like this:
 void ASovereignPlayerWisp::EnhancedInteract(const FInputActionValue& Value)
 {
 	Interact(Value); // This now links correctly to the function above
 }
-
-/*
-void ASovereignPlayerWisp::ReturnToWispForm()
-{
-	// 1. Get the current controller (which is currently inside a Vessel)
-	AController* PC = GetController();
-	if (!PC) return;
-
-	// 2. Unhide the Wisp and Detach from the Vessel
-	SetActorHiddenInGame(false);
-	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-	// 3. Move the Wisp slightly away from the body so they don't get stuck
-	SetActorLocation(GetActorLocation() + (GetActorUpVector() * 100.0f));
-
-	// 4. Swap control back to the Wisp
-	PC->Possess(this);
-
-	UE_LOG(LogTemp, Log, TEXT("Spirit has manifested from the vessel."));
-}
-*/
-
-/*
-ASovereignPlayerWisp::ASovereignPlayerWisp()
-{
-	// ... existing constructor logic (SpiritEffect, Movement) ...
-
-	// Setup the Wrist UI
-	WristDisplay = CreateDefaultSubobject<UWidgetComponent>(TEXT("WristDisplay"));
-	WristDisplay->SetupAttachment(RootComponent);
-
-	// Position it where a "watch" would be
-	WristDisplay->SetRelativeLocation(FVector(20.0f, -15.0f, 10.0f));
-	WristDisplay->SetWidgetSpace(EWidgetSpace::World); // Makes it feel "physical"
-	WristDisplay->SetDrawSize(FVector2D(250.0f, 250.0f));
-}
-*/

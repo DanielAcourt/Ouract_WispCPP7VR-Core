@@ -43,9 +43,12 @@ public:
 
 	/** Optional: Check if this entity is currently able to breed */
 	UFUNCTION(BlueprintPure, Category = "Sovereign|Gameplay")
-	bool IsReadyToMating() const;
+	bool IsReadyForMating() const;
 
 protected:
+	/** Can this entity be possessed by a Sovereign Spirit? */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	bool bCanBePossessed = false;
 	// --- Components ---
 
 	/** The physical body of the entity (The Oak Tree, the Bee, etc.) */
@@ -104,4 +107,7 @@ protected:
 
 	/** The logic function that runs growth progress and checks for Evolution */
 	void OnSovereignHeartbeat();
+
+	/** Callback function for when a mesh has been asynchronously loaded. */
+	void OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr);
 };
