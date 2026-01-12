@@ -95,6 +95,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* PossessAction;
 	
 };
 
