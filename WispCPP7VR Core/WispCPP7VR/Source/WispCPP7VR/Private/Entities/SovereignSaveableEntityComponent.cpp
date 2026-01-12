@@ -189,7 +189,7 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
     }
 
     // TAGS SECOND: Now that attributes are loaded, ingest the Sovereign tags.
-    OwnerEntity->GameplayTags.RemoveAllTags(); // Clear old tags to prevent bleeding.
+    OwnerEntity->GameplayTags.Reset(); // Clear old tags to prevent bleeding.
     if (LoadedTags.Contains(TEXT("SovereignTags")))
     {
         TArray<FString> TagStrings;
