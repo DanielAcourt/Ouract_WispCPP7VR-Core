@@ -35,12 +35,12 @@ public:
 	FGameplayTagContainer GameplayTags;
 
 	/** Task 6: Ingests unknown tags from JSON (e.g., Power.DragonBreath.Silver) */
-	//UFUNCTION(BlueprintCallable, Category = "Sovereign|Discovery")
-	//void IngestSovereignTag(FString IncomingTagString);
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Discovery")
+	void IngestSovereignTag(FString IncomingTagString);
 
 	/** Task 6: Checks TrustSignature + Luck/Charisma for unknown tag access */
-	//UFUNCTION(BlueprintPure, Category = "Sovereign|Security")
-	//bool VerifySymmetryLevel() const;
+	UFUNCTION(BlueprintPure, Category = "Sovereign|Security")
+	bool VerifySymmetryLevel() const;
 
 
 

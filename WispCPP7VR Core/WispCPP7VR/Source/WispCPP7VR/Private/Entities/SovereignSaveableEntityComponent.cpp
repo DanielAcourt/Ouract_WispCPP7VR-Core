@@ -4,7 +4,7 @@
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
 #include "SaveSystem/SovereignActorRegistry.h" // <--- Updated to match your Registry header
-
+#include "GameplayTagContainer.h"
 #include "Engine/World.h"
 
 USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
@@ -159,36 +159,46 @@ TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() c
 
 void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> LoadedTags)
 {
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
+    ASovereignBaseEntity* OwnerEntity = Cast<ASovereignBaseEntity>(GetOwner());
+    if (!OwnerEntity) return;
 
-	UEnum* EnumPtr = StaticEnum<ESovereignElement>();
+    // ATTRIBUTES FIRST: Populate TrustSignature and Triple-Axis values before tag ingestion.
+    if (LoadedTags.Contains(TEXT("TrustSignature")))
+    {
+        OwnerEntity->TrustSignature = FCString::Atoi(*LoadedTags[TEXT("TrustSignature")]);
+    }
 
-	// Cleanup old tags
-	for (int32 i = Owner->Tags.Num() - 1; i >= 0; --i)
-	{
-		if (Owner->Tags[i].ToString().Contains(TEXT(":")))
-		{
-			Owner->Tags.RemoveAt(i);
-		}
-	}
+    UEnum* EnumPtr = StaticEnum<ESovereignElement>();
+    if (EnumPtr)
+    {
+        if (LoadedTags.Contains(TEXT("Alignment")))
+        {
+            int64 Val = EnumPtr->GetValueByNameString(LoadedTags[TEXT("Alignment")]);
+            if (Val != INDEX_NONE) AlignmentSocket = static_cast<ESovereignElement>(Val);
+        }
+        if (LoadedTags.Contains(TEXT("Body")))
+        {
+            int64 Val = EnumPtr->GetValueByNameString(LoadedTags[TEXT("Body")]);
+            if (Val != INDEX_NONE) BodySocket = static_cast<ESovereignElement>(Val);
+        }
+        if (LoadedTags.Contains(TEXT("Magic")))
+        {
+            int64 Val = EnumPtr->GetValueByNameString(LoadedTags[TEXT("Magic")]);
+            if (Val != INDEX_NONE) MagicSocket = static_cast<ESovereignElement>(Val);
+        }
+    }
 
-	for (auto& Elem : LoadedTags)
-	{
-		if (EnumPtr)
-		{
-			int64 Val = EnumPtr->GetValueByNameString(Elem.Value);
-			if (Val != INDEX_NONE)
-			{
-				if (Elem.Key.Equals(TEXT("Alignment"), ESearchCase::IgnoreCase)) AlignmentSocket = static_cast<ESovereignElement>(Val);
-				else if (Elem.Key.Equals(TEXT("Body"), ESearchCase::IgnoreCase)) BodySocket = static_cast<ESovereignElement>(Val);
-				else if (Elem.Key.Equals(TEXT("Magic"), ESearchCase::IgnoreCase)) MagicSocket = static_cast<ESovereignElement>(Val);
-			}
-		}
-
-		FString ReconstructedTag = FString::Printf(TEXT("%s:%s"), *Elem.Key, *Elem.Value);
-		Owner->Tags.Add(FName(*ReconstructedTag));
-	}
+    // TAGS SECOND: Now that attributes are loaded, ingest the Sovereign tags.
+    OwnerEntity->GameplayTags.RemoveAllTags(); // Clear old tags to prevent bleeding.
+    if (LoadedTags.Contains(TEXT("SovereignTags")))
+    {
+        TArray<FString> TagStrings;
+        LoadedTags[TEXT("SovereignTags")].ParseIntoArray(TagStrings, TEXT(","), true);
+        for (const FString& TagString : TagStrings)
+        {
+            OwnerEntity->IngestSovereignTag(TagString);
+        }
+    }
 }
 
 
@@ -197,54 +207,34 @@ TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState
 	TMap<FString, FString> AggregatedData;
 
 	// 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
-	// This captures Actor-level tags like "Role:Guardian" or "Species:Elf"
 	AggregatedData.Append(GetUnknownMetaTags());
 
-	// 2. SCRAPE COMPONENTS (The "Contract" System)
-	// This captures Qi, Attributes, and Elements automatically
+	// 2. SCRAPE SOVEREIGN TAGS
+	ASovereignBaseEntity* OwnerEntity = Cast<ASovereignBaseEntity>(GetOwner());
+	if (OwnerEntity)
+	{
+		TArray<FString> TagStrings;
+		for (const FGameplayTag& Tag : OwnerEntity->GameplayTags)
+		{
+			TagStrings.Add(Tag.ToString());
+		}
+		AggregatedData.Add(TEXT("SovereignTags"), FString::Join(TagStrings, TEXT(",")));
+	}
+
+	// 3. SCRAPE COMPONENTS (The "Contract" System)
 	TArray<UActorComponent*> InterfaceComps;
 	GetOwner()->GetComponents(InterfaceComps);
 
 	for (UActorComponent* Comp : InterfaceComps)
 	{
-		// Check if the component signed the "Save Contract"
 		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
 		{
-			// Key/Value pairs from Qi, Attributes, etc. are merged into the master map
 			AggregatedData.Append(SaveInterface->GetSaveData());
 		}
 	}
 
 	return AggregatedData;
 }
-//new feature add qi components and attribute components to the save file
-// i need to implment this as it acts as tyhe framework to save all the data from attached compoents. I need to think as 
-//this was a time sink attaching everything in blueprints
-
-// we need to finish implementing this to the desired solution so all components and their data get written
-// to the save file reglardless of the meta tags so i dont have to make loads of loops in blkueprints./
-/*
-void USovereignSaveableEntityComponent::CaptureEntityState()
-{
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
-
-	// 1. Capture Qi
-	USovereignQiComponent* QiComp = Owner->FindComponentByClass<USovereignQiComponent>();
-	if (QiComp)
-	{
-		// Store in a way Isla's system can read (using tags or a map)
-		CapturedMetadata.AddTag(FGameplayTag::RequestGameplayTag("Data.Qi.Current"), QiComp->CurrentQi);
-	}
-
-	// 2. Capture Attributes
-	USovereignAttributeComponent* AttribComp = Owner->FindComponentByClass<USovereignAttributeComponent>();
-	if (AttribComp)
-	{
-		CapturedMetadata.AddTag(FGameplayTag::RequestGameplayTag("Data.Attr.Hunger"), AttribComp->Hunger);
-	}
-}
-*/
 #if WITH_EDITOR
 void USovereignSaveableEntityComponent::PostEditImport() { Super::PostEditImport(); EntityID = FGuid::NewGuid(); }
 void USovereignSaveableEntityComponent::PostDuplicate(bool bDuplicateForPIE)
@@ -253,6 +243,3 @@ void USovereignSaveableEntityComponent::PostDuplicate(bool bDuplicateForPIE)
 	if (!bDuplicateForPIE) { EntityID = FGuid::NewGuid(); }
 }
 #endif
-
-
-

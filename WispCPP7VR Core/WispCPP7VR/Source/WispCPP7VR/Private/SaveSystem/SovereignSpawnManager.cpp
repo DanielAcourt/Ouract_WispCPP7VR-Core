@@ -23,18 +23,30 @@ void USovereignSpawnManager::Deinitialize()
 
 void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesData, const FTransform& Transform, const FGuid& MotherID, const FGuid& FatherID)
 {
-	if (!SpeciesData)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnManager: SpeciesData is null!"));
-		return;
-	}
+    if (!SpeciesData)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnManager: SpeciesData is null!"));
+        return;
+    }
 
-	int32 RequestID = NextRequestID++;
-	FSpawnRequest NewRequest(RequestID, SpeciesData, Transform, MotherID, FatherID);
-	SpawnQueue.Add(NewRequest);
+    int32 RequestID = NextRequestID++;
+    FSpawnRequest NewRequest(RequestID, SpeciesData, Transform, MotherID, FatherID);
 
-	FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
-	StreamableManager.RequestAsyncLoad(SpeciesData->ActorClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &USovereignSpawnManager::OnClassLoaded, RequestID));
+    // PRIORITY LOGIC: Check for the Player/Isla signature
+    FGameplayTag PlayerTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Identity.Player.Isla"), false);
+    if (SpeciesData->IdentitySignature == PlayerTag)
+    {
+        // Insert at the front of the queue
+        SpawnQueue.Insert(NewRequest, 0);
+    }
+    else
+    {
+        // Add to the back of the queue
+        SpawnQueue.Add(NewRequest);
+    }
+
+    FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
+    StreamableManager.RequestAsyncLoad(SpeciesData->ActorClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &USovereignSpawnManager::OnClassLoaded, RequestID));
 }
 
 void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
