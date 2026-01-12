@@ -17,13 +17,13 @@ class WISPCPP7VR_API USovereignSpawnerUtils : public UBlueprintFunctionLibrary
 public:
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Spawner")
-    static AActor* SpawnEarnedEntity(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, FGuid ParentID);
+    static void SpawnEarnedEntity(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, FGuid ParentID);
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Spawner")
-    static AActor* SpawnEarnedEntityInherited(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, AActor* ParentActor);
+    static void SpawnEarnedEntityInherited(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* ParentActor);
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Spawner")
-    static AActor* SpawnHybridEntity(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, AActor* Mother, AActor* Father);
+    static void SpawnHybridEntity(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* Mother, AActor* Father);
 
     /** ?? COMPATIBILITY: Checks if two actors can produce offspring (Gender check, etc) */
     // Might need to exapand the logic so they are both type "[plant} for example

@@ -5,74 +5,40 @@
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Engine/World.h"
-#include "Math/UnrealMathUtility.h" 
+#include "Math/UnrealMathUtility.h"
+#include "SaveSystem/SovereignSpawnManager.h"
 
 
 // --- 1. PHYSICAL BIRTH ---
-AActor * USovereignSpawnerUtils::SpawnEarnedEntity(UObject * WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, FGuid ParentID)
+void USovereignSpawnerUtils::SpawnEarnedEntity(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, FGuid ParentID)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    UActorRegistry* Registry = World ? World->GetSubsystem<UActorRegistry>() : nullptr;
+    if (!World) return;
 
-    if (!World || !ActorClass || !Registry) return nullptr;
-
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    AActor* NewEntity = World->SpawnActor<AActor>(ActorClass, SpawnTransform, SpawnParams);
-
-    if (NewEntity)
+    if (USovereignSpawnManager* SpawnManager = World->GetGameInstance()->GetSubsystem<USovereignSpawnManager>())
     {
-        if (auto* SaveComp = NewEntity->FindComponentByClass<USovereignSaveableEntityComponent>())
-        {
-            // Assign a brand new, unique 128-bit Identity
-            SaveComp->EntityID = FGuid::NewGuid();
-
-            // Assign the Parent ID (Lineage tracking)
-            SaveComp->ParentID = ParentID;
-
-            // Registration with the Global System
-            Registry->RegisterActor(SaveComp->EntityID, NewEntity);
-
-            UE_LOG(LogTemp, Log, TEXT("Sovereign: New Entity Born! ID: %s | Parent: %s"),
-                *SaveComp->EntityID.ToString(), *ParentID.ToString());
-        }
+        SpawnManager->RequestSpawn(SpeciesData, SpawnTransform, ParentID);
     }
-    return NewEntity;
 }
 
 // --- 2. CLONE BIRTH (Single Parent) ---
-AActor* USovereignSpawnerUtils::SpawnEarnedEntityInherited(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, AActor* ParentActor)
+void USovereignSpawnerUtils::SpawnEarnedEntityInherited(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* ParentActor)
 {
-    if (!ParentActor) return nullptr;
+    if (!ParentActor) return;
     auto* ParentComp = ParentActor->FindComponentByClass<USovereignSaveableEntityComponent>();
-    if (!ParentComp) return nullptr;
+    if (!ParentComp) return;
 
-    // Apply genetic drift (10% chance) to the parent's tags for the clone
-    TMap<FString, FString> MutatedDNA = GenerateMutatedTags(ParentComp->GetUnknownMetaTags(), 0.1f);
-
-    // Call physical birth
-    AActor* Child = SpawnEarnedEntity(WorldContextObject, ActorClass, SpawnTransform, ParentComp->EntityID);
-
-    if (Child)
-    {
-        if (auto* ChildComp = Child->FindComponentByClass<USovereignSaveableEntityComponent>())
-        {
-            // Apply the mutated traits
-            ChildComp->ApplyMetaTags(MutatedDNA);
-        }
-    }
-    return Child;
+    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, ParentComp->EntityID);
 }
 
 // --- 3. HYBRID BIRTH (Dual Parent) ---
-AActor* USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, FTransform SpawnTransform, AActor* Mother, AActor* Father)
+void USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* Mother, AActor* Father)
 {
-    if (!Mother || !Father) return nullptr;
+    if (!Mother || !Father) return;
 
     auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
     auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
-    if (!MomComp || !DadComp) return nullptr;
+    if (!MomComp || !DadComp) return;
 
     // 1. Record the union in their histories
     MomComp->MatingHistory.AddUnique(DadComp->EntityID);
@@ -80,22 +46,11 @@ AActor* USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, T
     MomComp->OffspringCount++;
     DadComp->OffspringCount++;
 
-    // 2. Recombine DNA (Handling unknown tags for Isla's dynamic system)
-    TMap<FString, FString> ChildDNA = RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
+    // TODO: The ChildDNA logic needs to be moved to the PostSpawnInitialize function
+    // TMap<FString, FString> ChildDNA = RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
 
     // 3. Physical Birth (Using Mother as primary ParentID for the registry)
-    AActor* Child = SpawnEarnedEntity(WorldContextObject, ActorClass, SpawnTransform, MomComp->EntityID);
-
-    if (Child)
-    {
-        if (auto* ChildComp = Child->FindComponentByClass<USovereignSaveableEntityComponent>())
-        {
-            ChildComp->MotherID = MomComp->EntityID;
-            ChildComp->FatherID = DadComp->EntityID;
-            ChildComp->ApplyMetaTags(ChildDNA);
-        }
-    }
-    return Child;
+    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, MomComp->EntityID);
 }
 
 // --- 4. GENETIC ENGINE ---

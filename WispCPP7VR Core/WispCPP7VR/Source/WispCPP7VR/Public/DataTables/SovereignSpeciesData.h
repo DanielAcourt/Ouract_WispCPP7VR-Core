@@ -68,4 +68,12 @@ public:
     /** Default movement mode (Flying for Bees, Stationary for Oak) */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
     bool bCanFly = false;
+
+    /** The Actor Class to spawn for this species. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
+    TSoftClassPtr<ASovereignBaseEntity> ActorClass;
+
+    /** The Unique Identity Signature for this species. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity")
+    FGameplayTag IdentitySignature;
 };
