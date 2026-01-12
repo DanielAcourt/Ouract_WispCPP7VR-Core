@@ -15,6 +15,7 @@ Status: Do this first.*/
 #include"CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
+#include "Dom/JsonObject.h"
 #include "SovereignGameData.generated.h"
 
 class AWispsGameModeBase; // Just type this line above the struct
@@ -64,8 +65,6 @@ enum class ESovereignElement : uint8
     // Special
     Electric, Fairy, Dragon
 };
-
-#include "Dom/JsonObject.h"
 
 USTRUCT(BlueprintType)
 struct FEntitySaveData

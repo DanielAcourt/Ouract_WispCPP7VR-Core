@@ -6,11 +6,11 @@
 #include "SaveSystem/SovereignGameData.h" 
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameplayTagsManager.h"
 #include "Engine/World.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "TimerManager.h"
-#include "GameplayTagManager.h"
 
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
@@ -290,10 +290,15 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 
 void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString)
 {
-    FGameplayTag NewTag = UGameplayTagManager::Get().RequestGameplayTag(FName(*IncomingTagString), false);
+    if (IncomingTagString.IsEmpty()) return;
+
+    // Use the native FGameplayTag request - no Manager include needed!
+    FGameplayTag NewTag = FGameplayTag::RequestGameplayTag(FName(*IncomingTagString), false);
+
     if (NewTag.IsValid())
     {
         GameplayTags.AddTag(NewTag);
+        UE_LOG(LogTemp, Log, TEXT("Sovereign: Ingested Tag %s"), *IncomingTagString);
     }
 }
 

@@ -1,12 +1,13 @@
 ﻿{
 	"Entities": [
 		{
-			"GUID": "AEEDB08B4DA1B7CFF7F6E1935B97318A",
+			"GUID": "3947755942E5DFEA822CAD8EDBD37702",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C",
-			"Transform": "-660.145312,-155.886176,92.000100|0.000000,180.000000,0.000000|1.000000,1.000000,1.000000",
+			"Transform": "-200.000000,0.000000,92.000100|0.000000,180.000000,0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
 				"STR": "1",
 				"DEX": "10",
 				"CON": "5",
@@ -31,73 +32,13 @@
 			}
 		},
 		{
-			"GUID": "070F456E4C58785B0F7C57B05EA36C54",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_colt45.Bp_colt45_C",
-			"Transform": "-600.000000,630.000000,110.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"STR": "10",
-				"DEX": "10",
-				"CON": "10",
-				"INT": "10",
-				"WIS": "10",
-				"CHA": "10",
-				"LCK": "10",
-				"AC": "10",
-				"HP": "100.0",
-				"STM": "100.0",
-				"HGR": "0.0",
-				"HYD": "0.0",
-				"FTG": "0.0",
-				"TRD": "0.0",
-				"R_PHY": "7.0",
-				"R_MAG": "2.0",
-				"R_MEN": "3.0"
-			}
-		},
-		{
-			"GUID": "052E63744806BF0B6AA949ABDA46CD0D",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_colt45.Bp_colt45_C",
-			"Transform": "-860.000000,530.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"STR": "10",
-				"DEX": "10",
-				"CON": "10",
-				"INT": "10",
-				"WIS": "10",
-				"CHA": "10",
-				"LCK": "10",
-				"AC": "10",
-				"HP": "100.0",
-				"STM": "100.0",
-				"HGR": "0.0",
-				"HYD": "0.0",
-				"FTG": "0.0",
-				"TRD": "0.0",
-				"R_PHY": "7.0",
-				"R_MAG": "2.0",
-				"R_MEN": "3.0"
-			}
-		},
-		{
-			"GUID": "CC8ED6C443B31A9F7C184D895D477FD2",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_Object.Bp_Object_C",
-			"Transform": "-1350.000000,340.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-			}
-		},
-		{
-			"GUID": "F259BD704E64B77F1FC793BC1AD4270C",
+			"GUID": "A97FDE8342467D531F77E588CDEF1A6A",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/MySovereignBaseCharacter.MySovereignBaseCharacter_C",
-			"Transform": "-1700.000000,310.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Transform": "1100.000000,380.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
 				"STR": "10",
 				"DEX": "10",
 				"CON": "10",
@@ -122,21 +63,40 @@
 			}
 		},
 		{
-			"GUID": "7D2B4A1D4A8C016AEA9259B9BA394202",
+			"GUID": "4F9680514F2BF86F3A4C55A702C4BFC4",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_Object.Bp_Object_C",
-			"Transform": "-1360.000000,10.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Class": "/Game/Blueprint/Bp_colt45.Bp_colt45_C",
+			"Transform": "1020.000000,780.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
+				"STR": "10",
+				"DEX": "10",
+				"CON": "10",
+				"INT": "10",
+				"WIS": "10",
+				"CHA": "10",
+				"LCK": "10",
+				"AC": "10",
+				"HP": "100.0",
+				"STM": "100.0",
+				"HGR": "0.0",
+				"HYD": "0.0",
+				"FTG": "0.0",
+				"TRD": "0.0",
+				"R_PHY": "7.0",
+				"R_MAG": "2.0",
+				"R_MEN": "3.0"
 			}
 		},
 		{
-			"GUID": "5C559A6845C82AF2D752DBBB0B06E562",
+			"GUID": "A4BC13E74705910013AA5997576D7F82",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/MySovereignBaseCharacter.MySovereignBaseCharacter_C",
-			"Transform": "-1040.000000,210.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Transform": "1280.000000,700.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
 				"STR": "10",
 				"DEX": "10",
 				"CON": "10",
@@ -161,21 +121,13 @@
 			}
 		},
 		{
-			"GUID": "8853347245A1C6545AA8AE8A238DF648",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Script/WispCPP7VR.SovereignSaveTerminal",
-			"Transform": "-1060.000000,50.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-			}
-		},
-		{
-			"GUID": "95461E7A452C38E46B2DCD92C8E99356",
+			"GUID": "F8F4040B496EF3017F06A09089C8B955",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/Bp_colt.Bp_colt_C",
-			"Transform": "-650.000000,630.000000,110.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Transform": "1190.000000,990.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
 				"STR": "10",
 				"DEX": "10",
 				"CON": "10",
@@ -196,51 +148,49 @@
 			}
 		},
 		{
-			"GUID": "A5D8149C43D5C45073BACD8BF12A376C",
+			"GUID": "7264E5494178909BEC08F3A6816EB8CC",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Script/WispCPP7VR.SovereignBaseEntity",
-			"Transform": "-1060.000000,860.000000,90.149999|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Class": "/Game/DataActors/BP_MyNewDiscovery.BP_MyNewDiscovery_C",
+			"Transform": "3750.000000,2230.000000,90.149999|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [
+					"Object"
+				]
 			}
 		},
 		{
-			"GUID": "340EF1F54E426A993B1692A6841DF729",
+			"GUID": "69AAF851451DFE0CC73A76853CC67985",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Script/WispCPP7VR.SovereignBaseCharacter",
-			"Transform": "-1270.000000,610.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Class": "/Game/DataActors/BP_DiscorveryItem.BP_DiscorveryItem_C",
+			"Transform": "1940.000000,580.000000,90.149999|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
-				"STR": "10",
-				"DEX": "10",
-				"CON": "10",
-				"INT": "10",
-				"WIS": "10",
-				"CHA": "10",
-				"LCK": "10",
-				"AC": "10",
-				"HP": "100.0",
-				"STM": "100.0",
-				"HGR": "0.0",
-				"HYD": "0.0",
-				"FTG": "0.0",
-				"TRD": "0.0",
-				"R_PHY": "0.0",
-				"R_MAG": "0.0",
-				"R_MEN": "0.0",
-				"Qi.Current": "0.0",
-				"Qi.Max": "100.0",
-				"Qi.Purity": "0.1",
-				"Qi.Total": "0.0"
+				"GameplayTags": [
+					"Object.Item"
+				]
 			}
 		},
 		{
-			"GUID": "2C7948D04CD68FAA806A1FADBA596EA1",
+			"GUID": "07C3E320485AE25A65CE2288DF209F8F",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/DataActors/BP_MyNewDiscovery.BP_MyNewDiscovery_C",
+			"Transform": "2140.000000,1040.000000,90.149999|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": [
+					"Object"
+				]
+			}
+		},
+		{
+			"GUID": "3E49F4F94D6EC39E61F9D9BCDAB00D7B",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Script/WispCPP7VR.SovereignPlayerWisp",
 			"Transform": "-940.000000,520.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
+				"GameplayTags": [],
 				"STR": "1",
 				"DEX": "10",
 				"CON": "5",
@@ -265,78 +215,13 @@
 			}
 		},
 		{
-			"GUID": "D8854BF74551590B7038A3B9120E1D4F",
+			"GUID": "10093B4943A441171497FBBE25568A10",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Script/WispCPP7VR.SovereignSaveTerminal",
-			"Transform": "-1170.000000,580.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"Transform": "-1060.000000,50.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
-			}
-		},
-		{
-			"GUID": "C0D852A2415D558264A92A82B4606CF5",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/MySovereignBaseInteractable.MySovereignBaseInteractable_C",
-			"Transform": "-1790.000000,-200.000000,300.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-			}
-		},
-		{
-			"GUID": "264FF0DE4427B7D1524E21BC3CD12F68",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/MySovereignBaseCharacter.MySovereignBaseCharacter_C",
-			"Transform": "630.000000,590.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"STR": "10",
-				"DEX": "10",
-				"CON": "10",
-				"INT": "10",
-				"WIS": "10",
-				"CHA": "10",
-				"LCK": "10",
-				"AC": "10",
-				"HP": "100.0",
-				"STM": "100.0",
-				"HGR": "0.0",
-				"HYD": "0.0",
-				"FTG": "0.0",
-				"TRD": "0.0",
-				"R_PHY": "0.0",
-				"R_MAG": "0.0",
-				"R_MEN": "0.0",
-				"Qi.Current": "0.0",
-				"Qi.Max": "100.0",
-				"Qi.Purity": "0.1",
-				"Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "0A897CE04299712F229406A5E92B1DA9",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_Object.Bp_Object_C",
-			"Transform": "1050.000000,880.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-			}
-		},
-		{
-			"GUID": "8DC5C5344CA74D8A061D138C83DECB5B",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Script/WispCPP7VR.SovereignBaseEntity",
-			"Transform": "470.000000,790.000000,90.150000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-			}
-		},
-		{
-			"GUID": "C18CB98A4DA8896D859F45AB5ABE3789",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_Object.Bp_Object_C",
-			"Transform": "0.000000,340.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
+				"GameplayTags": []
 			}
 		}
 	]

@@ -6,7 +6,7 @@
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Engine/World.h"
 #include "Math/UnrealMathUtility.h"
-#include "SaveSystem/SovereignSpawnManager.h"
+#include "Subsystems/SovereignSpawnManager.h"
 
 
 // --- 1. PHYSICAL BIRTH ---

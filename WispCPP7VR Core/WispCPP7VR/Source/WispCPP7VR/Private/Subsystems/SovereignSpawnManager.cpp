@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SaveSystem/SovereignSpawnManager.h"
+#include "Subsystems/SovereignSpawnManager.h"
+#include "Entities/SovereignBaseEntity.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "GameplayTagContainer.h"
-#include "GameplayTagManager.h"
 
 void USovereignSpawnManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -95,7 +95,7 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
 		if (bHasParentFailure)
 		{
-			FGameplayTag PenaltyTag = UGameplayTagManager::Get().RequestGameplayTag(FName("State.Biological.Penalty"), false);
+			FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
 			if (PenaltyTag.IsValid())
 			{
 				NewEntity->GameplayTags.AddTag(PenaltyTag);
@@ -103,7 +103,7 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		}
 		if (ClassToSpawn == FallbackUnknownClass)
 		{
-			FGameplayTag UnknownTag = UGameplayTagManager::Get().RequestGameplayTag(FName("Transient.Unknown"), false);
+			FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
 			if (UnknownTag.IsValid())
 			{
 				NewEntity->GameplayTags.AddTag(UnknownTag);

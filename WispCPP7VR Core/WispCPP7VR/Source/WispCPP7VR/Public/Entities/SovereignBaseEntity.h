@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
 	FGameplayTagContainer GameplayTags;
 
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
+	void IngestSovereignTag(FString IncomingTagString);
+
 	// --- Lifecycle ---
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -53,6 +56,9 @@ public:
 	/** Optional: Check if this entity is currently able to breed */
 	UFUNCTION(BlueprintPure, Category = "Sovereign|Gameplay")
 	bool IsReadyForMating() const;
+
+	/** Called by the Spawn Manager after the actor has been spawned. */
+	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 
 protected:
 	/** Can this entity be possessed by a Sovereign Spirit? */
@@ -90,11 +96,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
 	virtual void InitializeFromSovereignData(USovereignSpeciesData* InData);
 
-	/** Called by the Spawn Manager after the actor has been spawned. */
-	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
-
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
-	void IngestSovereignTag(FString IncomingTagString);
 
 protected:
 	void VerifySymmetryLevel();

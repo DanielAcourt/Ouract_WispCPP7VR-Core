@@ -5,6 +5,9 @@
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
 #include "SaveSystem/SovereignActorRegistry.h" // <--- Updated to match your Registry header
 
+#include "JsonObjectConverter.h"
+#include "GameplayTagContainer.h"
+
 #include "Engine/World.h"
 
 USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
@@ -208,7 +211,6 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 }
 
 
-#include "Serialization/JsonObjectConverter.h"
 
 TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityState()
 {
