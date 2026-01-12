@@ -46,9 +46,6 @@ void USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, cons
     MomComp->OffspringCount++;
     DadComp->OffspringCount++;
 
-    // TODO: The ChildDNA logic needs to be moved to the PostSpawnInitialize function
-    // TMap<FString, FString> ChildDNA = RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
-
     // 3. Physical Birth (Using Mother as primary ParentID for the registry)
     SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, MomComp->EntityID);
 }

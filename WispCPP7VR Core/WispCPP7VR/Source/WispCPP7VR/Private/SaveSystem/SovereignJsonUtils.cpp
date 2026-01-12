@@ -130,27 +130,3 @@ TSharedPtr<FJsonObject> USovereignJsonUtils::ParseJsonString(FString JsonString)
     UE_LOG(LogTemp, Error, TEXT("Sovereign: Failed to parse JSON string!"));
     return nullptr;
 }
-
-// Map management for Metadata (The [2025-12-20] Requirement)
-TSharedPtr<FJsonObject> USovereignJsonUtils::MapToJsonObject(const TMap<FString, FString>& TagMap)
-{
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
-    for (const auto& Entry : TagMap)
-    {
-        JsonObject->SetStringField(Entry.Key, Entry.Value);
-    }
-    return JsonObject;
-}
-
-TMap<FString, FString> USovereignJsonUtils::JsonObjectToMap(TSharedPtr<FJsonObject> JsonObject)
-{
-    TMap<FString, FString> OutMap;
-    if (JsonObject.IsValid())
-    {
-        for (auto& Entry : JsonObject->Values)
-        {
-            OutMap.Add(Entry.Key, Entry.Value->AsString());
-        }
-    }
-    return OutMap;
-}

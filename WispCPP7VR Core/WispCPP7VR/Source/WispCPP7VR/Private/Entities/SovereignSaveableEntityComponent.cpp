@@ -157,6 +157,8 @@ TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() c
 	return FoundTags;
 }
 
+// Note: This function is now primarily used for the hybrid/clone spawning logic.
+// For loading from save files, see ApplyStateFromJsonObject.
 void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> LoadedTags)
 {
 	AActor* Owner = GetOwner();
@@ -206,41 +208,47 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 }
 
 
-TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState()
+#include "Serialization/JsonObjectConverter.h"
+
+TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityState()
 {
-	TMap<FString, FString> AggregatedData;
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 
-	// 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
-	// This captures Actor-level tags like "Role:Guardian" or "Species:Elf"
-	AggregatedData.Append(GetUnknownMetaTags());
+    // 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
+    TMap<FString, FString> MetaTags = GetUnknownMetaTags();
+    for (const auto& Elem : MetaTags)
+    {
+        JsonObject->SetStringField(Elem.Key, Elem.Value);
+    }
 
-	// Serialize the GameplayTagContainer
-	if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
-	{
-		FString TagString;
-		for (const FGameplayTag& Tag : MyEntity->GameplayTags)
-		{
-			TagString += Tag.ToString() + TEXT(",");
-		}
-		AggregatedData.Add(TEXT("GameplayTags"), TagString);
-	}
+    // Serialize the GameplayTagContainer
+    if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
+    {
+        TArray<TSharedPtr<FJsonValue>> TagArray;
+        for (const FGameplayTag& Tag : MyEntity->GameplayTags)
+        {
+            TagArray.Add(MakeShareable(new FJsonValueString(Tag.ToString())));
+        }
+        JsonObject->SetArrayField(TEXT("GameplayTags"), TagArray);
+    }
 
-	// 2. SCRAPE COMPONENTS (The "Contract" System)
-	// This captures Qi, Attributes, and Elements automatically
-	TArray<UActorComponent*> InterfaceComps;
-	GetOwner()->GetComponents(InterfaceComps);
+    // 2. SCRAPE COMPONENTS (The "Contract" System)
+    TArray<UActorComponent*> InterfaceComps;
+    GetOwner()->GetComponents(InterfaceComps);
 
-	for (UActorComponent* Comp : InterfaceComps)
-	{
-		// Check if the component signed the "Save Contract"
-		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
-		{
-			// Key/Value pairs from Qi, Attributes, etc. are merged into the master map
-			AggregatedData.Append(SaveInterface->GetSaveData());
-		}
-	}
+    for (UActorComponent* Comp : InterfaceComps)
+    {
+        if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
+        {
+            TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
+            for (const auto& Elem : ComponentData)
+            {
+                JsonObject->SetStringField(Elem.Key, Elem.Value);
+            }
+        }
+    }
 
-	return AggregatedData;
+    return JsonObject;
 }
 //new feature add qi components and attribute components to the save file
 // i need to implment this as it acts as tyhe framework to save all the data from attached compoents. I need to think as 
@@ -248,6 +256,34 @@ TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState
 
 // we need to finish implementing this to the desired solution so all components and their data get written
 // to the save file reglardless of the meta tags so i dont have to make loads of loops in blkueprints./
+void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData)
+{
+    if (!JsonData.IsValid()) return;
+
+    AActor* Owner = GetOwner();
+    if (!Owner) return;
+
+    // Direct Deserialization for GameplayTags
+    if (JsonData->HasField(TEXT("GameplayTags")))
+    {
+        const TArray<TSharedPtr<FJsonValue>>* TagArray;
+        if (JsonData->TryGetArrayField(TEXT("GameplayTags"), TagArray))
+        {
+            if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
+            {
+                MyEntity->GameplayTags.Reset();
+                for (const TSharedPtr<FJsonValue>& Val : *TagArray)
+                {
+                    MyEntity->IngestSovereignTag(Val->AsString());
+                }
+            }
+        }
+    }
+
+    // You can add similar logic for other keys here
+    // For now, we are only concerned with GameplayTags
+}
+
 /*
 void USovereignSaveableEntityComponent::CaptureEntityState()
 {

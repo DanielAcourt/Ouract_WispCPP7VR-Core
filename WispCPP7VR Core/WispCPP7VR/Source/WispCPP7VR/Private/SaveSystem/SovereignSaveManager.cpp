@@ -92,8 +92,6 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 Data.ClassPath = TargetActor->GetClass()->GetPathName();
 
                 // 4. THE SOVEREIGN BRIDGE : The Master Scrape
-                    // This now replaces the old GetUnknownMetaTags() call.
-                    // It captures Qi, Attributes, AND Unknown Tags in one map.
                 Data.UnknownMetaTags = SaveComp->CaptureFullEntityState();
 
                 // Pack this entity into the suitcase
@@ -178,7 +176,10 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
                 SaveComp->ParentID = Data.ParentID;
 
                 // Restore [2025-12-20] Unknown Tags (Mutations, Qi levels, etc.)
-                SaveComp->ApplyMetaTags(Data.UnknownMetaTags);
+                if (Data.UnknownMetaTags.IsValid())
+                {
+                    SaveComp->ApplyStateFromJsonObject(Data.UnknownMetaTags);
+                }
             }
         }
     }
@@ -236,8 +237,7 @@ USovereignSaveGame* USaveManager::ConvertJsonToSuitcase(const FString& JsonConte
 
                 if (Obj->HasField(TEXT("MetaTags")))
                 {
-                    TSharedPtr<FJsonObject> Tags = Obj->GetObjectField(TEXT("MetaTags"));
-                    Data.UnknownMetaTags = USovereignJsonUtils::JsonObjectToMap(Tags);
+                    Data.UnknownMetaTags = Obj->GetObjectField(TEXT("MetaTags"));
                 }
 
                 NewSuitcase->SavedActors.Add(Data);
@@ -270,9 +270,11 @@ FString USaveManager::ConvertSuitcaseToJson(USovereignSaveGame* Suitcase)
         Writer->WriteValue(TEXT("Transform"), Data.WorldTransform.ToString());
 
         // 4. Metabolics (Isla's Tags)
-        TSharedPtr<FJsonObject> Tags = USovereignJsonUtils::MapToJsonObject(Data.UnknownMetaTags);
-        Writer->WriteIdentifierPrefix(TEXT("MetaTags"));
-        FJsonSerializer::Serialize(Tags.ToSharedRef(), Writer);
+        if (Data.UnknownMetaTags.IsValid())
+        {
+            Writer->WriteIdentifierPrefix(TEXT("MetaTags"));
+            FJsonSerializer::Serialize(Data.UnknownMetaTags.ToSharedRef(), Writer);
+        }
 
         Writer->WriteObjectEnd();
     }

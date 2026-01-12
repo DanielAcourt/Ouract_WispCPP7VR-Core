@@ -40,17 +40,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
     static bool ValidateAndSave(FString FileName, FString Content);
 
-    /** * WHY: Reconstructs data from the disk.
-        * WHAT: Takes a JSON object and pours the data back into a C++ Map
-        * so your Actors can read their saved properties.
-        */
-    static TSharedPtr<FJsonObject> MapToJsonObject(const TMap<FString, FString>& TagMap);
-
-    /**
-     * Converts a JSON Object back into a Map for your Entities to read.
-     */
-    static TMap<FString, FString> JsonObjectToMap(TSharedPtr<FJsonObject> JsonObject);
-
     static TSharedPtr<FJsonObject> ParseJsonString(FString JsonString);
 };
 

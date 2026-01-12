@@ -95,10 +95,10 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
 		if (bHasParentFailure)
 		{
-			FGameplayTag OrphanedTag = UGameplayTagManager::Get().RequestGameplayTag(FName("State.Malady.Orphaned"), false);
-			if (OrphanedTag.IsValid())
+			FGameplayTag PenaltyTag = UGameplayTagManager::Get().RequestGameplayTag(FName("State.Biological.Penalty"), false);
+			if (PenaltyTag.IsValid())
 			{
-				NewEntity->GameplayTags.AddTag(OrphanedTag);
+				NewEntity->GameplayTags.AddTag(PenaltyTag);
 			}
 		}
 		if (ClassToSpawn == FallbackUnknownClass)

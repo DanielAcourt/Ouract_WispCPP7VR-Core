@@ -290,11 +290,11 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 
 void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString)
 {
-	FGameplayTag NewTag = UGameplayTagManager::Get().AddNativeGameplayTag(FName(*IncomingTagString));
-	if (NewTag.IsValid())
-	{
-		GameplayTags.AddTag(NewTag);
-	}
+    FGameplayTag NewTag = UGameplayTagManager::Get().RequestGameplayTag(FName(*IncomingTagString), false);
+    if (NewTag.IsValid())
+    {
+        GameplayTags.AddTag(NewTag);
+    }
 }
 
 void ASovereignBaseEntity::VerifySymmetryLevel()

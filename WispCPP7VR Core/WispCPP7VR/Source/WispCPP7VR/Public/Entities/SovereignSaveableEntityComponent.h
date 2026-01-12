@@ -6,8 +6,9 @@
 #include "Interaction/SovereignSaveInterface.h"
 #include "SovereignSaveableEntityComponent.generated.h"
 
-// Forward declaration to fix potential LNK issues with Evolve()
+// Forward declarations
 class ASovereignBaseEntity;
+class FJsonObject;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent
@@ -17,8 +18,7 @@ class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent
 public:
     USovereignSaveableEntityComponent();
 
-    UFUNCTION(BlueprintCallable, Category = "Sovereign|Persistence")
-    TMap<FString, FString> CaptureFullEntityState();
+    TSharedPtr<FJsonObject> CaptureFullEntityState();
 
     /** --- 1. IDENTITY --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
@@ -91,6 +91,8 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
     void ApplyMetaTags(TMap<FString, FString> LoadedTags);
+
+    void ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData);
 
 protected:
     /** Calculates multipliers based on the 3-axis interaction */

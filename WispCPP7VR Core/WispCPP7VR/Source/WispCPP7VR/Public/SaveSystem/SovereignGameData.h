@@ -65,6 +65,8 @@ enum class ESovereignElement : uint8
     Electric, Fairy, Dragon
 };
 
+#include "Dom/JsonObject.h"
+
 USTRUCT(BlueprintType)
 struct FEntitySaveData
 {
@@ -103,8 +105,7 @@ struct FEntitySaveData
     /** * THE SECRET SAUCE: Handles tags the system can't know in advance.
      * This is where your "Key:Value" scraper saves its data.
      */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign")
-    TMap<FString, FString> UnknownMetaTags;
+    TSharedPtr<FJsonObject> UnknownMetaTags;
 
 
     /** * The blueprint path of the actor.
