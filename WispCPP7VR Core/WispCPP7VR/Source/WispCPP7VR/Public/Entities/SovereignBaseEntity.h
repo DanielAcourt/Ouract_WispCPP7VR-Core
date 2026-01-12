@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "SaveSystem/SovereignGameData.h" 
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
+#include "GameplayTagContainer.h"
 #include "SovereignBaseEntity.generated.h"
 
 // Forward declarations to keep compile times fast
@@ -20,6 +21,14 @@ class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter
 
 public:
 	ASovereignBaseEntity();
+
+	/** The Unique Identity Signature for this class. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity")
+	FGameplayTag IdentitySignature;
+
+	/** The Gameplay Tags for this entity. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
+	FGameplayTagContainer GameplayTags;
 
 	// --- Lifecycle ---
 	virtual void BeginPlay() override;
@@ -80,6 +89,9 @@ protected:
 	/** Logic to update the entity based on new Species Data */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
 	virtual void InitializeFromSovereignData(USovereignSpeciesData* InData);
+
+	/** Called by the Spawn Manager after the actor has been spawned. */
+	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 
 protected:
 	/** The 'Passport' for this entity's species and trust level */

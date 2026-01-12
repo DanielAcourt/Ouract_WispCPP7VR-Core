@@ -95,22 +95,17 @@ void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
         FVector MidPoint = (GetActorLocation() + PotentialPartner->GetActorLocation()) / 2.0f;
         FTransform SpawnTransform(GetActorRotation(), MidPoint);
 
-        AActor* Child = USovereignSpawnerUtils::SpawnHybridEntity(
+        USovereignSpawnerUtils::SpawnHybridEntity(
             GetWorld(),
-            this->GetClass(),
+            SpeciesData,
             SpawnTransform,
             this,
             PotentialPartner
         );
 
-        if (Child)
-        {
-            float CurrentTime = GetWorld()->GetTimeSeconds();
-            this->SaveDataComponent->LastMatingTimestamp = CurrentTime;
-            PartnerActor->SaveDataComponent->LastMatingTimestamp = CurrentTime;
-
-            UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *GetName(), *PotentialPartner->GetName());
-        }
+        // Since spawning is now async, we can't get a return value.
+        // The timestamp logic should be moved to the PostSpawnInitialize function if needed.
+        // For now, we will just assume success.
     }
 }
 
@@ -218,4 +213,76 @@ void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPt
 
         UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
     }
+}
+
+void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID)
+{
+	if (InSpeciesData)
+	{
+		InitializeFromSovereignData(const_cast<USovereignSpeciesData*>(InSpeciesData));
+	}
+
+	if (SaveDataComponent)
+	{
+		SaveDataComponent->EntityID = FGuid::NewGuid();
+		SaveDataComponent->MotherID = InMotherID;
+		SaveDataComponent->FatherID = InFatherID;
+
+		if (UWorld* World = GetWorld())
+		{
+			if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
+			{
+				Registry->RegisterActor(SaveDataComponent->EntityID, this);
+			}
+		}
+
+		if (InFatherID.IsValid())
+		{
+			// This is a hybrid, so we need to recombine DNA
+			if (UWorld* World = GetWorld())
+			{
+				if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
+				{
+					AActor* Mother = Registry->FindActor(InMotherID);
+					AActor* Father = Registry->FindActor(InFatherID);
+					if (Mother && Father)
+					{
+						auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
+						auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
+						if (MomComp && DadComp)
+						{
+							TMap<FString, FString> ChildDNA = USovereignSpawnerUtils::RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
+							SaveDataComponent->ApplyMetaTags(ChildDNA);
+
+							float CurrentTime = World->GetTimeSeconds();
+							MomComp->LastMatingTimestamp = CurrentTime;
+							DadComp->LastMatingTimestamp = CurrentTime;
+
+							UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *Mother->GetName(), *Father->GetName());
+						}
+					}
+				}
+			}
+		}
+		else if (InMotherID.IsValid())
+		{
+			// This is a clone, so we need to mutate DNA
+			if (UWorld* World = GetWorld())
+			{
+				if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
+				{
+					AActor* Mother = Registry->FindActor(InMotherID);
+					if (Mother)
+					{
+						auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
+						if (MomComp)
+						{
+							TMap<FString, FString> MutatedDNA = USovereignSpawnerUtils::GenerateMutatedTags(MomComp->GetUnknownMetaTags(), 0.1f);
+							SaveDataComponent->ApplyMetaTags(MutatedDNA);
+						}
+					}
+				}
+			}
+		}
+	}
 }
