@@ -26,11 +26,27 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity")
 	FGameplayTag IdentitySignature;
 
+	// Add the TrustSignature back here if you want to solve that C2039 error properly
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
+	int32 TrustSignature = 0;
+
 	/** The Gameplay Tags for this entity. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
 	FGameplayTagContainer GameplayTags;
 
+	/** Task 6: Ingests unknown tags from JSON (e.g., Power.DragonBreath.Silver) */
+	//UFUNCTION(BlueprintCallable, Category = "Sovereign|Discovery")
+	//void IngestSovereignTag(FString IncomingTagString);
+
+	/** Task 6: Checks TrustSignature + Luck/Charisma for unknown tag access */
+	//UFUNCTION(BlueprintPure, Category = "Sovereign|Security")
+	//bool VerifySymmetryLevel() const;
+
+
+
+
 	// --- Lifecycle ---
+	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -72,9 +88,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
 	TArray<UStaticMesh*> GrowthMeshes;
 
-	// Add the TrustSignature back here if you want to solve that C2039 error properly
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
-	int32 TrustSignature = 0;
+
 
 	/** 1.0 is default size. 2.0 is double size. Allows for growth without new meshes. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")
@@ -89,9 +103,6 @@ protected:
 	/** Logic to update the entity based on new Species Data */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
 	virtual void InitializeFromSovereignData(USovereignSpeciesData* InData);
-
-	/** Called by the Spawn Manager after the actor has been spawned. */
-	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 
 protected:
 	/** The 'Passport' for this entity's species and trust level */

@@ -6,7 +6,10 @@
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "GameplayTagContainer.h"
-#include "GameplayTags/Classes/GameplayTagManager.h"
+#include "GameplayTagsManager.h"
+
+// ADD THIS INCLUDE - It fixes the "undefined type" errors
+#include "Entities/SovereignBaseEntity.h"
 
 void USovereignSpawnManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -36,69 +39,84 @@ void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesDa
 
 void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 {
-	FSpawnRequest* Request = SpawnQueue.FindByPredicate([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
-	if (!Request)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnManager: OnClassLoaded called with invalid RequestID!"));
-		return;
-	}
+    // 1. Locate the request in the queue
+    FSpawnRequest* Request = SpawnQueue.FindByPredicate([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
+    if (!Request)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnManager: OnClassLoaded called with invalid RequestID %d!"), RequestID);
+        return;
+    }
 
-	const USovereignSpeciesData* SpeciesData = Request->SpeciesData;
-	if (!SpeciesData)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnManager: OnClassLoaded called with null SpeciesData!"));
-		return;
-	}
+    const USovereignSpeciesData* SpeciesData = Request->SpeciesData;
+    if (!SpeciesData)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnManager: SpeciesData is null for RequestID %d!"), RequestID);
+        return;
+    }
 
-	TSubclassOf<ASovereignBaseEntity> ClassToSpawn = FallbackUnknownClass;
-	TSubclassOf<ASovereignBaseEntity> LoadedClass = SpeciesData->ActorClass.Get();
+    // 2. Identify the class to spawn (With Identity Signature Check)
+    TSubclassOf<ASovereignBaseEntity> ClassToSpawn = FallbackUnknownClass;
+    TSubclassOf<ASovereignBaseEntity> LoadedClass = SpeciesData->ActorClass.Get();
 
-	if (LoadedClass)
-	{
-		const ASovereignBaseEntity* CDO = LoadedClass->GetDefaultObject<ASovereignBaseEntity>();
-		if (CDO && CDO->IdentitySignature == SpeciesData->IdentitySignature)
-		{
-			ClassToSpawn = LoadedClass;
-		}
-	}
+    if (LoadedClass)
+    {
+        const ASovereignBaseEntity* CDO = LoadedClass->GetDefaultObject<ASovereignBaseEntity>();
+        // The Bridge Check: Ensure the blueprint matches the data asset's signature
+        if (CDO && CDO->IdentitySignature == SpeciesData->IdentitySignature)
+        {
+            ClassToSpawn = LoadedClass;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SpawnManager: Identity mismatch for %s. Using Fallback!"), *SpeciesData->SpeciesName.ToString());
+        }
+    }
 
-	if (!ClassToSpawn)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnManager: ClassToSpawn is null and no fallback is set!"));
-		return;
-	}
+    if (!ClassToSpawn)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnManager: No valid class or fallback found!"));
+        return;
+    }
 
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
+    UWorld* World = GetWorld();
+    if (!World) return;
 
-	bool bHasParentFailure = false;
-	if (Request->MotherID.IsValid())
-	{
-		UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>();
-		if (Registry && !Registry->FindActor(Request->MotherID))
-		{
-			bHasParentFailure = true;
-		}
-	}
+    // 3. Parent Validation (Orphan Check)
+    bool bHasParentFailure = false;
+    if (Request->MotherID.IsValid())
+    {
+        UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>();
+        if (Registry && !Registry->FindActor(Request->MotherID))
+        {
+            bHasParentFailure = true;
+        }
+    }
 
-	ASovereignBaseEntity* NewEntity = World->SpawnActor<ASovereignBaseEntity>(ClassToSpawn, Request->Transform);
+    // 4. Physical Spawning
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	if (NewEntity)
-	{
-		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
-		if (bHasParentFailure)
-		{
-			FGameplayTag OrphanedTag = UGameplayTagManager::Get().RequestGameplayTag(FName("State.Malady.Orphaned"), false);
-			if (OrphanedTag.IsValid())
-			{
-				NewEntity->GameplayTags.AddTag(OrphanedTag);
-			}
-		}
-	}
+    ASovereignBaseEntity* NewEntity = World->SpawnActor<ASovereignBaseEntity>(ClassToSpawn, Request->Transform, SpawnParams);
 
-	// Remove the request from the queue
-	SpawnQueue.RemoveAll([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
+    if (NewEntity)
+    {
+        // Hydrate the entity with its data and parentage
+        NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
+
+        // 5. Apply "Orphaned" status if the parent vanished during the async load
+        if (bHasParentFailure)
+        {
+            // CORRECTED: Plural 'UGameplayTagsManager'
+            FGameplayTag OrphanedTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("State.Malady.Orphaned"), false);
+
+            if (OrphanedTag.IsValid())
+            {
+                // Note: Ensure GameplayTags is a public FGameplayTagContainer in SovereignBaseEntity.h
+                NewEntity->GameplayTags.AddTag(OrphanedTag);
+            }
+        }
+    }
+
+    // 6. Cleanup the queue
+    SpawnQueue.RemoveAll([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
 }

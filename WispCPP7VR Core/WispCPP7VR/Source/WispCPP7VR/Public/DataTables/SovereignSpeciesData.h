@@ -7,6 +7,10 @@
 #include "GameplayTagContainer.h" // <--- CRITICAL: Fixes FGameplayTag errors
 #include "SovereignSpeciesData.generated.h"
 
+// 1. FORWARD DECLARATION: This tells the compiler the class exists without 
+// needing to #include the whole file, breaking the circular loop.
+class ASovereignBaseEntity;
+
 /** * The Unique Tag for this species (e.g., Species.Plant.Oak).
      * This is what the Save System looks for to know which asset to load.
      */

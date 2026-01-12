@@ -1,6 +1,0 @@
-[40952:15500:0107/134228.649:WARNING:chrome_main_delegate.cc(745)] This is Chrome version 128.0.6613.138 (not a warning)
-[40952:45048:0107/134228.675:ERROR:google_update_settings.cc(265)] Failed opening key Software\Chromium to set usagestats; result: 5
-[40952:15500:0107/134228.690:WARNING:account_consistency_mode_manager.cc(77)] Desktop Identity Consistency cannot be enabled as no OAuth client ID and client secret have been configured.
-[40952:15500:0107/134230.049:WARNING:external_registry_loader_win.cc(232)] Error observing HKLM: 5
-[40952:15500:0107/134234.312:ERROR:device_event_log_impl.cc(196)] [13:42:34.307] USB: usb_service_win.cc:105 SetupDiGetDeviceProperty({{A45C254E-DF1C-4EFD-8020-67D146A850E0}, 6}) failed: Element not found. (0x490)
-[40952:15500:0107/135004.169:WARNING:pref_notifier_impl.cc(41)] Pref observer for media_router.cast_allow_all_ips found at shutdown.
