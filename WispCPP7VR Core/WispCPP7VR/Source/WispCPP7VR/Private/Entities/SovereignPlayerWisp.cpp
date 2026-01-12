@@ -162,8 +162,10 @@ void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	// 2. Now add Wisp-specific bindings if you have any (like AttemptPossession)
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Example: Bind 'Q' or 'Right Click' to AttemptPossession
-		// EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
+		if (PossessAction)
+		{
+			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
+		}
 	}
 }
 
