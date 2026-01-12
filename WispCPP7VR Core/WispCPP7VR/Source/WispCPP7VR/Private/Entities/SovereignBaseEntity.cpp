@@ -10,6 +10,7 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "TimerManager.h"
+#include "GameplayTagsManager.h"
 
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
@@ -285,4 +286,34 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 			}
 		}
 	}
+}
+
+bool ASovereignBaseEntity::VerifySymmetryLevel(int32 InstigatorTrust) const
+{
+    float SymmetryScore = ((TrustSignature + InstigatorTrust) * 0.5f) + (BaseConstitution * 1.0f);
+    return SymmetryScore >= 50.0f;
+}
+
+void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString, int32 InstigatorTrust)
+{
+    UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
+    FName TagName = FName(*IncomingTagString);
+
+    FGameplayTag NewTag = Manager.RequestGameplayTag(TagName, false);
+
+    if (!NewTag.IsValid())
+    {
+        NewTag = Manager.AddNativeGameplayTag(TagName);
+    }
+
+    if (VerifySymmetryLevel(InstigatorTrust))
+    {
+        GameplayTags.AddTag(NewTag);
+        UE_LOG(LogTemp, Log, TEXT("Sovereign: Tag [%s] Ingested Successfully."), *IncomingTagString);
+    }
+    else
+    {
+        GameplayTags.AddTag(Manager.RequestGameplayTag(FName("State.Identity.Uncertain")));
+        UE_LOG(LogTemp, Warning, TEXT("Sovereign: Symmetry Failure for [%s]. Adding Uncertain state."), *IncomingTagString);
+    }
 }
