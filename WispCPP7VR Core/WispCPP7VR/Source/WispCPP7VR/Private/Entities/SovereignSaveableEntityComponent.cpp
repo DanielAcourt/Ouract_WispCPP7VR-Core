@@ -196,7 +196,7 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
         LoadedTags[TEXT("SovereignTags")].ParseIntoArray(TagStrings, TEXT(","), true);
         for (const FString& TagString : TagStrings)
         {
-            OwnerEntity->IngestSovereignTag(TagString);
+            OwnerEntity->IngestSovereignTag(TagString); // InstigatorTrust defaults to 0
         }
     }
 }
@@ -209,7 +209,7 @@ TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState
 	// 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
 	AggregatedData.Append(GetUnknownMetaTags());
 
-	// 2. SCRAPE SOVEREIGN TAGS
+	// 2. SCRAPE SOVEREIGN TAGS (LIVING SAVE BRIDGE)
 	ASovereignBaseEntity* OwnerEntity = Cast<ASovereignBaseEntity>(GetOwner());
 	if (OwnerEntity)
 	{
@@ -218,7 +218,10 @@ TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState
 		{
 			TagStrings.Add(Tag.ToString());
 		}
-		AggregatedData.Add(TEXT("SovereignTags"), FString::Join(TagStrings, TEXT(",")));
+		if (TagStrings.Num() > 0)
+		{
+			AggregatedData.Add(TEXT("SovereignTags"), FString::Join(TagStrings, TEXT(",")));
+		}
 	}
 
 	// 3. SCRAPE COMPONENTS (The "Contract" System)

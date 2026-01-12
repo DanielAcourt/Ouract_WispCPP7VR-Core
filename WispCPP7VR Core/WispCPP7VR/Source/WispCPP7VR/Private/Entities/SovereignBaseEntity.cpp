@@ -288,41 +288,31 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 	}
 }
 
-bool ASovereignBaseEntity::VerifySymmetryLevel() const
+bool ASovereignBaseEntity::VerifySymmetryLevel(int32 InstigatorTrust) const
 {
-    // Simple math to check if the entity's 'weight' supports its tags
-    float SymmetryScore = (TrustSignature * 0.5f) + (BaseConstitution * 1.0f);
-
-    // Isla (Trust 500) = 250+ score (PASS)
-    // Oak Tree (Trust 0, Const 60) = 60 score (PASS for standard tags)
-    // Faked High-Power Tag (Trust 0, Const 1) = 1 score (FAIL)
-
+    float SymmetryScore = ((TrustSignature + InstigatorTrust) * 0.5f) + (BaseConstitution * 1.0f);
     return SymmetryScore >= 50.0f;
 }
 
-void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString)
+void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString, int32 InstigatorTrust)
 {
     UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
     FName TagName = FName(*IncomingTagString);
 
-    // 1. Attempt to find or dynamically create the tag
     FGameplayTag NewTag = Manager.RequestGameplayTag(TagName, false);
 
     if (!NewTag.IsValid())
     {
-        // This is where the 'Discovery' happens
         NewTag = Manager.AddNativeGameplayTag(TagName);
     }
 
-    // 2. Perform the Symmetry Handshake
-    if (VerifySymmetryLevel())
+    if (VerifySymmetryLevel(InstigatorTrust))
     {
         GameplayTags.AddTag(NewTag);
         UE_LOG(LogTemp, Log, TEXT("Sovereign: Tag [%s] Ingested Successfully."), *IncomingTagString);
     }
     else
     {
-        // Fail State: The entity is too weak or untrusted for this tag
         GameplayTags.AddTag(Manager.RequestGameplayTag(FName("State.Identity.Uncertain")));
         UE_LOG(LogTemp, Warning, TEXT("Sovereign: Symmetry Failure for [%s]. Adding Uncertain state."), *IncomingTagString);
     }

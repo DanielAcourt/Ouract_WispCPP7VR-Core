@@ -36,11 +36,11 @@ public:
 
 	/** Task 6: Ingests unknown tags from JSON (e.g., Power.DragonBreath.Silver) */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Discovery")
-	void IngestSovereignTag(FString IncomingTagString);
+	void IngestSovereignTag(FString IncomingTagString, int32 InstigatorTrust = 0);
 
 	/** Task 6: Checks TrustSignature + Luck/Charisma for unknown tag access */
 	UFUNCTION(BlueprintPure, Category = "Sovereign|Security")
-	bool VerifySymmetryLevel() const;
+	bool VerifySymmetryLevel(int32 InstigatorTrust = 0) const;
 
 
 
