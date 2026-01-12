@@ -7,6 +7,8 @@
 #include "GameplayTagContainer.h" // <--- CRITICAL: Fixes FGameplayTag errors
 #include "SovereignSpeciesData.generated.h"
 
+class ASovereignBaseEntity;
+
 /** * The Unique Tag for this species (e.g., Species.Plant.Oak).
      * This is what the Save System looks for to know which asset to load.
      */
@@ -22,9 +24,6 @@ struct FSovereignGrowthStage
     /** NEW: Scaling factor for this stage (1.0 = Default) */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")
     float VisualScale = 1.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
-    int32 TrustSignature = 0;
 
     // PHYSICAL ATTRIBUTES (The 'Advanced' data)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
@@ -71,7 +70,7 @@ public:
 
     /** The Actor Class to spawn for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
-    TSoftClassPtr<ASovereignBaseEntity> ActorClass;
+    TSoftClassPtr<class ASovereignBaseEntity> ActorClass;
 
     /** The Unique Identity Signature for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity")

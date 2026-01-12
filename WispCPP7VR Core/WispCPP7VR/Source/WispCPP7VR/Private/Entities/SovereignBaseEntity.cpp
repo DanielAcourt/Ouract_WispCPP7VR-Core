@@ -10,6 +10,7 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "TimerManager.h"
+#include "GameplayTagManager.h"
 
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
@@ -285,4 +286,25 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 			}
 		}
 	}
+}
+
+void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString)
+{
+	FGameplayTag NewTag = UGameplayTagManager::Get().AddNativeGameplayTag(FName(*IncomingTagString));
+	if (NewTag.IsValid())
+	{
+		GameplayTags.AddTag(NewTag);
+	}
+}
+
+void ASovereignBaseEntity::VerifySymmetryLevel()
+{
+	// Placeholder for Symmetry Kernel Check
+	// This is where you would grant permissions based on the TrustSignature,
+	// and attributes like Luck or Charisma.
+	// For example:
+	// if (TrustSignature > 1000 && GetAttributeComponent()->Luck > 50)
+	// {
+	//		// Grant special permission
+	// }
 }

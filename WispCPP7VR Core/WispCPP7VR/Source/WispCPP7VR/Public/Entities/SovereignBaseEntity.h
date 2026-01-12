@@ -93,7 +93,12 @@ protected:
 	/** Called by the Spawn Manager after the actor has been spawned. */
 	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
+	void IngestSovereignTag(FString IncomingTagString);
+
 protected:
+	void VerifySymmetryLevel();
+
 	/** The 'Passport' for this entity's species and trust level */
 /** The "Advanced" data asset defining growth stages, health, and species attributes */
 	// Note: class keyword here handles the forward declaration inline

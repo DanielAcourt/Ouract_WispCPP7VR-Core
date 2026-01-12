@@ -7,6 +7,8 @@
 #include "DataTables/SovereignSpeciesData.h"
 #include "SovereignSpawnManager.generated.h"
 
+class ASovereignBaseEntity;
+
 USTRUCT(BlueprintType)
 struct FSpawnRequest
 {
@@ -50,7 +52,7 @@ public:
 
 private:
 	UPROPERTY()
-	TArray<FSpawnRequest> SpawnQueue;
+	TMap<int32, FSpawnRequest> SpawnQueue;
 
 	int32 NextRequestID = 0;
 

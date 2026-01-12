@@ -175,6 +175,20 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 
 	for (auto& Elem : LoadedTags)
 	{
+		if (Elem.Key.Equals(TEXT("GameplayTags"), ESearchCase::IgnoreCase))
+		{
+			if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
+			{
+				TArray<FString> TagStrings;
+				Elem.Value.ParseIntoArray(TagStrings, TEXT(","), true);
+				for (const FString& TagString : TagStrings)
+				{
+					MyEntity->IngestSovereignTag(TagString);
+				}
+			}
+			continue;
+		}
+
 		if (EnumPtr)
 		{
 			int64 Val = EnumPtr->GetValueByNameString(Elem.Value);
@@ -199,6 +213,17 @@ TMap<FString, FString> USovereignSaveableEntityComponent::CaptureFullEntityState
 	// 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
 	// This captures Actor-level tags like "Role:Guardian" or "Species:Elf"
 	AggregatedData.Append(GetUnknownMetaTags());
+
+	// Serialize the GameplayTagContainer
+	if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
+	{
+		FString TagString;
+		for (const FGameplayTag& Tag : MyEntity->GameplayTags)
+		{
+			TagString += Tag.ToString() + TEXT(",");
+		}
+		AggregatedData.Add(TEXT("GameplayTags"), TagString);
+	}
 
 	// 2. SCRAPE COMPONENTS (The "Contract" System)
 	// This captures Qi, Attributes, and Elements automatically

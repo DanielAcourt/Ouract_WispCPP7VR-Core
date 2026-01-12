@@ -6,11 +6,12 @@
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "GameplayTagContainer.h"
-#include "GameplayTags/Classes/GameplayTagManager.h"
+#include "GameplayTagManager.h"
 
 void USovereignSpawnManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	UE_LOG(LogTemp, Log, TEXT("Sovereign Spawn Manager Online: PSTAS Logic Engaged"));
 }
 
 void USovereignSpawnManager::Deinitialize()
@@ -28,7 +29,7 @@ void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesDa
 
 	int32 RequestID = NextRequestID++;
 	FSpawnRequest NewRequest(RequestID, SpeciesData, Transform, MotherID, FatherID);
-	SpawnQueue.Add(NewRequest);
+	SpawnQueue.Add(RequestID, NewRequest);
 
 	FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
 	StreamableManager.RequestAsyncLoad(SpeciesData->ActorClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &USovereignSpawnManager::OnClassLoaded, RequestID));
@@ -36,7 +37,7 @@ void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesDa
 
 void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 {
-	FSpawnRequest* Request = SpawnQueue.FindByPredicate([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
+	FSpawnRequest* Request = SpawnQueue.Find(RequestID);
 	if (!Request)
 	{
 		UE_LOG(LogTemp, Error, TEXT("SpawnManager: OnClassLoaded called with invalid RequestID!"));
@@ -74,6 +75,9 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		return;
 	}
 
+	// "Drone-Laying Penalty" (Ontological Parent Check)
+	// If the parent ID is valid but the parent actor is not found in the registry,
+	// it is considered an ontological failure (e.g. the parent has died or been culled).
 	bool bHasParentFailure = false;
 	if (Request->MotherID.IsValid())
 	{
@@ -97,8 +101,16 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 				NewEntity->GameplayTags.AddTag(OrphanedTag);
 			}
 		}
+		if (ClassToSpawn == FallbackUnknownClass)
+		{
+			FGameplayTag UnknownTag = UGameplayTagManager::Get().RequestGameplayTag(FName("Transient.Unknown"), false);
+			if (UnknownTag.IsValid())
+			{
+				NewEntity->GameplayTags.AddTag(UnknownTag);
+			}
+		}
 	}
 
 	// Remove the request from the queue
-	SpawnQueue.RemoveAll([RequestID](const FSpawnRequest& Item) { return Item.RequestID == RequestID; });
+	SpawnQueue.Remove(RequestID);
 }
