@@ -1,0 +1,144 @@
+﻿{
+	"Entities": [
+		{
+			"GUID": "594836034A92A92F0A433AA927BA8B6C",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C",
+			"Transform": "-200.000000,0.000000,92.000100|0.000000,180.000000,0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": [],
+				"STR": "1",
+				"DEX": "10",
+				"CON": "5",
+				"INT": "25",
+				"WIS": "10",
+				"CHA": "10",
+				"LCK": "10",
+				"AC": "10",
+				"HP": "100.0",
+				"STM": "100.0",
+				"HGR": "100.0",
+				"HYD": "0.0",
+				"FTG": "0.0",
+				"TRD": "0.0",
+				"R_PHY": "0.0",
+				"R_MAG": "0.0",
+				"R_MEN": "0.0",
+				"Qi.Current": "500.0",
+				"Qi.Max": "500.0",
+				"Qi.Purity": "0.8",
+				"Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "A3DE21154DEC11FBF0C7EB9BDE47C1A5",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Script/WispCPP7VR.SovereignSaveTerminal",
+			"Transform": "-760.000000,20.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": []
+			}
+		},
+		{
+			"GUID": "C6D7FFD3417CA4AA03B979B622C91AEC",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/BP_Human.BP_Human_C",
+			"Transform": "-910.000000,550.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": [
+					"PPC.Humanoid.Human"
+				],
+				"STR": "10",
+				"DEX": "10",
+				"CON": "10",
+				"INT": "10",
+				"WIS": "10",
+				"CHA": "10",
+				"LCK": "10",
+				"AC": "10",
+				"HP": "100.0",
+				"STM": "100.0",
+				"HGR": "0.0",
+				"HYD": "0.0",
+				"FTG": "0.0",
+				"TRD": "0.0",
+				"R_PHY": "0.0",
+				"R_MAG": "0.0",
+				"R_MEN": "0.0",
+				"Qi.Current": "0.0",
+				"Qi.Max": "100.0",
+				"Qi.Purity": "0.1",
+				"Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "799ECF7B49BE9219D2B43CA7FBBA2646",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/BP_Humanoid.BP_Humanoid_C",
+			"Transform": "-1010.000000,160.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": [
+					"PPC.Humanoid"
+				],
+				"STR": "10",
+				"DEX": "10",
+				"CON": "10",
+				"INT": "10",
+				"WIS": "10",
+				"CHA": "10",
+				"LCK": "10",
+				"AC": "10",
+				"HP": "100.0",
+				"STM": "100.0",
+				"HGR": "0.0",
+				"HYD": "0.0",
+				"FTG": "0.0",
+				"TRD": "0.0",
+				"R_PHY": "0.0",
+				"R_MAG": "0.0",
+				"R_MEN": "0.0",
+				"Qi.Current": "0.0",
+				"Qi.Max": "100.0",
+				"Qi.Purity": "0.1",
+				"Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "CEABBF4848F2EA00975827A69DE26701",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/BP_PPC.BP_PPC_C",
+			"Transform": "-600.000000,-70.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"GameplayTags": [
+					"PPC"
+				],
+				"STR": "10",
+				"DEX": "10",
+				"CON": "10",
+				"INT": "10",
+				"WIS": "10",
+				"CHA": "10",
+				"LCK": "10",
+				"AC": "10",
+				"HP": "100.0",
+				"STM": "100.0",
+				"HGR": "0.0",
+				"HYD": "0.0",
+				"FTG": "0.0",
+				"TRD": "0.0",
+				"R_PHY": "0.0",
+				"R_MAG": "0.0",
+				"R_MEN": "0.0",
+				"Qi.Current": "0.0",
+				"Qi.Max": "100.0",
+				"Qi.Purity": "0.1",
+				"Qi.Total": "0.0"
+			}
+		}
+	]
+}
