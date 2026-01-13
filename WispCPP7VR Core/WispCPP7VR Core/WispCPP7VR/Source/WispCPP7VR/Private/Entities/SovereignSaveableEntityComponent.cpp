@@ -216,25 +216,15 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 {
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 
-    // 1. SCRAPE META-TAGS (The "Isla" Unknown Tag System)
+    // 1. DIRECT SCRAPE OF ACTOR TAGS (The "Isla" MetaData)
+    // We do this first so it's at the top of the JSON
     TMap<FString, FString> MetaTags = GetUnknownMetaTags();
     for (const auto& Elem : MetaTags)
     {
         JsonObject->SetStringField(Elem.Key, Elem.Value);
     }
 
-    // Serialize the GameplayTagContainer
-    if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
-    {
-        TArray<TSharedPtr<FJsonValue>> TagArray;
-        for (const FGameplayTag& Tag : MyEntity->GameplayTags)
-        {
-            TagArray.Add(MakeShareable(new FJsonValueString(Tag.ToString())));
-        }
-        JsonObject->SetArrayField(TEXT("GameplayTags"), TagArray);
-    }
-
-    // 2. SCRAPE COMPONENTS (The "Contract" System)
+    // 2. COMPONENT DATA (The "Contract" System)
     TArray<UActorComponent*> InterfaceComps;
     GetOwner()->GetComponents(InterfaceComps);
 
@@ -245,6 +235,7 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
             TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
             for (const auto& Elem : ComponentData)
             {
+                // Prefixing component data helps prevent key collisions
                 JsonObject->SetStringField(Elem.Key, Elem.Value);
             }
         }
@@ -265,7 +256,8 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
     AActor* Owner = GetOwner();
     if (!Owner) return;
 
-    // Direct Deserialization for GameplayTags
+    // --- 1. GAMEPLAY TAGS (HANDLED AS A SPECIAL CASE ARRAY) ---
+    // This logic is kept for compatibility, in case another system generates this field.
     if (JsonData->HasField(TEXT("GameplayTags")))
     {
         const TArray<TSharedPtr<FJsonValue>>* TagArray;
@@ -273,6 +265,7 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
         {
             if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
             {
+                // Clear existing tags before loading to prevent data corruption
                 MyEntity->GameplayTags.Reset();
                 for (const TSharedPtr<FJsonValue>& Val : *TagArray)
                 {
@@ -282,8 +275,40 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
         }
     }
 
-    // You can add similar logic for other keys here
-    // For now, we are only concerned with GameplayTags
+    // --- 2. COMPONENT DATA (THE "CONTRACT" SYSTEM) ---
+    // This is the primary path for Qi, Attributes, and other component data.
+
+    // First, convert the entire JsonObject into a string map.
+    // This is the "suitcase" that gets passed to each component.
+    TMap<FString, FString> AllData;
+    for (const auto& Elem : JsonData->Values)
+    {
+        // We only care about string values, as that's what GetSaveData produces.
+        // The GameplayTags array (if present) is handled above.
+        if (Elem.Value.IsValid() && Elem.Value->Type == EJson::String)
+        {
+            AllData.Add(Elem.Key, Elem.Value->AsString());
+        }
+    }
+
+    // If there's nothing to restore, don't bother iterating components.
+    if (AllData.Num() == 0)
+    {
+        return;
+    }
+
+    // Find all components that can be saved/loaded.
+    TArray<UActorComponent*> InterfaceComps;
+    Owner->GetComponents(InterfaceComps);
+
+    for (UActorComponent* Comp : InterfaceComps)
+    {
+        if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
+        {
+            // Pass the entire data map. The component is responsible for picking what it needs.
+            SaveInterface->RestoreSaveData(AllData);
+        }
+    }
 }
 
 /*

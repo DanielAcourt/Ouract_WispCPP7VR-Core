@@ -107,15 +107,15 @@ TMap<FString, FString> USovereignQiComponent::GetSaveData()
 void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 {
 	if (Data.Contains(TEXT("Qi.Current")))
-		CurrentQi = FCString::Atof(*Data[TEXT("CurrentQi")]);
+		CurrentQi = FCString::Atof(*Data.Find(TEXT("Qi.Current")));
 
 	if (Data.Contains(TEXT("Qi.Max")))
-		MaxQiCapacity = FCString::Atof(*Data[TEXT("MaxQiCapacity")]);
+		MaxQiCapacity = FCString::Atof(*Data.Find(TEXT("Qi.Max")));
 
 	if (Data.Contains(TEXT("Qi.Purity")))
-		QiPurity = FCString::Atof(*Data[TEXT("QiPurity")]);
+		QiPurity = FCString::Atof(*Data.Find(TEXT("Qi.Purity")));
 
 	if (Data.Contains(TEXT("Qi.Total")))
-		TotalQiAccumulated = FCString::Atof(*Data[TEXT("TotalQiAccumulated")]);
+		TotalQiAccumulated = FCString::Atof(*Data.Find(TEXT("Qi.Total")));
 }
 
