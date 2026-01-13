@@ -25,8 +25,6 @@ public:
 
 
 protected:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
-    USovereignSaveableEntityComponent* SaveDataComponent;
 
     // This is what was missing!
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")

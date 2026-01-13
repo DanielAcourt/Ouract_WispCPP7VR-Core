@@ -28,7 +28,7 @@ ASovereignBaseInteractable::ASovereignBaseInteractable()
     PrimaryActorTick.bCanEverTick = false;
 
     // The component must be created before the root is set
-    SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
+    //SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
 
     BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
     SetRootComponent(BaseMesh);
