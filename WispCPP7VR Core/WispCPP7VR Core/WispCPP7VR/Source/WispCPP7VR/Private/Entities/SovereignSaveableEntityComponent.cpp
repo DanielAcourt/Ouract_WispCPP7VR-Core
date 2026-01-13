@@ -7,6 +7,7 @@
 
 #include "JsonObjectConverter.h"
 #include "GameplayTagContainer.h"
+#include "GameplayTagAssetInterface.h"
 
 #include "Engine/World.h"
 
@@ -144,26 +145,26 @@ float USovereignSaveableEntityComponent::GetElementalMultiplier(ESovereignElemen
 // --- META TAG HANDLING ---
 TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() const
 {
-    TMap<FString, FString> FoundTags;
-    if (AActor* Owner = GetOwner())
-    {
-        for (const FName& TagName : Owner->Tags)
-        {
-            FString TagString = TagName.ToString();
-            FString Key, Value;
+	TMap<FString, FString> FoundTags;
+	if (AActor* Owner = GetOwner())
+	{
+		for (const FName& TagName : Owner->Tags)
+		{
+			FString TagString = TagName.ToString();
+			FString Key, Value;
 
-            // Split only on the first colon to support values with colons
-            if (TagString.Split(TEXT(":"), &Key, &Value, ESearchCase::CaseSensitive, ESearchDir::FromStart))
-            {
-                FoundTags.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
-            }
-            else // If no colon is found, treat the whole tag as a key with a value of "True"
-            {
-                FoundTags.Add(TagString.TrimStartAndEnd(), TEXT("True"));
-            }
-        }
-    }
-    return FoundTags;
+			// Split only on the first colon to support values with colons
+			if (TagString.Split(TEXT(":"), &Key, &Value, ESearchCase::CaseSensitive, ESearchDir::FromStart))
+			{
+				FoundTags.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
+			}
+			else // If no colon is found, treat the whole tag as a key with a value of "True"
+			{
+				FoundTags.Add(TagString.TrimStartAndEnd(), TEXT("True"));
+			}
+		}
+	}
+	return FoundTags;
 }
 
 // Note: This function is now primarily used for the hybrid/clone spawning logic.
@@ -174,8 +175,9 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 	if (!Owner) return;
 
 	UEnum* EnumPtr = StaticEnum<ESovereignElement>();
+	ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner);
 
-	// Cleanup old tags
+	// 1. CLEANUP: Only remove old "Legacy" colon-tags.
 	for (int32 i = Owner->Tags.Num() - 1; i >= 0; --i)
 	{
 		if (Owner->Tags[i].ToString().Contains(TEXT(":")))
@@ -186,20 +188,22 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 
 	for (auto& Elem : LoadedTags)
 	{
-		if (Elem.Key.Equals(TEXT("GameplayTags"), ESearchCase::IgnoreCase))
+		// 2. DNA FILTER: If the key contains "Component.", it is physical data.
+		// We skip it here because ApplyStateFromJsonObject handles this via the ISovereignSaveInterface.
+		if (Elem.Key.Contains(TEXT("Component.")))
 		{
-			if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
-			{
-				TArray<FString> TagStrings;
-				Elem.Value.ParseIntoArray(TagStrings, TEXT(","), true);
-				for (const FString& TagString : TagStrings)
-				{
-					MyEntity->IngestSovereignTag(TagString);
-				}
-			}
 			continue;
 		}
 
+		// 3. ID CARD (Gameplay Tags): If it uses dot-notation (e.g., "Identity.Species.Wisp")
+		// We ingest it into the formal GameplayTagContainer for system-wide logic.
+		if (MyEntity && Elem.Key.Contains(TEXT(".")))
+		{
+			MyEntity->IngestSovereignTag(Elem.Key);
+			continue;
+		}
+
+		// 4. ELEMENTAL SOCKETS (The Soul's Alignment)
 		if (EnumPtr)
 		{
 			int64 Val = EnumPtr->GetValueByNameString(Elem.Value);
@@ -208,11 +212,22 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 				if (Elem.Key.Equals(TEXT("Alignment"), ESearchCase::IgnoreCase)) AlignmentSocket = static_cast<ESovereignElement>(Val);
 				else if (Elem.Key.Equals(TEXT("Body"), ESearchCase::IgnoreCase)) BodySocket = static_cast<ESovereignElement>(Val);
 				else if (Elem.Key.Equals(TEXT("Magic"), ESearchCase::IgnoreCase)) MagicSocket = static_cast<ESovereignElement>(Val);
+				continue;
 			}
 		}
 
-		FString ReconstructedTag = FString::Printf(TEXT("%s:%s"), *Elem.Key, *Elem.Value);
-		Owner->Tags.Add(FName(*ReconstructedTag));
+		// 5. LEGACY/STRING FALLBACK: Add to standard AActor::Tags array
+		if (Elem.Value.Equals(TEXT("True"), ESearchCase::IgnoreCase))
+		{
+			// Simple boolean tag (e.g., "Terminal.Active")
+			Owner->Tags.Add(FName(*Elem.Key));
+		}
+		else
+		{
+			// Key:Value pair tag (e.g., "Door.Code:1234")
+			FString ReconstructedTag = FString::Printf(TEXT("%s:%s"), *Elem.Key, *Elem.Value);
+			Owner->Tags.Add(FName(*ReconstructedTag));
+		}
 	}
 }
 
@@ -220,37 +235,63 @@ void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> Loa
 
 TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityState()
 {
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return JsonObject;
+	}
 
-    // 1. DIRECT SCRAPE OF ACTOR TAGS (The "Isla" MetaData)
-    // We do this first so it's at the top of the JSON
-    TMap<FString, FString> MetaTags = GetUnknownMetaTags();
-    for (const auto& Elem : MetaTags)
-    {
-        JsonObject->SetStringField(Elem.Key, Elem.Value);
-    }
+	// --- PASS A (ID CARD) ---
 
-    // 2. COMPONENT DATA (The "Contract" System)
-    TArray<UActorComponent*> InterfaceComps;
-    GetOwner()->GetComponents(InterfaceComps);
+	// Part 1: Scrape AActor::Tags (e.g., "Terminal.Active:True") via helper function
+// Part 1: Standard Actor Tags (e.g., "Terminal.Active")
+	TMap<FString, FString> LegacyTags = GetUnknownMetaTags();
+	for (const auto& Elem : LegacyTags)
+	{
+		JsonObject->SetStringField(Elem.Key, Elem.Value);
+	}
 
-    for (UActorComponent* Comp : InterfaceComps)
-    {
-        if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
-        {
-            TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
-            FString ComponentName = Comp->GetName();
+	// Part 2: Upgraded Gameplay Tag Scraper (Interface-based)
+		// This finds ALL hierarchical tags set in Blueprints
+	if (IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Owner))
+	{
+		FGameplayTagContainer AllTags;
+		TagInterface->GetOwnedGameplayTags(AllTags);
 
-            for (const auto& Elem : ComponentData)
-            {
-                // Prefix component data to prevent key collisions, e.g., "Qi.Current"
-                FString PrefixedKey = FString::Printf(TEXT("%s.%s"), *ComponentName, *Elem.Key);
-                JsonObject->SetStringField(PrefixedKey, Elem.Value);
-            }
-        }
-    }
+		TArray<FGameplayTag> TagArray;
+		AllTags.GetGameplayTagArray(TagArray);
 
-    return JsonObject;
+		for (const FGameplayTag& Tag : TagArray)
+		{
+			JsonObject->SetStringField(Tag.ToString(), TEXT("True"));
+		}
+	}
+
+	// --- PASS B (DNA) ---
+	// Scrape Component Data (e.g., "QiComponent.CurrentQi", "AttributeComponent.Strength")
+	TArray<UActorComponent*> InterfaceComps;
+	Owner->GetComponents(InterfaceComps);
+
+	for (UActorComponent* Comp : InterfaceComps)
+	{
+		if (Comp == this) continue;
+
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
+		{
+			TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
+			FString ComponentName = Comp->GetName();
+
+			for (const auto& Elem : ComponentData)
+			{
+				// Prefix component data to prevent key collisions, e.g., "Qi.Current"
+				FString PrefixedKey = FString::Printf(TEXT("%s.%s"), *ComponentName, *Elem.Key);
+				JsonObject->SetStringField(PrefixedKey, Elem.Value);
+			}
+		}
+	}
+
+	return JsonObject;
 }
 //new feature add qi components and attribute components to the save file
 // i need to implment this as it acts as tyhe framework to save all the data from attached compoents. I need to think as 
@@ -260,88 +301,53 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 // to the save file reglardless of the meta tags so i dont have to make loads of loops in blkueprints./
 void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData)
 {
-    if (!JsonData.IsValid()) return;
+	if (!JsonData.IsValid()) return;
 
-    AActor* Owner = GetOwner();
-    if (!Owner) return;
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
 
-    // --- 1. GAMEPLAY TAGS (HANDLED AS A SPECIAL CASE ARRAY) ---
-    // This logic is kept for compatibility, in case another system generates this field.
-    if (JsonData->HasField(TEXT("GameplayTags")))
-    {
-        const TArray<TSharedPtr<FJsonValue>>* TagArray;
-        if (JsonData->TryGetArrayField(TEXT("GameplayTags"), TagArray))
-        {
-            if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
-            {
-                // Clear existing tags before loading to prevent data corruption
-                MyEntity->GameplayTags.Reset();
-                for (const TSharedPtr<FJsonValue>& Val : *TagArray)
-                {
-                    MyEntity->IngestSovereignTag(Val->AsString());
-                }
-            }
-        }
-    }
+	// 1. Convert the entire JsonObject into a flat string map.
+	// This "Suitcase" now contains everything: Tags, Stats, and Enums.
+	TMap<FString, FString> AllData;
+	for (const auto& Elem : JsonData->Values)
+	{
+		// We process everything as strings to maintain the Flat JSON standard
+		if (Elem.Value.IsValid() && Elem.Value->Type == EJson::String)
+		{
+			AllData.Add(Elem.Key, Elem.Value->AsString());
+		}
+	}
 
-    // --- 2. COMPONENT DATA (THE "CONTRACT" SYSTEM) ---
-    // This is the primary path for Qi, Attributes, and other component data.
+	// If there's nothing to restore, exit early
+	if (AllData.Num() == 0) return;
 
-    // First, convert the entire JsonObject into a string map.
-    // This is the "suitcase" that gets passed to each component.
-    TMap<FString, FString> AllData;
-    for (const auto& Elem : JsonData->Values)
-    {
-        // We only care about string values, as that's what GetSaveData produces.
-        // The GameplayTags array (if present) is handled above.
-        if (Elem.Value.IsValid() && Elem.Value->Type == EJson::String)
-        {
-            AllData.Add(Elem.Key, Elem.Value->AsString());
-        }
-    }
+	// 2. APPLY IDENTITY (The ID Card Pass)
+	// This processes Sockets (Alignment/Body), Ingests Gameplay Tags, 
+	// and handles standard Actor Tags.
+	ApplyMetaTags(AllData);
 
-    // If there's nothing to restore, don't bother iterating components.
-    if (AllData.Num() == 0)
-    {
-        return;
-    }
+	// 3. APPLY COMPONENT DATA (The DNA Pass)
+	// Find all components that implement the Save Interface (Qi, Attributes, etc.)
+	TArray<UActorComponent*> InterfaceComps;
+	Owner->GetComponents(InterfaceComps);
 
-    // Find all components that can be saved/loaded.
-    TArray<UActorComponent*> InterfaceComps;
-    Owner->GetComponents(InterfaceComps);
-
-    for (UActorComponent* Comp : InterfaceComps)
-    {
-        if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
-        {
-            // Pass the entire data map. The component is responsible for picking what it needs.
-            SaveInterface->RestoreSaveData(AllData);
-        }
-    }
+	for (UActorComponent* Comp : InterfaceComps)
+	{
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
+		{
+			// The component scans AllData for keys starting with its name 
+			// (e.g., "AttributeComponent.STR") and restores itself.
+			SaveInterface->RestoreSaveData(AllData);
+		}
+	}
 }
 
 /*
 void USovereignSaveableEntityComponent::CaptureEntityState()
-{
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
 
-	// 1. Capture Qi
-	USovereignQiComponent* QiComp = Owner->FindComponentByClass<USovereignQiComponent>();
-	if (QiComp)
-	{
-		// Store in a way Isla's system can read (using tags or a map)
-		CapturedMetadata.AddTag(FGameplayTag::RequestGameplayTag("Data.Qi.Current"), QiComp->CurrentQi);
-	}
-
-	// 2. Capture Attributes
-	USovereignAttributeComponent* AttribComp = Owner->FindComponentByClass<USovereignAttributeComponent>();
-	if (AttribComp)
-	{
-		CapturedMetadata.AddTag(FGameplayTag::RequestGameplayTag("Data.Attr.Hunger"), AttribComp->Hunger);
-	}
-}
 */
+
+
 #if WITH_EDITOR
 void USovereignSaveableEntityComponent::PostEditImport() { Super::PostEditImport(); EntityID = FGuid::NewGuid(); }
 void USovereignSaveableEntityComponent::PostDuplicate(bool bDuplicateForPIE)

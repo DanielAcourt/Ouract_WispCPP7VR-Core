@@ -7,6 +7,7 @@
 #include "SaveSystem/SovereignGameData.h" 
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
 #include "GameplayTagContainer.h"
+#include "GameplayTagAssetInterface.h"
 #include "SovereignBaseEntity.generated.h"
 
 // Forward declarations to keep compile times fast
@@ -15,7 +16,7 @@ class USovereignSpeciesData;
 class UStaticMeshComponent;
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter
+class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter, public IGameplayTagAssetInterface 
 {
 	GENERATED_BODY()
 
@@ -32,6 +33,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
 	void IngestSovereignTag(FString IncomingTagString);
+
+	// --- IGameplayTagAssetInterface Implementation ---
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 
 	// --- Lifecycle ---
 	virtual void BeginPlay() override;

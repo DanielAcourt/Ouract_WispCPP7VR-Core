@@ -17,6 +17,7 @@ public class WispCPP7VR : ModuleRules
                 "Json",
                 "JsonUtilities",
                 "GameplayTags",
+                "GameplayTasks",
                 "Niagara",           // <--- ADD THIS
                 "NavigationSystem",  // Recommended for your AI/Dragons
                 "AIModule",           // Recommended for your Entity logic

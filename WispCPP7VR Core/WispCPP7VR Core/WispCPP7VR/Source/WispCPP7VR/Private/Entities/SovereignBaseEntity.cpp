@@ -125,6 +125,18 @@ FGuid ASovereignBaseEntity::GetSovereignID() const
     return SaveDataComponent ? SaveDataComponent->EntityID : FGuid();
 }
 
+// Implementation of the IGameplayTagAssetInterface
+void ASovereignBaseEntity::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
+{
+    TagContainer = GameplayTags;
+
+    // Optional: If you want the IdentitySignature to always be included in the save
+    if (IdentitySignature.IsValid())
+    {
+        TagContainer.AddTag(IdentitySignature);
+    }
+}
+
 void ASovereignBaseEntity::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
