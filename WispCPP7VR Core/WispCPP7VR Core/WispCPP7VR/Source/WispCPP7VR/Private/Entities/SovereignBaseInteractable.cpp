@@ -19,13 +19,17 @@ ASovereignBaseInteractable (Your Physical Layer):
 #include "Entities/SovereignBaseInteractable.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
-
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseCharacter.h"
 
 // The constructor
 ASovereignBaseInteractable::ASovereignBaseInteractable()
 {
     PrimaryActorTick.bCanEverTick = false;
+
+    // The component must be created before the root is set
+    SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
+
     BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
     SetRootComponent(BaseMesh);
 

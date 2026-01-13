@@ -144,20 +144,26 @@ float USovereignSaveableEntityComponent::GetElementalMultiplier(ESovereignElemen
 // --- META TAG HANDLING ---
 TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() const
 {
-	TMap<FString, FString> FoundTags;
-	if (AActor* Owner = GetOwner())
-	{
-		for (const FName& TagName : Owner->Tags)
-		{
-			FString TagString = TagName.ToString();
-			FString Key, Value;
-			if (TagString.Split(TEXT(":"), &Key, &Value))
-			{
-				FoundTags.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
-			}
-		}
-	}
-	return FoundTags;
+    TMap<FString, FString> FoundTags;
+    if (AActor* Owner = GetOwner())
+    {
+        for (const FName& TagName : Owner->Tags)
+        {
+            FString TagString = TagName.ToString();
+            FString Key, Value;
+
+            // Split only on the first colon to support values with colons
+            if (TagString.Split(TEXT(":"), &Key, &Value, ESearchCase::CaseSensitive, ESearchDir::FromStart))
+            {
+                FoundTags.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
+            }
+            else // If no colon is found, treat the whole tag as a key with a value of "True"
+            {
+                FoundTags.Add(TagString.TrimStartAndEnd(), TEXT("True"));
+            }
+        }
+    }
+    return FoundTags;
 }
 
 // Note: This function is now primarily used for the hybrid/clone spawning logic.
@@ -233,10 +239,13 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
         if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
         {
             TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
+            FString ComponentName = Comp->GetName();
+
             for (const auto& Elem : ComponentData)
             {
-                // Prefixing component data helps prevent key collisions
-                JsonObject->SetStringField(Elem.Key, Elem.Value);
+                // Prefix component data to prevent key collisions, e.g., "Qi.Current"
+                FString PrefixedKey = FString::Printf(TEXT("%s.%s"), *ComponentName, *Elem.Key);
+                JsonObject->SetStringField(PrefixedKey, Elem.Value);
             }
         }
     }
