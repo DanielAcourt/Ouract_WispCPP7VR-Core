@@ -106,16 +106,27 @@ TMap<FString, FString> USovereignQiComponent::GetSaveData()
 
 void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 {
-	if (Data.Contains(TEXT("Qi.Current")))
-		CurrentQi = FCString::Atof(*Data.Find(TEXT("Qi.Current")));
+	// Use Find() to get a pointer to the value. 
+		// This is "Defensive": if the key is missing, the pointer is null and we don't crash.
 
-	if (Data.Contains(TEXT("Qi.Max")))
-		MaxQiCapacity = FCString::Atof(*Data.Find(TEXT("Qi.Max")));
+	if (const FString* FoundQi = Data.Find(TEXT("Qi.Current")))
+	{
+		CurrentQi = FCString::Atof(**FoundQi);
+	}
 
-	if (Data.Contains(TEXT("Qi.Purity")))
-		QiPurity = FCString::Atof(*Data.Find(TEXT("Qi.Purity")));
+	if (const FString* FoundMax = Data.Find(TEXT("Qi.Max")))
+	{
+		MaxQiCapacity = FCString::Atof(**FoundMax);
+	}
 
-	if (Data.Contains(TEXT("Qi.Total")))
-		TotalQiAccumulated = FCString::Atof(*Data.Find(TEXT("Qi.Total")));
+	if (const FString* FoundPurity = Data.Find(TEXT("Qi.Purity")))
+	{
+		QiPurity = FCString::Atof(**FoundPurity);
+	}
+
+	if (const FString* FoundTotal = Data.Find(TEXT("Qi.Total")))
+	{
+		TotalQiAccumulated = FCString::Atof(**FoundTotal);
+	}
 }
 
