@@ -1,0 +1,121 @@
+### ARCHITECTURAL CONTEXT: SOVEREIGN PERSISTENCE ENGINE
+
+This document outlines the architecture of the Sovereign Persistence Engine for the Unreal Engine project WispCPP7VR. It's designed as a developer onboarding guide to explain the philosophy and implementation of the save/load system.
+
+#### Core Philosophy
+
+The system is built on three core principles:
+1.  **Hierarchical Data:** Data has a defined "Hierarchy of Truth," ensuring that the most critical and structured data (like component variables) is processed with the highest priority.
+2.  **"Polite" Persistence:** The system is designed to never destroy data it doesn't understand. It uses a pass-through buffer to ensure forward and backward compatibility with different versions of game objects.
+3.  **Data-Driven:** The architecture is fundamentally data-driven, using Gameplay Tags for identity and interfaces for behavior, allowing new saveable objects and components to be added with minimal code changes.
+
+---
+
+#### 1. State Management: The Actor Registry & GUIDs
+
+At the heart of tracking saveable entities is the `UActorRegistry`.
+
+*   **Implementation:** It's a `UGameInstanceSubsystem`, making it a globally accessible singleton that persists for the entire game session.
+*   **Function:** It acts as the master "Address Book" for all active, saveable entities in the world. Its primary role is to maintain a `TMap` that links a unique `FGuid` to the `AActor*` instance it represents.
+*   **The Link:** Every actor that can be saved must have a `USovereignSaveableEntityComponent`. This component is responsible for the actor's identity.
+*   **Identity:** The `USovereignSaveableEntityComponent` contains a property: `FGuid EntityID`. This GUID is generated the first time the component is created (`BeginPlay` or post-duplication in the editor) and remains its unique identifier for its entire lifetime, across multiple save/load cycles.
+*   **Registration Flow:**
+    *   On `BeginPlay()`, the `USovereignSaveableEntityComponent` gets the `UActorRegistry` subsystem and calls `Registry->RegisterActor(EntityID, GetOwner())`.
+    *   On `EndPlay()`, it calls `Registry->UnregisterActor(EntityID)` to remove itself from the live tracking list.
+*   **Benefit:** When the `SovereignSaveManager` needs to save the game, it doesn't need to perform a slow `GetAllActorsOfClass` search. It simply asks the `UActorRegistry` for its list of registered actors, ensuring a fast and efficient process.
+
+---
+
+#### 2. The Serialization Handshake: From `FJsonObject` to the "Suitcase" `TMap`
+
+This is the process of converting an actor's state into a format that can be written to disk and then reversing the process.
+
+**Saving (Capture):**
+1.  The `SovereignSaveManager` iterates through the actors registered in the `UActorRegistry`.
+2.  For each actor, it gets the `USovereignSaveableEntityComponent` and calls `CaptureFullEntityState()`.
+3.  `CaptureFullEntityState()` creates a `TSharedPtr<FJsonObject>` and populates it by scraping data from the actor according to the "Hierarchy of Truth" (see below).
+4.  This `FJsonObject` is then converted into a flat `TMap<FString, FString>` which is stored in an `FSovereignActorData` struct inside the main `USovereignSaveGame` object. This struct also contains the `EntityID`, world `FTransform`, and the actor's `ClassPath` (for respawning).
+
+**Loading (Apply):**
+1.  The `SovereignSaveManager` loads the `USovereignSaveGame` file from disk.
+2.  For each `FSovereignActorData` entry, it finds the corresponding live actor in the world using the `EntityID` via the `UActorRegistry`. If the actor doesn't exist, it is spawned using the stored `ClassPath`.
+3.  It gets the actor's `USovereignSaveableEntityComponent` and calls `ApplyStateFromJsonObject()`, passing in the loaded `FJsonObject` (reconstructed from the `TMap`).
+4.  **The "Suitcase" Principle:** Inside `ApplyStateFromJsonObject`, the *entire* `FJsonObject` is converted into a single, flat `TMap<FString, FString> AllData`. This `AllData` map is the "Suitcase" containing every piece of saved information for that actor.
+5.  This "Suitcase" is then passed to every part of the actor responsible for deserialization. Each part is responsible for politely taking only the data it needs, ignoring everything else.
+
+---
+
+#### 3. The Tiered Hierarchy of Truth
+
+This hierarchy defines the priority and handling of data during serialization and deserialization. It's the core of the "polite" persistence model.
+
+**Tier 1: Component DNA (Highest Priority)**
+*   **Concept:** Represents the core state of an actor, like its current health, attributes, or energy. This is considered the most specific and vital data.
+*   **Implementation:** Any component (e.g., `USovereignQiComponent`, `USovereignAttributeComponent`) that needs to save its state must implement the `ISovereignSaveInterface`.
+*   **Interface:**
+    *   `TMap<FString, FString> GetSaveData()`: The component packages its variables into a map.
+    *   `void RestoreSaveData(const TMap<FString, FString>& Data)`: The component unpacks the map and restores its state.
+*   **Saving:** `CaptureFullEntityState` finds all components on the actor that implement the interface. It calls `GetSaveData()` on each one. To prevent key collisions, it prefixes each key with the component's name. For example, a `Strength` variable in a `USovereignAttributeComponent` becomes the key `"SovereignAttributeComponent.Strength"`.
+*   **Loading:** The entire `AllData` "Suitcase" is passed to `RestoreSaveData`. The component is responsible for iterating through the map and looking for keys that start with its own name (`ComponentName.`).
+
+**Tier 2: Gameplay Tags (The "ID Card")**
+*   **Concept:** Formal, hierarchical tags that define an entity's identity and state within the game's systems (e.g., `Identity.Player.Isla`, `State.Biological.Mature`).
+*   **Implementation:** The system uses the standard `IGameplayTagAssetInterface`.
+*   **Saving:** `CaptureFullEntityState` gets the actor's `FGameplayTagContainer`, iterates through the tags, and adds each one to the JSON object as a key with a string value of `"True"` (e.g., `"Identity.Player.Isla": "True"`).
+*   **Loading:** The `ApplyMetaTags` function iterates through the "Suitcase". Any key containing a dot (`.`) that was not handled by Tier 1 is assumed to be a gameplay tag. It calls `IngestSovereignTag()` to add the tag back to the actor.
+
+**Tier 3: Mapped Sockets (The "Soul")**
+*   **Concept:** Core, explicitly defined properties on the `USovereignSaveableEntityComponent` itself, such as the elemental sockets that define a creature's makeup.
+*   **Implementation:** `UPROPERTY` members on `USovereignSaveableEntityComponent` like `AlignmentSocket`, `BodySocket`, and `MagicSocket`.
+*   **Saving:** These are explicitly added to the JSON object.
+*   **Loading:** The `ApplyMetaTags` function specifically looks for keys like `"Alignment"` and parses the string value back into the appropriate `ESovereignElement` enum.
+
+**Tier 4: The Pass-Through Buffer (`AActor::Tags`)**
+*   **Concept:** This is the foundation of the "polite" model. It handles any and all data that is not formally understood by the first three tiers. This ensures that if you load a new save in an old version of the game, the new, unknown data is preserved perfectly.
+*   **Implementation:** Uses the engine's built-in `AActor::Tags` array (`TArray<FName>`).
+*   **Convention:** Tags can be simple booleans (`"Terminal.Active"`) or key-value pairs separated by the first colon (`"GrowthStage:5"`).
+*   **Saving:** The `GetUnknownMetaTags()` helper function scrapes `AActor::Tags`, parses them into a `TMap`, and adds them to the JSON object.
+*   **Loading:** In `ApplyMetaTags`, any key-value pair from the "Suitcase" that was not consumed by Tiers 1, 2, or 3 is assumed to be a Tier 4 tag. The system reconstructs the `FName` (e.g., `"GrowthStage:5"`) and adds it back to the `AActor::Tags` array. No data is lost.
+
+---
+
+#### 4. Biological/Evolutionary Logic
+
+*   **The Triple-Axis System:** An entity's elemental nature is defined by three sockets: `AlignmentSocket` (Light/Dark), `BodySocket` (Nature, Fire, Water, Earth, Air), and `MagicSocket` (Fairy, Dragon).
+*   **Energy Input:** Entities grow by receiving elemental energy via the `ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount)` function.
+*   **Maturity Formula:** The growth amount is determined by `MaturityProgress += (RawAmount * Modifier)`. The `Modifier` is calculated in `GetElementalMultiplier` based on the following rules:
+    *   **5-Way Battle Cycle (Body):** The elemental multiplier for an entity's `BodySocket` is determined by the `IncomingType` of energy it receives. The relationships are:
+        *   An entity with `BodySocket == Nature` takes `2x` from **Water** and `0.5x` from **Fire**.
+        *   An entity with `BodySocket == Earth` takes `2x` from **Water** and `0.5x` from **Nature**.
+        *   An entity with `BodySocket == Water` takes `2x` from **Fire** and `0.5x` from **Nature**.
+        *   An entity with `BodySocket == Fire` takes `2x` from **Nature** and `0.5x` from **Water**.
+        *   An entity with `BodySocket == Air` takes `2x` from **Fire** and `0.5x` from **Earth**.
+    *   **Alignment Duality (Soul):** If an entity's `AlignmentSocket` is Light and it receives Dark energy (or vice-versa), the final multiplier is penalized by `* 0.25f`.
+*   **Evolution Trigger:** When `MaturityProgress` reaches `1.0f`, the `ASovereignBaseEntity::Evolve()` method is called, allowing the entity to change (e.g., update its mesh or stats).
+
+---
+
+#### 5. Genetic Recombination & Inheritance
+
+The engine supports both asexual (cloning) and sexual (hybrid) reproduction, managed by the `USovereignSpawnerUtils` class. This system operates directly on the Tier 1 "Component DNA."
+
+*   **The "DNA" Metaphor:** An entity's "DNA" is the `TMap<FString, FString>` generated by `CaptureFullEntityState`, containing all the prefixed data from its saveable components (e.g., `"AttributeComponent.Strength": "15.0"`).
+
+*   **Cloning ("Rifles"):** For entities that are created from a single parent or template (e.g., a manufactured item or a plant cutting), the system uses `SpawnEarnedEntityInherited`. This creates a new entity that is an exact copy of the parent, inheriting its Component DNA without modification.
+
+*   **Hybridization ("Trees"):** For entities that breed, the system uses `SpawnHybridEntity` which triggers the `RecombineDNA` function. This is how new, unique offspring are created.
+    *   **Function Signature:** `TMap<FString, FString> RecombineDNA(const TMap<FString, FString>& MotherDNA, const TMap<FString, FString>& FatherDNA, float MutationChance)`
+    *   **Crossover:** The function iterates through all unique keys (traits) from both parents. For each trait, it has a 50% chance to inherit the value from the mother and a 50% chance to inherit from the father.
+    *   **Missing Genes:** If a parent is missing a trait that the other has, a default numerical value of `10.0` is used for the missing parent's contribution.
+    *   **Mutation:** After selecting a trait, there is a chance (`MutationChance`) for the value to be "jittered" by a small random amount (`-1.0f` to `+1.5f`), allowing for slight variations in offspring.
+    *   **Outcome:** The result is a brand new `TMap<FString, FString>` representing the child's unique Component DNA, which is then applied to the newly spawned entity.
+
+---
+
+#### Your Primary Task
+
+Your main goal is to help expand this foundation by implementing the `ISovereignSaveInterface` on various components. When you are asked to make a component saveable, you must:
+1.  Add `ISovereignSaveInterface` to its class definition.
+2.  Implement `GetSaveData()` to package its properties into a `TMap<FString, FString>`.
+3.  Implement `RestoreSaveData()` to restore its properties from the incoming "Suitcase" `TMap`.
+4.  **Critically**, remember that when restoring data, you must check for the correct prefix. For example, `USovereignAttributeComponent` must only process keys from the `TMap` that begin with `"SovereignAttributeComponent."`.
