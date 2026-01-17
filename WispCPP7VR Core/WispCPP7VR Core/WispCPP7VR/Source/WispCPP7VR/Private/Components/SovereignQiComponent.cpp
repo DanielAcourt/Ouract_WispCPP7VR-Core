@@ -94,39 +94,53 @@ void USovereignQiComponent::ResetDensity()
 TMap<FString, FString> USovereignQiComponent::GetSaveData()
 {
 	TMap<FString, FString> Data;
+	// The SaveableEntityComponent will prefix these with the component name.
+	// We just need to provide the raw variable names.
+	Data.Add(TEXT("CurrentQi"), FString::SanitizeFloat(CurrentQi));
+	Data.Add(TEXT("MaxQiCapacity"), FString::SanitizeFloat(MaxQiCapacity));
+	Data.Add(TEXT("QiPurity"), FString::SanitizeFloat(QiPurity));
+	Data.Add(TEXT("TotalQiAccumulated"), FString::SanitizeFloat(TotalQiAccumulated));
 
-	// Convert floats to Strings for the JSON Suitcase
-	Data.Add(TEXT("Qi.Current"), FString::SanitizeFloat(CurrentQi));
-	Data.Add(TEXT("Qi.Max"), FString::SanitizeFloat(MaxQiCapacity));
-	Data.Add(TEXT("Qi.Purity"), FString::SanitizeFloat(QiPurity));
-	Data.Add(TEXT("Qi.Total"), FString::SanitizeFloat(TotalQiAccumulated));
+	UE_LOG(LogTemp, Log, TEXT("QiComponent %s: GetSaveData called. CurrentQi: %f"), *GetName(), CurrentQi);
 
 	return Data;
 }
 
 void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 {
-	// Use Find() to get a pointer to the value. 
-		// This is "Defensive": if the key is missing, the pointer is null and we don't crash.
+	// The incoming map is the entire "Suitcase" for the actor.
+	// We must politely check for keys prefixed with our own component name.
+	const FString ComponentPrefix = GetName() + TEXT(".");
+	int32 FoundKeys = 0;
 
-	if (const FString* FoundQi = Data.Find(TEXT("Qi.Current")))
+	for (const auto& Elem : Data)
 	{
-		CurrentQi = FCString::Atof(**FoundQi);
+		if (Elem.Key.StartsWith(ComponentPrefix))
+		{
+			const FString VariableName = Elem.Key.RightChop(ComponentPrefix.Len());
+			if (VariableName.Equals(TEXT("CurrentQi")))
+			{
+				CurrentQi = FCString::Atof(*Elem.Value);
+				FoundKeys++;
+			}
+			else if (VariableName.Equals(TEXT("MaxQiCapacity")))
+			{
+				MaxQiCapacity = FCString::Atof(*Elem.Value);
+				FoundKeys++;
+			}
+			else if (VariableName.Equals(TEXT("QiPurity")))
+			{
+				QiPurity = FCString::Atof(*Elem.Value);
+				FoundKeys++;
+			}
+			else if (VariableName.Equals(TEXT("TotalQiAccumulated")))
+			{
+				TotalQiAccumulated = FCString::Atof(*Elem.Value);
+				FoundKeys++;
+			}
+		}
 	}
 
-	if (const FString* FoundMax = Data.Find(TEXT("Qi.Max")))
-	{
-		MaxQiCapacity = FCString::Atof(**FoundMax);
-	}
-
-	if (const FString* FoundPurity = Data.Find(TEXT("Qi.Purity")))
-	{
-		QiPurity = FCString::Atof(**FoundPurity);
-	}
-
-	if (const FString* FoundTotal = Data.Find(TEXT("Qi.Total")))
-	{
-		TotalQiAccumulated = FCString::Atof(**FoundTotal);
-	}
+	UE_LOG(LogTemp, Log, TEXT("QiComponent %s: RestoreSaveData called. Found %d matching keys. CurrentQi is now: %f"), *GetName(), FoundKeys, CurrentQi);
 }
 
