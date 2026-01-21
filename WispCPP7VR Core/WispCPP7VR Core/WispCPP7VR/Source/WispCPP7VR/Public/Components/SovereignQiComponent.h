@@ -13,6 +13,7 @@
  * Handles the "Spiritual" energy of the entity.
  * Manages Qi levels, Purity (quality), and Density (experience/evolution).
  */
+// Change Proposal 1 = This class now correctly inherits the ISovereignSaveInterface from its parent (SovereignBaseComponent) instead of declaring it directly.
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class WISPCPP7VR_API USovereignQiComponent : public USovereignBaseComponent
 {

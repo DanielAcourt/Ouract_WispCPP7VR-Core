@@ -94,8 +94,7 @@ void USovereignQiComponent::ResetDensity()
 TMap<FString, FString> USovereignQiComponent::GetSaveData()
 {
 	TMap<FString, FString> Data;
-	// The SaveableEntityComponent will prefix these with the component name.
-	// We just need to provide the raw variable names.
+	// Change Proposal 2 = Refactored to provide raw, unprefixed variable names. The SovereignSaveableEntityComponent is now responsible for prefixing these keys to prevent naming collisions.
 	Data.Add(TEXT("CurrentQi"), FString::SanitizeFloat(CurrentQi));
 	Data.Add(TEXT("MaxQiCapacity"), FString::SanitizeFloat(MaxQiCapacity));
 	Data.Add(TEXT("QiPurity"), FString::SanitizeFloat(QiPurity));
@@ -108,8 +107,7 @@ TMap<FString, FString> USovereignQiComponent::GetSaveData()
 
 void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 {
-	// The incoming map is the entire "Suitcase" for the actor.
-	// We must politely check for keys prefixed with our own component name.
+	// Change Proposal 3 = Refactored to parse the entire actor "Suitcase" map. It now looks for keys prefixed with its own component name, making it compliant with the "polite persistence" model.
 	const FString ComponentPrefix = GetName() + TEXT(".");
 	int32 FoundKeys = 0;
 

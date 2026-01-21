@@ -282,6 +282,7 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 			TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
 			FString ComponentName = Comp->GetName();
 
+			// Change Proposal 4 = Added diagnostic logging to trace the serialization process.
 			if (ComponentData.Num() > 0)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Capturing %d keys from component %s"), ComponentData.Num(), *ComponentName);
@@ -342,6 +343,7 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 		{
 			// The component scans AllData for keys starting with its name 
 			// (e.g., "AttributeComponent.STR") and restores itself.
+			// Change Proposal 5 = Added diagnostic logging to trace the deserialization process.
 			UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Passing entire %d-key suitcase to %s for restore."), AllData.Num(), *Comp->GetName());
 			SaveInterface->RestoreSaveData(AllData);
 		}
