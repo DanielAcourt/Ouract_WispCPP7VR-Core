@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Components/SovereignBaseComponent.h"
-#include "Interaction/SovereignSaveInterface.h"
 #include "SovereignQiComponent.generated.h"
 
 
@@ -15,7 +14,7 @@
  * Manages Qi levels, Purity (quality), and Density (experience/evolution).
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class WISPCPP7VR_API USovereignQiComponent : public USovereignBaseComponent, public ISovereignSaveInterface
+class WISPCPP7VR_API USovereignQiComponent : public USovereignBaseComponent
 {
 	GENERATED_BODY()
 public:
