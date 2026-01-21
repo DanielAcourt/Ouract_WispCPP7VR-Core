@@ -245,7 +245,6 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 	// --- PASS A (ID CARD) ---
 
 	// Part 1: Scrape AActor::Tags (e.g., "Terminal.Active:True") via helper function
-// Part 1: Standard Actor Tags (e.g., "Terminal.Active")
 	TMap<FString, FString> LegacyTags = GetUnknownMetaTags();
 	for (const auto& Elem : LegacyTags)
 	{
@@ -294,11 +293,6 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 	return JsonObject;
 }
 //new feature add qi components and attribute components to the save file
-// i need to implment this as it acts as tyhe framework to save all the data from attached compoents. I need to think as 
-//this was a time sink attaching everything in blueprints
-
-// we need to finish implementing this to the desired solution so all components and their data get written
-// to the save file reglardless of the meta tags so i dont have to make loads of loops in blkueprints./
 void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData)
 {
 	if (!JsonData.IsValid()) return;
@@ -337,15 +331,12 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 		{
 			// The component scans AllData for keys starting with its name 
 			// (e.g., "AttributeComponent.STR") and restores itself.
+			UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Passing entire %d-key suitcase to %s for restore."), AllData.Num(), *Comp->GetName());
 			SaveInterface->RestoreSaveData(AllData);
 		}
 	}
 }
 
-/*
-void USovereignSaveableEntityComponent::CaptureEntityState()
-
-*/
 
 
 #if WITH_EDITOR

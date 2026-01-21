@@ -1,10 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+//SovereignBaseEntity.ccp
+
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "SaveSystem/SovereignSpawnerUtils.h" 
 #include "SaveSystem/SovereignGameData.h" 
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Components/CapsuleComponent.h" // Add this include!
 #include "Components/StaticMeshComponent.h"
 #include "GameplayTagsManager.h"
 #include "Engine/World.h"
@@ -14,9 +16,17 @@
 
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
-    // 1. CHARACTER DEFAULTS
+    // 0. CHARACTER DEFAULTS
     PrimaryActorTick.bCanEverTick = true;
     bCanAffectNavigationGeneration = true;
+
+    // 1. CONFIGURE THE BUILT-IN CAPSULE
+        // We don't use CreateDefaultSubobject here because ACharacter already did it!
+    if (UCapsuleComponent* MyCapsule = GetCapsuleComponent())
+    {
+        MyCapsule->InitCapsuleSize(40.f, 90.f);
+        MyCapsule->SetCollisionProfileName(TEXT("Pawn"));
+    }
 
     // 2. THE SOUL (SAVE SYSTEM)
     // This component handles the GUID and the metadata tags (Isla's unknown tags)
@@ -24,8 +34,16 @@ ASovereignBaseEntity::ASovereignBaseEntity()
 
     // 3. PHYSICAL MESH
     // We create a StaticMeshComponent to visualize the 8 growth stages (Seed to Tree)
+    // Create the "Master" mesh slot
     EntityMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EntityMesh"));
-    EntityMesh->SetupAttachment(RootComponent);
+
+    if (RootComponent)
+    {
+        EntityMesh->SetupAttachment(RootComponent);
+    }
+
+    // Optional: Move the mesh down so it sits at the bottom of the capsule
+    EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 }
 
 void ASovereignBaseEntity::BeginPlay()
@@ -155,8 +173,6 @@ void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
-
-
 void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* InData)
 {
     // 1. Safety Check: Stop the crash if data is missing
@@ -176,7 +192,6 @@ void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* In
     // 4. Log Success (Simplified)
     UE_LOG(LogTemp, Log, TEXT("[%s] Sovereign Entity Initialized successfully."), *GetName());
 }
-
 
 void ASovereignBaseEntity::RefreshVisuals()
 {
@@ -222,7 +237,7 @@ void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPt
         // 6. Scale/Physical Logic (The "Symmetry" adjustment)
         // Adjust the scale based on the growth stage defined in the data asset
         float StageScale = SpeciesData->GrowthStages[CurrentGrowthStage].VisualScale;
-        EntityMesh->SetWorldScale3D(FVector(StageScale));
+        EntityMesh->SetRelativeScale3D(FVector(StageScale));
 
         UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
     }

@@ -27,20 +27,25 @@ ASovereignBaseInteractable::ASovereignBaseInteractable()
 {
     PrimaryActorTick.bCanEverTick = false;
 
-    // The component must be created before the root is set
-    //SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
-
-    BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
-    SetRootComponent(BaseMesh);
-
     // --- THE FIX ---
-    // Ensure the mesh actually blocks the trace channels we use
-    BaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    BaseMesh->SetCollisionResponseToAllChannels(ECR_Block); 
-    
-    // Specifically ensure Visibility is blocked (this is what the Wisp looks for)
-    BaseMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-    BaseMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+    // Instead of creating a new mesh, we just point to the one the parent made.
+    // EntityMesh is inherited from ASovereignBaseEntity.
+    BaseMesh = EntityMesh;
+
+    // Now, anything we do to BaseMesh is actually happening to EntityMesh!
+    if (BaseMesh)
+    {
+        // No need for SetupAttachment here because the Parent 
+        // constructor already attached EntityMesh to the Root!
+
+        BaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        BaseMesh->SetCollisionResponseToAllChannels(ECR_Block);
+        BaseMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+        BaseMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+
+        // Use the same location offset as the parent
+        BaseMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+    }
 }
 
 bool ASovereignBaseInteractable::CanInteract_Implementation(AActor* Interactor)

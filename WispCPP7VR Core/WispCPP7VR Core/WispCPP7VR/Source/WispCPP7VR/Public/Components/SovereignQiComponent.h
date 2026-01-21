@@ -42,7 +42,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	float TotalQiAccumulated;
 
-
 	// --- 2. LOGIC FUNCTIONS ---
 
 	/** * Adds Qi to the pool. Mixing different purities will shift the overall QiPurity.
@@ -67,13 +66,16 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	/** * Internal tick called by the Character's Heartbeat.
-	 * @param DeltaTime Time since last tick.
-	 * @param WisdomStat The Wisdom attribute from the physical body to boost regen.
+	/** * Override the ability to save the component data to the save slot or json file
 	 */
 	virtual TMap<FString, FString> GetSaveData() override;
 	virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
 
+
+	/** * Internal tick called by the Character's Heartbeat.
+ * @param DeltaTime Time since last tick.
+ * @param WisdomStat The Wisdom attribute from the physical body to boost regen.
+ */
 	void ProcessQiFlow(float DeltaTime, int32 WisdomStat);
 
 };

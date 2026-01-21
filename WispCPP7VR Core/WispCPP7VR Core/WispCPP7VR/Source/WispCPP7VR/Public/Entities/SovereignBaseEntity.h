@@ -68,6 +68,7 @@ protected:
 	/** Can this entity be possessed by a Sovereign Spirit? */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
 	bool bCanBePossessed = false;
+
 	// --- Components ---
 
 	/** The physical body of the entity (The Oak Tree, the Bee, etc.) */

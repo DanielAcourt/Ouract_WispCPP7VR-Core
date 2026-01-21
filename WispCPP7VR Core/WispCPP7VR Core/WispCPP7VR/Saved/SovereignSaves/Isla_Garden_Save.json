@@ -1,7 +1,7 @@
 ﻿{
 	"Entities": [
 		{
-			"GUID": "E85588A74967E7E71992B0BD4130997F",
+			"GUID": "3361DBCA48F8B25B7666089F6AB34E6E",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C",
 			"Transform": "-200.000000,0.000000,92.000100|0.000000,180.000000,0.000000|1.000000,1.000000,1.000000",
@@ -31,220 +31,7 @@
 			}
 		},
 		{
-			"GUID": "25D99A464A54D0576F3DA3B3B8C41578",
-			"ParentID": "D484A5FD495979E42FD1129A8D26C89C",
-			"Class": "/Game/Blueprint/Actors/BP_Human.BP_Human_C",
-			"Transform": "-1190.000000,330.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"PPC.State.Awake": "True",
-				"PPC.Humanoid.Human": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "19E118424DAE59BD50622686DB1936F4",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Elf.BP_Elf_C",
-			"Transform": "-2520.000000,350.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"PPC.State.Dormant": "True",
-				"PPC.Humanoid.Elf": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "5E4A3235465388BAC1DEAC96DA48D583",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Orc.BP_Orc_C",
-			"Transform": "-990.000000,120.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"PPC.State": "True",
-				"PPC.Humanoid.Orc": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "48775E8043D1DBC8CD4E62BF74A62E5F",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Human.BP_Human_C",
-			"Transform": "-520.000000,20.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"PPC.State.Awake": "True",
-				"PPC.Humanoid.Human": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "58A9FA7E45D6B5431716A3B50EDC7730",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/Bp_Chopkeepr.Bp_Chopkeepr_C",
-			"Transform": "-820.000000,1670.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"PPC.State.Awake": "True",
-				"PPC.Humanoid.Human": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "B2CFC66046176E48AC607B9E7D5E8BA3",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Antelope.BP_Antelope_C",
-			"Transform": "40.000000,260.000000,60.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"Sandwhich": "True",
-				"PPC": "True",
-				"PPC.Animal.Mammal.Antelope": "True",
-				"AttributeComponent.STR": "10",
-				"AttributeComponent.DEX": "10",
-				"AttributeComponent.CON": "10",
-				"AttributeComponent.INT": "10",
-				"AttributeComponent.WIS": "10",
-				"AttributeComponent.CHA": "10",
-				"AttributeComponent.LCK": "10",
-				"AttributeComponent.AC": "10",
-				"AttributeComponent.HP": "100.0",
-				"AttributeComponent.STM": "100.0",
-				"AttributeComponent.HGR": "0.0",
-				"AttributeComponent.HYD": "0.0",
-				"AttributeComponent.FTG": "0.0",
-				"AttributeComponent.TRD": "0.0",
-				"AttributeComponent.R_PHY": "0.0",
-				"AttributeComponent.R_MAG": "0.0",
-				"AttributeComponent.R_MEN": "0.0",
-				"QiComponent.Qi.Current": "0.0",
-				"QiComponent.Qi.Max": "100.0",
-				"QiComponent.Qi.Purity": "0.1",
-				"QiComponent.Qi.Total": "0.0"
-			}
-		},
-		{
-			"GUID": "0946A1C5475638BDF6DC7EBF10A8AECE",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Bp_Pistol_38Special.Bp_Pistol_38Special_C",
-			"Transform": "1200.000000,310.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"Object": "True"
-			}
-		},
-		{
-			"GUID": "895C458E4C614BCBED254CA165EDFA38",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/BP_Winchester308.BP_Winchester308_C",
-			"Transform": "1690.000000,-1010.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"Object": "True"
-			}
-		},
-		{
-			"GUID": "E4A783934EF0AC72FECF9191D3E52780",
+			"GUID": "565102EB42B8C86A884BAD93B0135A75",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/BP_SaveTerminal.BP_SaveTerminal_C",
 			"Transform": "-54090.000000,-32750.000000,3360.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -254,9 +41,9 @@
 			}
 		},
 		{
-			"GUID": "2970DEC043E57C52DBC6B3924AA8DEA9",
+			"GUID": "5868E8504670A7096FD9179B8B9623E7",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Animal.BP_Animal_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Animal.BP_Animal_C",
 			"Transform": "-1290.000000,-1430.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -286,9 +73,9 @@
 			}
 		},
 		{
-			"GUID": "4406ABEF464E26D218EE72A077F2D123",
+			"GUID": "1CF6A02D467CB38F7EF288896927E77D",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Human.BP_Human_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Human.BP_Human_C",
 			"Transform": "-3290.000000,-2250.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -318,9 +105,9 @@
 			}
 		},
 		{
-			"GUID": "884036EA406E45FC21ED4783CEA9B126",
+			"GUID": "E684C80940AC147AF0625EA75C932B78",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Antelope.BP_Antelope_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Antelope.BP_Antelope_C",
 			"Transform": "-2160.000000,-240.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -351,9 +138,9 @@
 			}
 		},
 		{
-			"GUID": "C77FA6D145A257D568755A84CF08E220",
+			"GUID": "9AB1FADE480B21EE0108FB92B6AD8CB8",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Orc.BP_Orc_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Orc.BP_Orc_C",
 			"Transform": "-980.000000,-80.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -383,9 +170,9 @@
 			}
 		},
 		{
-			"GUID": "0E4BF2F64EB4DE1C8E018AAA5D271694",
+			"GUID": "B7891A7E4A95E3E1B3007381D1F38F42",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Mammal.BP_Mammal_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Mammal.BP_Mammal_C",
 			"Transform": "-700.000000,-950.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -415,9 +202,9 @@
 			}
 		},
 		{
-			"GUID": "43B45B2540DA6727961787A8B03343B4",
+			"GUID": "78F1785C49F3B44100E4DEAA46E634AC",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Mammal.BP_Mammal_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Mammal.BP_Mammal_C",
 			"Transform": "-370.000000,-290.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -447,9 +234,9 @@
 			}
 		},
 		{
-			"GUID": "1614DB8F4443348CD2C2EE940D63EFD1",
+			"GUID": "06C2D55B4E06C3947F16B9B11A4EE1E5",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_PPC.BP_PPC_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_PPC.BP_PPC_C",
 			"Transform": "-890.000000,-370.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
@@ -478,14 +265,227 @@
 			}
 		},
 		{
-			"GUID": "9ED7955B4A34748A942931ACCE23F337",
+			"GUID": "FB7319BF499A895A247E7A9149126491",
 			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/BP_Animal.BP_Animal_C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Animal.BP_Animal_C",
 			"Transform": "-1930.000000,-890.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
 			"MetaTags": 
 			{
 				"PPC": "True",
 				"PPC.Animal": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "24AB21714C416A2758D34E9C210F45ED",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Human.BP_Human_C",
+			"Transform": "-520.000000,20.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"PPC.State.Awake": "True",
+				"PPC.Humanoid.Human": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "0B5316444451F61FFC8093B69772796F",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Orc.BP_Orc_C",
+			"Transform": "-990.000000,120.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"PPC.State": "True",
+				"PPC.Humanoid.Orc": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "879E957F45C7C7AEFC18C9A54DA0E79C",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Elf.BP_Elf_C",
+			"Transform": "-2520.000000,350.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"PPC.State.Dormant": "True",
+				"PPC.Humanoid.Elf": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "25D99A464A54D0576F3DA3B3B8C41578",
+			"ParentID": "D484A5FD495979E42FD1129A8D26C89C",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Human.BP_Human_C",
+			"Transform": "-1190.000000,330.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"PPC.State.Awake": "True",
+				"PPC.Humanoid.Human": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "B9D25A9048F22DC5DCABF399EB73625D",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Living/Bp_Chopkeepr.Bp_Chopkeepr_C",
+			"Transform": "-820.000000,1670.000000,0.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"PPC.State.Awake": "True",
+				"PPC.Humanoid.Human": "True",
+				"AttributeComponent.STR": "10",
+				"AttributeComponent.DEX": "10",
+				"AttributeComponent.CON": "10",
+				"AttributeComponent.INT": "10",
+				"AttributeComponent.WIS": "10",
+				"AttributeComponent.CHA": "10",
+				"AttributeComponent.LCK": "10",
+				"AttributeComponent.AC": "10",
+				"AttributeComponent.HP": "100.0",
+				"AttributeComponent.STM": "100.0",
+				"AttributeComponent.HGR": "0.0",
+				"AttributeComponent.HYD": "0.0",
+				"AttributeComponent.FTG": "0.0",
+				"AttributeComponent.TRD": "0.0",
+				"AttributeComponent.R_PHY": "0.0",
+				"AttributeComponent.R_MAG": "0.0",
+				"AttributeComponent.R_MEN": "0.0",
+				"QiComponent.Qi.Current": "0.0",
+				"QiComponent.Qi.Max": "100.0",
+				"QiComponent.Qi.Purity": "0.1",
+				"QiComponent.Qi.Total": "0.0"
+			}
+		},
+		{
+			"GUID": "5BFEC35A409806505C53DC8AC75C8F0D",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Items/BP_Rifle_Winchester308.BP_Rifle_Winchester308_C",
+			"Transform": "1510.000000,400.000000,60.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"Object.Item.Weapon.Range.Gun.Rifle.Winchester308": "True"
+			}
+		},
+		{
+			"GUID": "403D552448AF6159410D46B41DB9F69C",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Items/BP_Rifle_Winchester308.BP_Rifle_Winchester308_C",
+			"Transform": "840.000000,70.000000,90.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"Object.Item.Weapon.Range.Gun.Rifle.Winchester308": "True"
+			}
+		},
+		{
+			"GUID": "FFBC50DF46F1948E60127C9CB31B4AD8",
+			"ParentID": "00000000000000000000000000000000",
+			"Class": "/Game/Blueprint/Actors/Living/BP_Antelope.BP_Antelope_C",
+			"Transform": "40.000000,260.000000,60.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
+			"MetaTags": 
+			{
+				"Sandwhich": "True",
+				"PPC": "True",
+				"PPC.Animal.Mammal.Antelope": "True",
 				"AttributeComponent.STR": "10",
 				"AttributeComponent.DEX": "10",
 				"AttributeComponent.CON": "10",

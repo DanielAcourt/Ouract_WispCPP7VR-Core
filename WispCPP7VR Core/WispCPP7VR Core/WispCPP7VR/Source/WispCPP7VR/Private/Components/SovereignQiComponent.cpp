@@ -101,6 +101,7 @@ TMap<FString, FString> USovereignQiComponent::GetSaveData()
 	Data.Add(TEXT("Qi.Purity"), FString::SanitizeFloat(QiPurity));
 	Data.Add(TEXT("Qi.Total"), FString::SanitizeFloat(TotalQiAccumulated));
 
+	UE_LOG(LogTemp, Log, TEXT("QiComponent %s: GetSaveData called. CurrentQi: %f"), *GetName(), CurrentQi);
 	return Data;
 }
 
@@ -109,24 +110,33 @@ void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 	// Use Find() to get a pointer to the value. 
 		// This is "Defensive": if the key is missing, the pointer is null and we don't crash.
 
+		// The incoming map is the entire "Suitcase" for the actor.
+	// We must politely check for keys prefixed with our own component name.
+	const FString ComponentPrefix = GetName() + TEXT(".");
+	int32 FoundKeys = 0;
+
 	if (const FString* FoundQi = Data.Find(TEXT("Qi.Current")))
 	{
 		CurrentQi = FCString::Atof(**FoundQi);
+		FoundKeys++;
 	}
 
 	if (const FString* FoundMax = Data.Find(TEXT("Qi.Max")))
 	{
 		MaxQiCapacity = FCString::Atof(**FoundMax);
+		FoundKeys++;
 	}
 
 	if (const FString* FoundPurity = Data.Find(TEXT("Qi.Purity")))
 	{
 		QiPurity = FCString::Atof(**FoundPurity);
+		FoundKeys++;
 	}
 
 	if (const FString* FoundTotal = Data.Find(TEXT("Qi.Total")))
 	{
 		TotalQiAccumulated = FCString::Atof(**FoundTotal);
+		FoundKeys++;
 	}
 }
 

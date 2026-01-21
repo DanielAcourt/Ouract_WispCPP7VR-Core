@@ -27,7 +27,7 @@ public:
 protected:
 
     // This is what was missing!
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Components")
     class UStaticMeshComponent* BaseMesh;
 
     /** Master interaction gate */
