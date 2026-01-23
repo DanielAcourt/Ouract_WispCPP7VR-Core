@@ -2,8 +2,6 @@
 
 
 #include "Entities/SovereignPlayerWisp.h"
-#include "Components/SovereignAttributeComponent.h"
-#include "Components/SovereignQiComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NiagaraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -15,34 +13,14 @@
 #include "GameplayTagContainer.h"
 #include "GameplayTagsManager.h"
 #include "GameFramework/PlayerController.h"
+#include "Interfaces/SovereignEntityInterface.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
+
 
 ASovereignPlayerWisp::ASovereignPlayerWisp()
 {
-	// Force the Movement Component to link to your Capsule
-	GetCharacterMovement()->SetUpdatedComponent(RootComponent);
-
-	// 1. Setup the Visuals
 	SpiritEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SpiritEffect"));
 	SpiritEffect->SetupAttachment(RootComponent);
-
-	// 2. Flying Movement (Spirit style)
-	GetCharacterMovement()->DefaultLandMovementMode = MOVE_Flying;
-
-	// Ensure we are in Flying mode immediately
-	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-
-	// The 1% Architect values for a snappy spirit
-	GetCharacterMovement()->MaxAcceleration = 10000.0f; // Extremely high to bypass friction
-	GetCharacterMovement()->MaxFlySpeed = 1200.0f;
-	GetCharacterMovement()->BrakingDecelerationFlying = 2000.0f;
-
-	// Ghostly settings
-	GetCharacterMovement()->bCheatFlying = true;
-	GetCharacterMovement()->GravityScale = 0.0f;
-
-
-	// 3. Ghostly Physics
-	ConfigureSpiritPhysics();
 }
 
 void ASovereignPlayerWisp::BeginPlay()
@@ -50,55 +28,23 @@ void ASovereignPlayerWisp::BeginPlay()
 	Super::BeginPlay();
 
 	// Initialize the Wisp with "Spirit" stats
-	// We access these from the parent ASovereignBaseCharacter
-	if (AttributeComponent)
+	if (SovereignSoul)
 	{
-		AttributeComponent->Strength = 1;      // Spirit cannot lift rocks
-		AttributeComponent->Constitution = 5;  // Spirit is fragile if hit by magic
-		AttributeComponent->Intelligence = 25; // Spirit is pure mind
-
-		// Wisps are eternal energy; they don't hunger for meat
-		AttributeComponent->Hunger = 100.0f;
+		SovereignSoul->Health = 100.f;
+		SovereignSoul->MaxHealth = 100.f;
+		SovereignSoul->Qi = 500.f;
+		SovereignSoul->MaxQi = 500.f;
 	}
-
-	if (QiComponent)
-	{
-		// A Wisp is literally made of Qi
-		QiComponent->MaxQiCapacity = 500.0f;
-		QiComponent->CurrentQi = 500.0f;
-		QiComponent->QiPurity = 0.8f; // Very pure by default
-	}
-}
-
-void ASovereignPlayerWisp::ConfigureSpiritPhysics()
-{
-	// Don't use ECR_Ignore; use ECR_Overlap
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//GetCaps-uleComponent()->SetCollisionResponseToAllChannels(ECR_Overlap);
-
-	// Block only the world so you don't fly through mountains
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-
-	// Allow the wisp to pass through most things, but stay within world bounds
-	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-
-	// No Gravity for the Soul
-	GetCharacterMovement()->GravityScale = 0.0f;
 }
 
 void ASovereignPlayerWisp::Tick(float DeltaTime)
 {
-	if (GameplayTags.HasTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit"))))
-	{
-		return;
-	}
 	Super::Tick(DeltaTime);
 
 	// Special Wisp Drain: Being in the world costs a tiny bit of Qi every second
-	if (QiComponent)
+	if (SovereignSoul && !SovereignSoul->GameplayTags.HasTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit"))))
 	{
-		QiComponent->SpendQi(QiDrainRate * DeltaTime);
+		SovereignSoul->Qi -= QiDrainRate * DeltaTime;
 	}
 }
 
@@ -114,6 +60,7 @@ void ASovereignPlayerWisp::AttemptPossession()
 	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 	FHitResult OutHit;
@@ -126,28 +73,20 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 	if (bHit && OutHit.GetActor())
 	{
-		ASovereignBaseCharacter* HitCharacter = Cast<ASovereignBaseCharacter>(OutHit.GetActor());
-		if (HitCharacter)
+		if (OutHit.GetActor()->Implements<USovereignEntityInterface>())
 		{
-			InitiatePossession(HitCharacter);
+			InitiatePossession(OutHit.GetActor());
 		}
 	}
 }
 
-void ASovereignPlayerWisp::InitiatePossession(ASovereignBaseCharacter* TargetVessel)
+void ASovereignPlayerWisp::InitiatePossession(AActor* TargetVessel)
 {
 	if (!TargetVessel) return;
 
 	CurrentlyPossessedVessel = TargetVessel;
 
-	// Wisp-centric logic: Wisp tells the Vessel it's about to be possessed
-	TargetVessel->BeginPossessionBy(this);
-
-	AController* CurrentController = GetController();
-	if (CurrentController)
-	{
-		CurrentController->Possess(TargetVessel);
-	}
+	ISovereignEntityInterface::Execute_OnPossessedByWisp(TargetVessel, GetController());
 
 	AttachToVessel(TargetVessel);
 
@@ -155,27 +94,32 @@ void ASovereignPlayerWisp::InitiatePossession(ASovereignBaseCharacter* TargetVes
 	GetWorldTimerManager().SetTimer(QiDrainTimerHandle, this, &ASovereignPlayerWisp::DrainPossessionQi, 1.0f, true);
 }
 
-void ASovereignPlayerWisp::AttachToVessel(ASovereignBaseCharacter* Vessel)
+void ASovereignPlayerWisp::AttachToVessel(AActor* Vessel)
 {
 	if (!Vessel) return;
 
+	USceneComponent* TargetComponent = Cast<USceneComponent>(Vessel->GetRootComponent());
+	if (ISovereignEntityInterface::Execute_GetPrimaryMesh(Vessel))
+	{
+		TargetComponent = ISovereignEntityInterface::Execute_GetPrimaryMesh(Vessel);
+	}
+
 	// Attach to the Vessel's capsule component
-	AttachToComponent(Vessel->GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, NAME_None);
+	AttachToComponent(TargetComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, NAME_None);
 
 	// Hide and disable collision
 	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Add the state tag
-	GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
+	SovereignSoul->GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
 }
 
 void ASovereignPlayerWisp::DrainPossessionQi()
 {
-	if (QiComponent && CurrentlyPossessedVessel.IsValid())
+	if (SovereignSoul && CurrentlyPossessedVessel.IsValid())
 	{
-		// You can add more complex logic here based on the vessel's tags
-		QiComponent->SpendQi(QiDrainRate);
+		SovereignSoul->Qi -= QiDrainRate;
 	}
 	else
 	{
@@ -187,6 +131,9 @@ void ASovereignPlayerWisp::DrainPossessionQi()
 void ASovereignPlayerWisp::EndPossession()
 {
 	if (!CurrentlyPossessedVessel.IsValid()) return;
+
+	// Tell the vessel it is no longer possessed
+	ISovereignEntityInterface::Execute_OnUnpossessedByWisp(CurrentlyPossessedVessel.Get());
 
 	// Stop the Qi Drain
 	GetWorldTimerManager().ClearTimer(QiDrainTimerHandle);
@@ -208,18 +155,18 @@ void ASovereignPlayerWisp::EndPossession()
 		EjectionPoint = HitResult.ImpactPoint;
 	}
 
-	// Detach and reset state
+	// Detach and reset wisp state
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	SetActorLocation(EjectionPoint);
 	SetActorHiddenInGame(false);
-	SetActorEnableCollision(true);
-	GameplayTags.RemoveTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SovereignSoul->GameplayTags.RemoveTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
 
-	// Return the controller to the wisp
-	AController* VesselController = CurrentlyPossessedVessel->GetController();
-	if (VesselController)
+	// Re-possess the wisp
+	AController* OldController = CurrentlyPossessedVessel->GetController();
+	if (OldController)
 	{
-		VesselController->Possess(this);
+		OldController->Possess(this);
 	}
 
 	// Clear the reference
@@ -227,24 +174,13 @@ void ASovereignPlayerWisp::EndPossession()
 }
 
 
-void ASovereignPlayerWisp::Evolve()
-{
-	// Call the parent Evolve first (if it has logic)
-	Super::Evolve();
-
-	// Wisp-specific evolution logic (e.g., change particle color)
-	UE_LOG(LogTemp, Warning, TEXT("The Player Spirit is evolving to a higher density!"));
-}
-
 void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// 1. THIS IS THE KEY: Call the Base version first!
-	// This binds Move, Look, and the Base Interact automatically.
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// 2. Now add Wisp-specific bindings if you have any (like AttemptPossession)
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		// Bind possession action
 		if (PossessAction)
 		{
 			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
@@ -309,10 +245,4 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 		// Total Miss: Draw a thin red line to show where you aimed
 		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 	}
-}
-
-// Ensure your bridge function looks like this:
-void ASovereignPlayerWisp::EnhancedInteract(const FInputActionValue& Value)
-{
-	Interact(Value); // This now links correctly to the function above
 }

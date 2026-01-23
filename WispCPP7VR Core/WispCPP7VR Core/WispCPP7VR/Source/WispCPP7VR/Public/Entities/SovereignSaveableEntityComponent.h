@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SaveSystem/SovereignGameData.h" // <--- ADD THIS LI
+#include "SaveSystem/SovereignGameData.h"
 #include "Interaction/SovereignSaveInterface.h"
 #include "SovereignSaveableEntityComponent.generated.h"
 
@@ -10,102 +10,76 @@
 class ASovereignBaseEntity;
 class FJsonObject;
 
+UENUM(BlueprintType)
+enum class EVesselState : uint8
+{
+	Alive,
+	Dead,
+	Dissolving
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEmergencyEject);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    USovereignSaveableEntityComponent();
+	USovereignSaveableEntityComponent();
 
-    TSharedPtr<FJsonObject> CaptureFullEntityState();
+	TSharedPtr<FJsonObject> CaptureFullEntityState();
 
-    /** --- 1. IDENTITY --- */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
-    FGuid EntityID;
+	/** --- 1. IDENTITY --- */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
+	FGuid EntityID;
 
-    /** --- 2. LINEAGE & BREEDING --- */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    bool bIsFemale;
+	/** --- 2. ATTRIBUTES --- */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Attributes")
+	float Health = 100.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid ParentID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Attributes")
+	float MaxHealth = 100.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid MotherID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Attributes")
+	float Qi = 100.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid FatherID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Attributes")
+	float MaxQi = 100.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    int32 OffspringCount = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Attributes")
+	float Maturity = 0.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    TArray<FGuid> MatingHistory;
+	/** --- 3. STATE --- */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|State")
+	EVesselState VesselState = EVesselState::Alive;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Biology")
-    float LastMatingTimestamp = -100.0f;
+	/** --- 4. LIFECYCLE --- */
+	UPROPERTY(BlueprintAssignable, Category = "Sovereign|Lifecycle")
+	FOnEmergencyEject OnEmergencyEject;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    float MatingCooldownDuration = 60.0f;
+	void HandleVesselDeath();
 
-    /** --- 3. THE TRIPLE-AXIS SYSTEM (The Soul, Body, and Spark) --- */
+	/** --- 5. DYNAMIC DNA (Meta Tags) --- */
 
-    // Axis 1: Alignment (Light vs Dark)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
-    ESovereignElement AlignmentSocket = ESovereignElement::Grey;
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
+	TMap<FString, FString> GetUnknownMetaTags() const;
 
-    // Axis 2: Physical Element (The Body - Fire, Water, Earth, Nature, Air)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
-    ESovereignElement BodySocket = ESovereignElement::Nature;
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
+	void ApplyMetaTags(TMap<FString, FString> LoadedTags);
 
-    // Axis 3: Magic Essence (The Spark - Fairy, Dragon, Electric)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
-    ESovereignElement MagicSocket = ESovereignElement::None;
-
-    // Influence levels for each axis (0-100)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
-    float AlignmentInfluence = 100.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
-    float BodyInfluence = 100.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
-    float MagicInfluence = 0.0f;
-
-    /** --- 4. EVOLUTION & ENERGY --- */
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
-    float MaturityProgress = 0.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
-    float MaturityRate = 0.1f;
-
-    UFUNCTION(BlueprintCallable, Category = "Sovereign|Evolution")
-    void ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount);
-
-    /** --- 5. DYNAMIC DNA (Meta Tags) --- */
-
-    UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
-    TMap<FString, FString> GetUnknownMetaTags() const;
-
-    UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
-    void ApplyMetaTags(TMap<FString, FString> LoadedTags);
-
-    void ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData);
+	void ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData);
 
 protected:
-    /** Calculates multipliers based on the 3-axis interaction */
-    float GetElementalMultiplier(ESovereignElement IncomingType);
-
-    UFUNCTION(BlueprintPure, Category = "Sovereign|Core")
-    FGuid GetGUID() const { return EntityID; }
-
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 #if WITH_EDITOR
-    virtual void PostEditImport() override;
-    virtual void PostDuplicate(bool bDuplicateForPIE) override;
+	virtual void PostEditImport() override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 #endif
+
+private:
+	FTimerHandle HeartbeatTimerHandle;
+	void Heartbeat();
 };

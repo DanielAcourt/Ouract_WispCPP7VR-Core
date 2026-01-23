@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Entities/SovereignBaseCharacter.h"
+#include "Entities/SovereignPawn.h"
 #include "InputActionValue.h"
 #include "Engine/TimerManager.h"
 #include "SovereignPlayerWisp.generated.h"
@@ -18,7 +18,7 @@ class UInputAction;
  * 
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignPlayerWisp : public ASovereignBaseCharacter
+class WISPCPP7VR_API ASovereignPlayerWisp : public ASovereignPawn
 {
 	GENERATED_BODY()
 
@@ -31,12 +31,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// --- Wisp Logic ---
-	/** Declaring Evolve here fixes Error C2509 */
-	virtual void Evolve() override;
-
 	// --- Possession ---
-	void InitiatePossession(ASovereignBaseCharacter* TargetVessel);
+	void InitiatePossession(AActor* TargetVessel);
 	void EndPossession();
 
 	/** Visuals for the Wisp - Declared ONLY ONCE now */
@@ -47,7 +43,7 @@ protected:
 	/** * INTERACTION LOGIC
 		 * This is the raycast that lets you press 'E' to evolve trees/bees Core raycast logic
 		 */
-	virtual void Interact(const FInputActionValue& Value) override;
+	virtual void Interact(const FInputActionValue& Value);
 
 	/** Enhanced Input bridge */
 	void EnhancedInteract(const FInputActionValue& Value);
@@ -62,16 +58,13 @@ protected:
 	float QiDrainRate = 0.1f;
 
 private:
-	/** Ghostly physics settings */
-	void ConfigureSpiritPhysics();
-
 	/** Wisp Logic */
 	void AttemptPossession();
 
 	// --- Possession State ---
-	TWeakObjectPtr<ASovereignBaseCharacter> CurrentlyPossessedVessel;
+	TWeakObjectPtr<AActor> CurrentlyPossessedVessel;
 	FTimerHandle QiDrainTimerHandle;
 
-	void AttachToVessel(ASovereignBaseCharacter* Vessel);
+	void AttachToVessel(AActor* Vessel);
 	void DrainPossessionQi();
 };

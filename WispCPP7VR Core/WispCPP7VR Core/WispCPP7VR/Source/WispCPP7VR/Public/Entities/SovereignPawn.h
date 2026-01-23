@@ -3,20 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
 #include "Interfaces/SovereignEntityInterface.h"
-#include "SovereignBaseInteractable.generated.h"
+#include "SovereignPawn.generated.h"
 
 class USovereignSaveableEntityComponent;
-class UInputAction;
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseInteractable : public AActor, public ISovereignEntityInterface
+class WISPCPP7VR_API ASovereignPawn : public APawn, public ISovereignEntityInterface
 {
 	GENERATED_BODY()
 
 public:
-	ASovereignBaseInteractable();
+	ASovereignPawn();
 
 	virtual USovereignSaveableEntityComponent* GetSovereignSoul() const override;
 	virtual USceneComponent* GetPrimaryMesh() const override;
@@ -28,15 +27,5 @@ protected:
 	USovereignSaveableEntityComponent* SovereignSoul;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
-	UStaticMeshComponent* MeshComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputAction* MoveAction;
-
-	void Move(const struct FInputActionValue& Value);
-
-private:
-	TWeakObjectPtr<AController> PossessingController;
-	TWeakObjectPtr<class UFloatingPawnMovement> MovementComponent;
-	TWeakObjectPtr<class UInputComponent> InputComponent;
+	class UFloatingPawnMovement* MovementComponent;
 };
