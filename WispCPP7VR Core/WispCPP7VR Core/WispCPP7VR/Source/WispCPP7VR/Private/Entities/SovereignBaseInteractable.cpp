@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
@@ -34,12 +35,15 @@ void ASovereignBaseInteractable::OnPossessedByWisp(AController* WispController)
 	MovementComponent = NewObject<UFloatingPawnMovement>(this, TEXT("MovementComponent"));
 	MovementComponent->RegisterComponent();
 
-	EnableInput(WispController->GetLocalPlayer());
-	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
+	if (APlayerController* PC = Cast<APlayerController>(WispController))
 	{
-		if (MoveAction)
+		EnableInput(PC);
+		if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
 		{
-			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignBaseInteractable::Move);
+			if (MoveAction)
+			{
+				EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignBaseInteractable::Move);
+			}
 		}
 	}
 }
@@ -50,7 +54,10 @@ void ASovereignBaseInteractable::OnUnpossessedByWisp()
 	{
 		MovementComponent->DestroyComponent();
 	}
-	DisableInput(PossessingController->GetLocalPlayer());
+	if (APlayerController* PC = Cast<APlayerController>(PossessingController.Get()))
+	{
+		DisableInput(PC);
+	}
 	PossessingController = nullptr;
 }
 

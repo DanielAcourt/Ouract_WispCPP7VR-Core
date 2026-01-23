@@ -2,9 +2,14 @@
 
 
 #include "Entities/SovereignSaveTerminal.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "SaveSystem/SovereignSaveManager.h" // Needed to talk to the Save Boss
 #include "Kismet/GameplayStatics.h"
 
+ASovereignSaveTerminal::ASovereignSaveTerminal()
+{
+	SovereignSoul = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
+}
 
 void ASovereignSaveTerminal::OnInteract_Implementation(AActor* Interactor)
 {
@@ -87,4 +92,24 @@ void ASovereignSaveTerminal::Editor_RefreshSavedCount()
         UE_LOG(LogTemp, Log, TEXT("Sovereign: File check complete. Found %d entities in %s"),
             LastOperationEntityCount, *TargetSlotName);
     }
+}
+
+USovereignSaveableEntityComponent* ASovereignSaveTerminal::GetSovereignSoul() const
+{
+	return SovereignSoul;
+}
+
+USceneComponent* ASovereignSaveTerminal::GetPrimaryMesh() const
+{
+	return RootComponent;
+}
+
+void ASovereignSaveTerminal::OnPossessedByWisp(AController* WispController)
+{
+	// This actor cannot be possessed
+}
+
+void ASovereignSaveTerminal::OnUnpossessedByWisp()
+{
+	// This actor cannot be possessed
 }

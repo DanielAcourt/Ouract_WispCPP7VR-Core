@@ -50,7 +50,17 @@ void USovereignSaveableEntityComponent::Heartbeat()
 {
 	if (VesselState == EVesselState::Alive)
 	{
-		// Implement growth or other passive logic here
+		MaturityProgress += MaturityRate;
+		if (MaturityProgress >= 1.0f)
+		{
+			MaturityProgress = 0.0f;
+			if (GetOwner()->Implements<USovereignEntityInterface>())
+			{
+				// This is a placeholder for a more robust evolution system.
+				// For now, we just log that the entity has evolved.
+				UE_LOG(LogTemp, Log, TEXT("Entity %s has evolved!"), *GetOwner()->GetName());
+			}
+		}
 	}
 	else if (VesselState == EVesselState::Dead)
 	{
@@ -68,6 +78,55 @@ void USovereignSaveableEntityComponent::HandleVesselDeath()
 {
 	VesselState = EVesselState::Dead;
 }
+
+void USovereignSaveableEntityComponent::ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount)
+{
+	float Modifier = GetElementalMultiplier(EnergyType);
+	MaturityProgress += (RawAmount * Modifier);
+
+	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s received %f %s energy. New Maturity: %f"),
+		*GetOwner()->GetName(), RawAmount, *UEnum::GetValueAsString(EnergyType), MaturityProgress);
+}
+
+float USovereignSaveableEntityComponent::GetElementalMultiplier(ESovereignElement IncomingType)
+{
+	float Multiplier = 1.0f;
+
+	// --- 1. SPECIAL/MAGIC (Fairy/Dragon) ---
+	if (IncomingType == ESovereignElement::Fairy || IncomingType == ESovereignElement::Dragon) return 1000.0f;
+
+	// --- 2. THE 5-WAY BATTLE CYCLE (Body) ---
+	if (BodySocket == ESovereignElement::Nature) {
+		if (IncomingType == ESovereignElement::Water) Multiplier = 2.0f;
+		if (IncomingType == ESovereignElement::Fire)  Multiplier = 0.5f;
+	}
+	else if (BodySocket == ESovereignElement::Earth) {
+		if (IncomingType == ESovereignElement::Nature) Multiplier = 0.5f;
+		if (IncomingType == ESovereignElement::Water)  Multiplier = 2.0f;
+	}
+	else if (BodySocket == ESovereignElement::Water) {
+		if (IncomingType == ESovereignElement::Fire)   Multiplier = 2.0f;
+		if (IncomingType == ESovereignElement::Nature) Multiplier = 0.5f;
+	}
+	else if (BodySocket == ESovereignElement::Fire) {
+		if (IncomingType == ESovereignElement::Nature) Multiplier = 2.0f;
+		if (IncomingType == ESovereignElement::Water)  Multiplier = 0.5f;
+	}
+	else if (BodySocket == ESovereignElement::Air) {
+		if (IncomingType == ESovereignElement::Fire)   Multiplier = 2.0f;
+		if (IncomingType == ESovereignElement::Earth)  Multiplier = 0.5f;
+	}
+
+	// --- 3. ALIGNMENT DUALITY ---
+	if ((AlignmentSocket == ESovereignElement::Light && IncomingType == ESovereignElement::Dark) ||
+		(AlignmentSocket == ESovereignElement::Dark && IncomingType == ESovereignElement::Light))
+	{
+		Multiplier *= 0.25f;
+	}
+
+	return Multiplier;
+}
+
 
 TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() const
 {
@@ -111,6 +170,9 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 	JsonObject->SetStringField("Qi", FString::SanitizeFloat(Qi));
 	JsonObject->SetStringField("MaxQi", FString::SanitizeFloat(MaxQi));
 	JsonObject->SetStringField("Maturity", FString::SanitizeFloat(Maturity));
+	JsonObject->SetStringField("MaturityProgress", FString::SanitizeFloat(MaturityProgress));
+	JsonObject->SetStringField("MaturityRate", FString::SanitizeFloat(MaturityRate));
+
 
 	if (IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Owner))
 	{
@@ -138,6 +200,8 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 	Qi = JsonData->GetNumberField("Qi");
 	MaxQi = JsonData->GetNumberField("MaxQi");
 	Maturity = JsonData->GetNumberField("Maturity");
+	MaturityProgress = JsonData->GetNumberField("MaturityProgress");
+	MaturityRate = JsonData->GetNumberField("MaturityRate");
 }
 
 #if WITH_EDITOR

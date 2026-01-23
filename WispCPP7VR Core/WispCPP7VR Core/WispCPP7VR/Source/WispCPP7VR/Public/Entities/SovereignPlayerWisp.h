@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignPawn.h"
 #include "InputActionValue.h"
-#include "Engine/TimerManager.h"
+#include "TimerManager.h"
 #include "SovereignPlayerWisp.generated.h"
 
 
@@ -40,6 +40,24 @@ public:
 	UNiagaraComponent* SpiritEffect;
 
 protected:
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputMappingContext* DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* PossessAction;
+
 	/** * INTERACTION LOGIC
 		 * This is the raycast that lets you press 'E' to evolve trees/bees Core raycast logic
 		 */

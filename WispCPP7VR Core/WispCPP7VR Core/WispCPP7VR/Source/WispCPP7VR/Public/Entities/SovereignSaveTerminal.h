@@ -3,31 +3,34 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Entities/SovereignBaseInteractable.h"
-#include "Interaction/SovereignInterfaceMain.h" // Include your interface header
+#include "GameFramework/Actor.h"
+#include "Interfaces/SovereignEntityInterface.h"
+#include "Interaction/SovereignInterfaceMain.h"
 #include "SovereignSaveTerminal.generated.h"
+
+class USovereignSaveableEntityComponent;
 
 /**
  * 
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignSaveTerminal : public ASovereignBaseInteractable
+class WISPCPP7VR_API ASovereignSaveTerminal : public AActor, public ISovereignEntityInterface, public IInteractionInterface
 {
 	GENERATED_BODY()
 
 public:
-    // We don't need a constructor here if we are happy with the Parent's mesh!
+	ASovereignSaveTerminal();
 
     /** * We "Override" the Parent's interaction.
      * This tells the compiler: "Forget the debug message in the parent, do THIS instead."
      */
-    virtual void OnInteract_Implementation(AActor* Interactor) override;
+    virtual void OnInteract_Implementation(AActor* Interactor);
 
     /** We override the name so the UI says "Chronicle Stone" instead of "Interactable" */
-    virtual FText GetInteractableName_Implementation() override;
+    virtual FText GetInteractableName_Implementation();
 
     // NEW: Handle the "Secondary" action (e.g., Grip + Trigger)
-    virtual void OnSecondaryInteract_Implementation(AActor* Interactor) override;
+    virtual void OnSecondaryInteract_Implementation(AActor* Interactor);
 
     /** * Bakes the current world state to a file immediately.
      * This creates a button in the Editor Details panel!
@@ -46,8 +49,16 @@ public:
     UFUNCTION(CallInEditor, Category = "Sovereign|Debug")
     void Editor_RefreshSavedCount();
 
+	// --- ISovereignEntityInterface ---
+	virtual USovereignSaveableEntityComponent* GetSovereignSoul() const override;
+	virtual USceneComponent* GetPrimaryMesh() const override;
+	virtual void OnPossessedByWisp(AController* WispController) override;
+	virtual void OnUnpossessedByWisp() override;
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
+	USovereignSaveableEntityComponent* SovereignSoul;
+
     /** The name of the file this stone writes to. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Save")
     FString TargetSlotName = TEXT("Isla_Garden_Save");

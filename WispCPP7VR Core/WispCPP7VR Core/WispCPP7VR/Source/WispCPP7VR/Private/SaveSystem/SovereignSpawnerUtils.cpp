@@ -4,6 +4,7 @@
 #include "SaveSystem/SovereignSpawnerUtils.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Interfaces/SovereignEntityInterface.h"
 #include "Engine/World.h"
 #include "Math/UnrealMathUtility.h"
 #include "Subsystems/SovereignSpawnManager.h"
@@ -25,10 +26,13 @@ void USovereignSpawnerUtils::SpawnEarnedEntity(UObject* WorldContextObject, cons
 void USovereignSpawnerUtils::SpawnEarnedEntityInherited(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* ParentActor)
 {
     if (!ParentActor) return;
-    auto* ParentComp = ParentActor->FindComponentByClass<USovereignSaveableEntityComponent>();
-    if (!ParentComp) return;
-
-    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, ParentComp->EntityID);
+    if (ParentActor->Implements<USovereignEntityInterface>())
+    {
+        if (USovereignSaveableEntityComponent* ParentComp = ISovereignEntityInterface::Execute_GetSovereignSoul(ParentActor))
+        {
+            SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, ParentComp->EntityID);
+        }
+    }
 }
 
 // --- 3. HYBRID BIRTH (Dual Parent) ---
@@ -36,8 +40,18 @@ void USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, cons
 {
     if (!Mother || !Father) return;
 
-    auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
-    auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
+    USovereignSaveableEntityComponent* MomComp = nullptr;
+    USovereignSaveableEntityComponent* DadComp = nullptr;
+
+    if (Mother->Implements<USovereignEntityInterface>())
+    {
+        MomComp = ISovereignEntityInterface::Execute_GetSovereignSoul(Mother);
+    }
+    if (Father->Implements<USovereignEntityInterface>())
+    {
+        DadComp = ISovereignEntityInterface::Execute_GetSovereignSoul(Father);
+    }
+
     if (!MomComp || !DadComp) return;
 
     // 1. Record the union in their histories
@@ -102,7 +116,12 @@ FString USovereignSpawnerUtils::GetEntityAncestry(AActor* TargetActor)
     if (!TargetActor) return "Invalid";
     UWorld* World = TargetActor->GetWorld();
     UActorRegistry* Registry = World ? World->GetSubsystem<UActorRegistry>() : nullptr;
-    auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>();
+
+    USovereignSaveableEntityComponent* SaveComp = nullptr;
+    if (TargetActor->Implements<USovereignEntityInterface>())
+    {
+        SaveComp = ISovereignEntityInterface::Execute_GetSovereignSoul(TargetActor);
+    }
 
     if (!SaveComp || !Registry) return "No Data";
 
@@ -117,8 +136,14 @@ FString USovereignSpawnerUtils::GetEntityAncestry(AActor* TargetActor)
         if (P)
         {
             Tree += " -> " + P->GetName();
-            if (auto* Next = P->FindComponentByClass<USovereignSaveableEntityComponent>())
-                CurrentID = Next->ParentID;
+            if (P->Implements<USovereignEntityInterface>())
+            {
+                if (auto* Next = ISovereignEntityInterface::Execute_GetSovereignSoul(P))
+                {
+                    CurrentID = Next->ParentID;
+                }
+                else break;
+            }
             else break;
         }
         else
@@ -135,8 +160,19 @@ TArray<FString> USovereignSpawnerUtils::ScanForMutations(AActor* ChildActor, AAc
 {
     TArray<FString> Log;
     if (!ChildActor || !ParentActor) return { "Invalid" };
-    auto* C = ChildActor->FindComponentByClass<USovereignSaveableEntityComponent>();
-    auto* P = ParentActor->FindComponentByClass<USovereignSaveableEntityComponent>();
+
+    USovereignSaveableEntityComponent* C = nullptr;
+    if (ChildActor->Implements<USovereignEntityInterface>())
+    {
+        C = ISovereignEntityInterface::Execute_GetSovereignSoul(ChildActor);
+    }
+
+    USovereignSaveableEntityComponent* P = nullptr;
+    if (ParentActor->Implements<USovereignEntityInterface>())
+    {
+        P = ISovereignEntityInterface::Execute_GetSovereignSoul(ParentActor);
+    }
+
     if (!C || !P) return { "Missing Component" };
 
     TMap<FString, FString> CTags = C->GetUnknownMetaTags();
@@ -160,8 +196,17 @@ bool USovereignSpawnerUtils::CanBreed(AActor* ParentA, AActor* ParentB)
 {
     if (!ParentA || !ParentB || (ParentA == ParentB)) return false;
 
-    auto* CompA = ParentA->FindComponentByClass<USovereignSaveableEntityComponent>();
-    auto* CompB = ParentB->FindComponentByClass<USovereignSaveableEntityComponent>();
+    USovereignSaveableEntityComponent* CompA = nullptr;
+    if (ParentA->Implements<USovereignEntityInterface>())
+    {
+        CompA = ISovereignEntityInterface::Execute_GetSovereignSoul(ParentA);
+    }
+
+    USovereignSaveableEntityComponent* CompB = nullptr;
+    if (ParentB->Implements<USovereignEntityInterface>())
+    {
+        CompB = ISovereignEntityInterface::Execute_GetSovereignSoul(ParentB);
+    }
 
     if (CompA && CompB)
     {

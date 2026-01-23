@@ -1,4 +1,3 @@
-
 // Copyright (c) 2013-2025 Daniel Acourt. All Rights Reserved. Confidential & Proprietary.
 
 #include "SaveSystem/SovereignSaveManager.h"
@@ -7,6 +6,7 @@
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "SaveSystem/SovereignJsonUtils.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Interfaces/SovereignEntityInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h" // Requires "JsonUtilities" in Build.cs
@@ -39,7 +39,11 @@ void USaveManager::PurgeUnearnedEntities(USovereignSaveGame* LoadedSuitcase)
 
     for (AActor* Actor : TrackedActors)
     {
-        auto* SaveComp = Actor->FindComponentByClass<USovereignSaveableEntityComponent>();
+        USovereignSaveableEntityComponent* SaveComp = nullptr;
+        if (Actor->Implements<USovereignEntityInterface>())
+        {
+            SaveComp = ISovereignEntityInterface::Execute_GetSovereignSoul(Actor);
+        }
         if (!SaveComp) continue;
 
         // Use a Lambda or FindByPredicate for better performance than a nested loop
@@ -71,8 +75,12 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
         // Get the physical actor from the Weak Pointer
         if (AActor* TargetActor = Elem.Value.Get())
         {
-            // Find the 'Passport' (Component) containing the Sovereign data
-            if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
+            USovereignSaveableEntityComponent* SaveComp = nullptr;
+            if (TargetActor->Implements<USovereignEntityInterface>())
+            {
+                SaveComp = ISovereignEntityInterface::Execute_GetSovereignSoul(TargetActor);
+            }
+            if (SaveComp)
             {
                 FEntitySaveData Data;
 
@@ -156,7 +164,12 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
 
                 if (TargetActor)
                 {
-                    if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
+                    USovereignSaveableEntityComponent* SaveComp = nullptr;
+                    if (TargetActor->Implements<USovereignEntityInterface>())
+                    {
+                        SaveComp = ISovereignEntityInterface::Execute_GetSovereignSoul(TargetActor);
+                    }
+                    if (SaveComp)
                     {
                         // Restore Identity & Lineage immediately upon birth
                         SaveComp->EntityID = Data.MyGUID;
@@ -170,7 +183,12 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
         if (TargetActor)
         {
             TargetActor->SetActorTransform(Data.WorldTransform);
-            if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
+            USovereignSaveableEntityComponent* SaveComp = nullptr;
+            if (TargetActor->Implements<USovereignEntityInterface>())
+            {
+                SaveComp = ISovereignEntityInterface::Execute_GetSovereignSoul(TargetActor);
+            }
+            if (SaveComp)
             {
                 // Ensure ParentID is set even for existing actors to maintain symmetry
                 SaveComp->ParentID = Data.ParentID;

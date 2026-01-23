@@ -2,7 +2,7 @@
 
 
 #include "Entities/SovereignPlayerWisp.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/FloatingPawnMovement.h"
 #include "NiagaraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetSystemLibrary.h" // <--- CRITICAL FOR THE TRACE
@@ -34,6 +34,21 @@ void ASovereignPlayerWisp::BeginPlay()
 		SovereignSoul->MaxHealth = 100.f;
 		SovereignSoul->Qi = 500.f;
 		SovereignSoul->MaxQi = 500.f;
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+			{
+				if (DefaultMappingContext)
+				{
+					Subsystem->RemoveMappingContext(DefaultMappingContext);
+					Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				}
+			}
+		}
 	}
 }
 
@@ -180,24 +195,38 @@ void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Bind possession action
-		if (PossessAction)
-		{
-			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
-		}
+		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::Move);
+		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::Look);
+		EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
+		EIC->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::Interact);
+	}
+}
+
+void ASovereignPlayerWisp::Move(const FInputActionValue& Value)
+{
+	if (MovementComponent)
+	{
+		const FVector Input = Value.Get<FVector>();
+		AddMovementInput(GetActorForwardVector(), Input.Y);
+		AddMovementInput(GetActorRightVector(), Input.X);
+	}
+}
+
+void ASovereignPlayerWisp::Look(const FInputActionValue& Value)
+{
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
 
 void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 {
-	// 1. ARCHITECT TRUTH: Run the Parent logic first.
-	// This ensures any base-level logging or variable clearing happens.
-	Super::Interact(Value);
-
 	if (!GetWorld()) return;
 
-	// 2. CALCULATE PRECISION VECTOR
-	// InteractionDistance should be defined in your header (e.g., 500.0f)
 	FVector Start = GetActorLocation();
 	FVector ViewDir = GetControlRotation().Vector();
 	FVector End = Start + (ViewDir * InteractionDistance);
@@ -206,7 +235,6 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	// 3. EXECUTE LINE TRACE
 	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Start,
@@ -215,34 +243,13 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 		Params
 	);
 
-	// 4. THE INTERFACE HANDSHAKE
 	if (bHit && HitResult.GetActor())
 	{
 		AActor* HitActor = HitResult.GetActor();
 
-		// Check if the actor is a Sovereign Interactable (using the Interface)
 		if (HitActor->Implements<UInteractionInterface>())
 		{
-			// This line is the "Spark" -> It calls OnInteract_Implementation in C++
-			// which then calls the Broadcast that fires your Red Blueprint Node.
 			IInteractionInterface::Execute_OnInteract(HitActor, this);
-
-			// SUCCESS DEBUG: Draw a Green Sphere where we hit
-			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.f, 12, FColor::Cyan, false, 2.0f);
-
-			if (GEngine)
-				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan,
-					FString::Printf(TEXT("Sensed: %s"), *HitActor->GetName()));
 		}
-		else
-		{
-			// Hit something, but it's not interactable (like a wall)
-			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.f, 8, FColor::Red, false, 1.0f);
-		}
-	}
-	else
-	{
-		// Total Miss: Draw a thin red line to show where you aimed
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 	}
 }
