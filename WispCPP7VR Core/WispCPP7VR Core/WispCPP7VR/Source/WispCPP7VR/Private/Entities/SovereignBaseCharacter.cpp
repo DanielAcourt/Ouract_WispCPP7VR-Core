@@ -2,6 +2,7 @@
 
 
 #include "Entities/SovereignBaseCharacter.h"
+#include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignElementComponent.h"
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignControllerComponent.h"
@@ -10,6 +11,8 @@
 #include "GameFramework/CharacterMovementComponent.h"//Core Unreal Character frameworks
 #include "EnhancedInputComponent.h" //core unreal input libraries
 #include "EnhancedInputSubsystems.h" // You'll likely need this for the Mapping Context too
+#include "GameplayTagContainer.h"
+#include "GameplayTagsManager.h"
 
 ASovereignBaseCharacter::ASovereignBaseCharacter()
 {
@@ -24,6 +27,11 @@ ASovereignBaseCharacter::ASovereignBaseCharacter()
 	bUseControllerRotationYaw = false;
 }
 
+void ASovereignBaseCharacter::BeginPossessionBy(ASovereignPlayerWisp* Wisp)
+{
+	PossessingWisp = Wisp;
+}
+
 void ASovereignBaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -35,6 +43,7 @@ void ASovereignBaseCharacter::PossessedBy(AController* NewController)
 
 	if (AttributeComponent && NewController && NewController->IsPlayerController())
 	{
+		GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("State.Possessed.IsVessel")));
 		UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is now Player-Controlled."), *GetName());
 	}
 }
@@ -45,8 +54,19 @@ void ASovereignBaseCharacter::UnPossessed()
 	{
 		ControlComponent->OnUnpossessed();
 	}
-
+	GameplayTags.RemoveTag(FGameplayTag::RequestGameplayTag(FName("State.Possessed.IsVessel")));
+	PossessingWisp = nullptr;
 	Super::UnPossessed();
+}
+
+void ASovereignBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (PossessingWisp.IsValid())
+	{
+		PossessingWisp->EndPossession();
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ASovereignBaseCharacter::BeginPlay()

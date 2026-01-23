@@ -17,6 +17,8 @@ class USovereignControllerComponent;
 class USovereignAttributeComponent;
 class USovereignQiComponent; // Added this
 class AController; // <--- MUST ADD THIS FOR POSSESSION
+class ASovereignPlayerWisp;
+
 
 // This creates a custom event node for your Blueprints
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor);
@@ -43,6 +45,8 @@ public:
 
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void BeginPossessionBy(ASovereignPlayerWisp* Wisp);
 
 protected: // Changed from public to protected for better security
 
@@ -72,6 +76,8 @@ protected: // Changed from public to protected for better security
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
@@ -99,5 +105,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* PossessAction;
 	
+private:
+	TWeakObjectPtr<ASovereignPlayerWisp> PossessingWisp;
 };
-

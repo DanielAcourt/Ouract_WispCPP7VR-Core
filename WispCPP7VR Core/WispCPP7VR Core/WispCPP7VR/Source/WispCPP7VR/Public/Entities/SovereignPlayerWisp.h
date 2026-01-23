@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignBaseCharacter.h"
 #include "InputActionValue.h"
+#include "Engine/TimerManager.h"
 #include "SovereignPlayerWisp.generated.h"
 
 
@@ -34,8 +35,9 @@ public:
 	/** Declaring Evolve here fixes Error C2509 */
 	virtual void Evolve() override;
 
-	// --- Wisp Logic ---
-	void AttemptPossession();
+	// --- Possession ---
+	void InitiatePossession(ASovereignBaseCharacter* TargetVessel);
+	void EndPossession();
 
 	/** Visuals for the Wisp - Declared ONLY ONCE now */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Vfx")
@@ -62,5 +64,14 @@ protected:
 private:
 	/** Ghostly physics settings */
 	void ConfigureSpiritPhysics();
-};
 
+	/** Wisp Logic */
+	void AttemptPossession();
+
+	// --- Possession State ---
+	TWeakObjectPtr<ASovereignBaseCharacter> CurrentlyPossessedVessel;
+	FTimerHandle QiDrainTimerHandle;
+
+	void AttachToVessel(ASovereignBaseCharacter* Vessel);
+	void DrainPossessionQi();
+};

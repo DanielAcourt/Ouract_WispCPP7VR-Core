@@ -12,6 +12,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "DrawDebugHelpers.h"
+#include "GameplayTagContainer.h"
+#include "GameplayTagsManager.h"
+#include "GameFramework/PlayerController.h"
 
 ASovereignPlayerWisp::ASovereignPlayerWisp()
 {
@@ -71,7 +74,7 @@ void ASovereignPlayerWisp::ConfigureSpiritPhysics()
 {
 	// Don't use ECR_Ignore; use ECR_Overlap
 	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Overlap);
+	//GetCaps-uleComponent()->SetCollisionResponseToAllChannels(ECR_Overlap);
 
 	// Block only the world so you don't fly through mountains
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
@@ -86,6 +89,10 @@ void ASovereignPlayerWisp::ConfigureSpiritPhysics()
 
 void ASovereignPlayerWisp::Tick(float DeltaTime)
 {
+	if (GameplayTags.HasTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit"))))
+	{
+		return;
+	}
 	Super::Tick(DeltaTime);
 
 	// Special Wisp Drain: Being in the world costs a tiny bit of Qi every second
@@ -97,6 +104,11 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 
 void ASovereignPlayerWisp::AttemptPossession()
 {
+	if (CurrentlyPossessedVessel.IsValid())
+	{
+		EndPossession();
+		return;
+	}
 	// 1. Setup the Trace parameters
 	FVector Start = GetActorLocation();
 	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
@@ -114,35 +126,106 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 	if (bHit && OutHit.GetActor())
 	{
-		AActor* HitActor = OutHit.GetActor();
-		if (HitActor->Implements<UInteractionInterface>())
+		ASovereignBaseCharacter* HitCharacter = Cast<ASovereignBaseCharacter>(OutHit.GetActor());
+		if (HitCharacter)
 		{
-			if (IInteractionInterface::Execute_CanBePossessed(HitActor))
-			{
-				IInteractionInterface::Execute_RequestPossession(HitActor, GetController());
-
-				// 2. Physical Snap
-				// We attach to the "Soul_Socket". If it doesn't exist, it defaults to the root.
-				if (USceneComponent* AttachmentComponent = IInteractionInterface::Execute_GetPossessionAttachmentComponent(HitActor))
-				{
-					this->AttachToComponent(AttachmentComponent,
-						FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-						FName("Soul_Socket"));
-				}
-
-				// 3. Spirit State
-				SetActorHiddenInGame(true);
-				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-				// Disable Wisp Tick while inside to save performance, 
-				// OR leave it on if you want the "Wisp Drain" to stay active.
-				SetActorTickEnabled(true);
-
-				UE_LOG(LogTemp, Warning, TEXT("Spirit bound to Soul Socket of %s"), *HitActor->GetName());;
-			}
+			InitiatePossession(HitCharacter);
 		}
 	}
 }
+
+void ASovereignPlayerWisp::InitiatePossession(ASovereignBaseCharacter* TargetVessel)
+{
+	if (!TargetVessel) return;
+
+	CurrentlyPossessedVessel = TargetVessel;
+
+	// Wisp-centric logic: Wisp tells the Vessel it's about to be possessed
+	TargetVessel->BeginPossessionBy(this);
+
+	AController* CurrentController = GetController();
+	if (CurrentController)
+	{
+		CurrentController->Possess(TargetVessel);
+	}
+
+	AttachToVessel(TargetVessel);
+
+	// Start Qi Drain
+	GetWorldTimerManager().SetTimer(QiDrainTimerHandle, this, &ASovereignPlayerWisp::DrainPossessionQi, 1.0f, true);
+}
+
+void ASovereignPlayerWisp::AttachToVessel(ASovereignBaseCharacter* Vessel)
+{
+	if (!Vessel) return;
+
+	// Attach to the Vessel's capsule component
+	AttachToComponent(Vessel->GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, NAME_None);
+
+	// Hide and disable collision
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+
+	// Add the state tag
+	GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
+}
+
+void ASovereignPlayerWisp::DrainPossessionQi()
+{
+	if (QiComponent && CurrentlyPossessedVessel.IsValid())
+	{
+		// You can add more complex logic here based on the vessel's tags
+		QiComponent->SpendQi(QiDrainRate);
+	}
+	else
+	{
+		// If the vessel is invalid, stop the timer
+		GetWorldTimerManager().ClearTimer(QiDrainTimerHandle);
+	}
+}
+
+void ASovereignPlayerWisp::EndPossession()
+{
+	if (!CurrentlyPossessedVessel.IsValid()) return;
+
+	// Stop the Qi Drain
+	GetWorldTimerManager().ClearTimer(QiDrainTimerHandle);
+
+	// Calculate a safe ejection point
+	FVector EjectionPoint = CurrentlyPossessedVessel->GetActorLocation() + (CurrentlyPossessedVessel->GetActorForwardVector() * 150.0f);
+	FHitResult HitResult;
+	bool bHit = GetWorld()->SweepSingleByChannel(
+		HitResult,
+		CurrentlyPossessedVessel->GetActorLocation(),
+		EjectionPoint,
+		FQuat::Identity,
+		ECC_Visibility,
+		FCollisionShape::MakeSphere(GetCapsuleComponent()->GetScaledCapsuleRadius())
+	);
+
+	if (bHit)
+	{
+		EjectionPoint = HitResult.ImpactPoint;
+	}
+
+	// Detach and reset state
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	SetActorLocation(EjectionPoint);
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	GameplayTags.RemoveTag(FGameplayTag::RequestGameplayTag(FName("State.Possession.IsAttachedSpirit")));
+
+	// Return the controller to the wisp
+	AController* VesselController = CurrentlyPossessedVessel->GetController();
+	if (VesselController)
+	{
+		VesselController->Possess(this);
+	}
+
+	// Clear the reference
+	CurrentlyPossessedVessel = nullptr;
+}
+
 
 void ASovereignPlayerWisp::Evolve()
 {
