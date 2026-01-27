@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "DataTables/SovereignSpeciesData.h"
-#include "Subsystems/SovereignSpawnmanager.h"
 #include "SovereignSpawnManager.generated.h"
 
 USTRUCT(BlueprintType)

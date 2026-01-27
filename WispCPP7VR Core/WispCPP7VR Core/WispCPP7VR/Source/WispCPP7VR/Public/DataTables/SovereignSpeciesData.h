@@ -68,7 +68,7 @@ public:
 
     /** The Actor Class to spawn for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
-    TSoftClassPtr<class AActor> ActorClass;
+    TSoftClassPtr<AActor> ActorClass;
 
     /** The Unique Identity Signature for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity")
