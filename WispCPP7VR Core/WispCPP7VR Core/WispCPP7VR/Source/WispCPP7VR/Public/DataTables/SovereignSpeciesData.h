@@ -7,8 +7,6 @@
 #include "GameplayTagContainer.h" // <--- CRITICAL: Fixes FGameplayTag errors
 #include "SovereignSpeciesData.generated.h"
 
-class ASovereignBaseEntity;
-
 /** * The Unique Tag for this species (e.g., Species.Plant.Oak).
      * This is what the Save System looks for to know which asset to load.
      */
@@ -70,7 +68,7 @@ public:
 
     /** The Actor Class to spawn for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
-    TSoftClassPtr<class ASovereignBaseEntity> ActorClass;
+    TSoftClassPtr<class AActor> ActorClass;
 
     /** The Unique Identity Signature for this species. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity")

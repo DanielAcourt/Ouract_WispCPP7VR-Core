@@ -8,8 +8,6 @@
 #include "Subsystems/SovereignSpawnmanager.h"
 #include "SovereignSpawnManager.generated.h"
 
-class ASovereignBaseEntity;
-
 USTRUCT(BlueprintType)
 struct FSpawnRequest
 {
@@ -49,7 +47,7 @@ public:
 	virtual void Deinitialize() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Spawning")
-	void RequestSpawn(const USovereignSpeciesData* SpeciesData, const FTransform& Transform, const FGuid& MotherID, const FGuid& FatherID = FGuid());
+	void RequestSpawn(const USovereignSpeciesData* SpeciesData, const FTransform& Transform, const FGuid& ParentID);
 
 private:
 	UPROPERTY()
@@ -58,7 +56,7 @@ private:
 	int32 NextRequestID = 0;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sovereign|Spawning")
-	TSubclassOf<ASovereignBaseEntity> FallbackUnknownClass;
+	TSubclassOf<AActor> FallbackUnknownClass;
 
 	void OnClassLoaded(int32 RequestID);
 };

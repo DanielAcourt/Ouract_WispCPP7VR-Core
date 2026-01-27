@@ -2,11 +2,12 @@
 
 
 #include "Subsystems/SovereignSpawnManager.h"
-#include "Entities/SovereignBaseEntity.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "GameplayTagContainer.h"
+#include "Interfaces/SovereignEntityInterface.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 
 void USovereignSpawnManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -19,7 +20,7 @@ void USovereignSpawnManager::Deinitialize()
 	Super::Deinitialize();
 }
 
-void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesData, const FTransform& Transform, const FGuid& MotherID, const FGuid& FatherID)
+void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesData, const FTransform& Transform, const FGuid& ParentID)
 {
 	if (!SpeciesData)
 	{
@@ -28,7 +29,7 @@ void USovereignSpawnManager::RequestSpawn(const USovereignSpeciesData* SpeciesDa
 	}
 
 	int32 RequestID = NextRequestID++;
-	FSpawnRequest NewRequest(RequestID, SpeciesData, Transform, MotherID, FatherID);
+	FSpawnRequest NewRequest(RequestID, SpeciesData, Transform, ParentID);
 	SpawnQueue.Add(RequestID, NewRequest);
 
 	FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
@@ -51,16 +52,12 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		return;
 	}
 
-	TSubclassOf<ASovereignBaseEntity> ClassToSpawn = FallbackUnknownClass;
-	TSubclassOf<ASovereignBaseEntity> LoadedClass = SpeciesData->ActorClass.Get();
+	TSubclassOf<AActor> ClassToSpawn = FallbackUnknownClass;
+	TSubclassOf<AActor> LoadedClass = SpeciesData->ActorClass.Get();
 
 	if (LoadedClass)
 	{
-		const ASovereignBaseEntity* CDO = LoadedClass->GetDefaultObject<ASovereignBaseEntity>();
-		if (CDO && CDO->IdentitySignature == SpeciesData->IdentitySignature)
-		{
-			ClassToSpawn = LoadedClass;
-		}
+		ClassToSpawn = LoadedClass;
 	}
 
 	if (!ClassToSpawn)
@@ -76,8 +73,6 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 	}
 
 	// "Drone-Laying Penalty" (Ontological Parent Check)
-	// If the parent ID is valid but the parent actor is not found in the registry,
-	// it is considered an ontological failure (e.g. the parent has died or been culled).
 	bool bHasParentFailure = false;
 	if (Request->MotherID.IsValid())
 	{
@@ -88,25 +83,32 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		}
 	}
 
-	ASovereignBaseEntity* NewEntity = World->SpawnActor<ASovereignBaseEntity>(ClassToSpawn, Request->Transform);
+	AActor* NewActor = World->SpawnActor<AActor>(ClassToSpawn, Request->Transform);
 
-	if (NewEntity)
+	if (NewActor)
 	{
-		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
-		if (bHasParentFailure)
+		if (NewActor->Implements<USovereignEntityInterface>())
 		{
-			FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
-			if (PenaltyTag.IsValid())
+			USovereignSaveableEntityComponent* Soul = ISovereignEntityInterface::Execute_GetSovereignSoul(NewActor);
+			if (Soul)
 			{
-				NewEntity->GameplayTags.AddTag(PenaltyTag);
-			}
-		}
-		if (ClassToSpawn == FallbackUnknownClass)
-		{
-			FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
-			if (UnknownTag.IsValid())
-			{
-				NewEntity->GameplayTags.AddTag(UnknownTag);
+				Soul->ParentID = Request->MotherID;
+				if (bHasParentFailure)
+				{
+					FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
+					if (PenaltyTag.IsValid())
+					{
+						Soul->GameplayTags.AddTag(PenaltyTag);
+					}
+				}
+				if (ClassToSpawn == FallbackUnknownClass)
+				{
+					FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
+					if (UnknownTag.IsValid())
+					{
+						Soul->GameplayTags.AddTag(UnknownTag);
+					}
+				}
 			}
 		}
 	}
