@@ -4,16 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "SaveSystem/SovereignGameData.h" 
+#include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
-#include "GameplayTagContainer.h"
-#include "GameplayTagAssetInterface.h"
-#include "SovereignBaseEntity.generated.h"
+#include "GameplayTagContainer.h" //Lets us read Gameplay tags
+#include "GameplayTagAssetInterface.h" 
+#include "SovereignBaseEntity.generated.h" //Must be last
 
 // Forward declarations to keep compile times fast
 class USovereignSaveableEntityComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
+
+
+//The problem with this current approach is i start by inheriting from ACharacter,
+// what we reaslly need is a base which is AActor and APawn and has this interaction.
+// But not the mating and more Advance options
 
 UCLASS()
 class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter, public IGameplayTagAssetInterface 
@@ -31,6 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
 	FGameplayTagContainer GameplayTags;
 
+	/** The Gameplay Tags that this Enity is checking against. */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
 	void IngestSovereignTag(FString IncomingTagString);
 

@@ -28,15 +28,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
     bool bIsFemale;
 
+    //Base idea
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
     FGuid ParentID;
-
+    //Optional if we want to store its mother code compared to its fathers so we can do pokemon like upgrading/breeding
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
     FGuid MotherID;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
     FGuid FatherID;
-
+    // Can be useful as if they hit a limit they can break if item or just store a known log for Parents
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
     int32 OffspringCount = 0;
 
@@ -74,12 +75,12 @@ public:
     float MagicInfluence = 0.0f;
 
     /** --- 4. EVOLUTION & ENERGY --- */
-
+    //Ideally we need this maturity progress and current state to determine an object age deterministically
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
     float MaturityProgress = 0.0f;
-
+    //How quickly it ages based on a tick
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
-    float MaturityRate = 0.1f;
+    float MaturityRate = 0.01f;
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Evolution")
     void ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount);
