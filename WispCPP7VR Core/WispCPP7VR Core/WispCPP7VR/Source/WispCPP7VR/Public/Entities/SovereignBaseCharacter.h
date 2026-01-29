@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Entities/SovereignBaseInteractable.h"
 #include "GameFramework/Character.h" 
+#include "Interaction/SovereignInterfaceMain.h"
+#include "Entities/SovereignBaseInteractable.h"
+
 
 //This means i need a Input SetupPlayerInputComponent
 #include "InputActionValue.h" // For FInputActionValue
@@ -26,7 +28,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor
  * The 'Master Vessel' for everything from Erisis to Dragons.
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseCharacter : public ASovereignBaseInteractable
+class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IInteractionInterface
 {
 	GENERATED_BODY()
 	
@@ -41,10 +43,32 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
 	FOnActorSensed OnActorSensed;
 
+	// --- IInteractionInterface Implementation ---
+	// This is the "Universal Handshake" your Wisp uses.
+	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+
+	/** Primary logic for growth/evolution.
+	 * Making it virtual allows children like the Wisp to override it.
+	 */
+	virtual void Evolve();
+
+	/** Since we are an IInteractionInterface, we can implement these standard functions here too */
+	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
+	virtual void OnInteract_Implementation(AActor* Interactor) override;
+
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
 
-protected: // Changed from public to protected for better security
+protected: 
+
+
+
+	/** Every Sovereign Entity needs the Soul Hub */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignSaveableEntityComponent* SaveDataComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	bool bCanBePossessed = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
 	USovereignAttributeComponent* AttributeComponent; // Renamed to match Wisp code

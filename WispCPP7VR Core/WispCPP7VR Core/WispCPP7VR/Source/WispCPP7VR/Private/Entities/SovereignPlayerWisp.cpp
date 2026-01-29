@@ -4,13 +4,24 @@
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignQiComponent.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
-#include "NiagaraComponent.h"
+
+
 #include "Components/CapsuleComponent.h"
+
 #include "Kismet/KismetSystemLibrary.h" // <--- CRITICAL FOR THE TRACE
 #include "Components/WidgetComponent.h" // Add this include!
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+
+//DO i need these 2 in the wisp aswell?
+#include "Interaction/SovereignInterfaceMain.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
+
+//Visuals
+#include "NiagaraComponent.h"
 #include "DrawDebugHelpers.h"
 
 ASovereignPlayerWisp::ASovereignPlayerWisp()
@@ -97,11 +108,14 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 
 void ASovereignPlayerWisp::AttemptPossession()
 {
-	// 1. Setup the Trace parameters
+	// 1. Setup the Trace parameters for EVERYTHING Sovereign
 	FVector Start = GetActorLocation();
 	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
+	//Create A List fo object we can hit
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));		  // Characters/Animals
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)); // Rocks/Plants/Interactables
+
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 	FHitResult OutHit;
@@ -171,23 +185,22 @@ void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 {
-	// 1. ARCHITECT TRUTH: Run the Parent logic first.
-	// This ensures any base-level logging or variable clearing happens.
+	// 1. ARCHITECT TRUTH: Always respect the inheritance chain.
 	Super::Interact(Value);
 
 	if (!GetWorld()) return;
 
-	// 2. CALCULATE PRECISION VECTOR
-	// InteractionDistance should be defined in your header (e.g., 500.0f)
+	// 2. PRECISION VECTOR: Trace from where the player is LOOKING.
 	FVector Start = GetActorLocation();
+	// Using GetControlRotation ensures VR/First Person accuracy.
 	FVector ViewDir = GetControlRotation().Vector();
 	FVector End = Start + (ViewDir * InteractionDistance);
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(this); // Don't hit yourself!
 
-	// 3. EXECUTE LINE TRACE
+	// 3. EXECUTE TRACE: Checking for visual blockages.
 	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Start,
@@ -196,35 +209,53 @@ void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 		Params
 	);
 
-	// 4. THE INTERFACE HANDSHAKE
+	// 4. THE UNIVERSAL HANDSHAKE
 	if (bHit && HitResult.GetActor())
 	{
 		AActor* HitActor = HitResult.GetActor();
 
-		// Check if the actor is a Sovereign Interactable (using the Interface)
+		// Check if the target speaks the Sovereign Language
 		if (HitActor->Implements<UInteractionInterface>())
 		{
-			// This line is the "Spark" -> It calls OnInteract_Implementation in C++
-			// which then calls the Broadcast that fires your Red Blueprint Node.
+			// --- THE SOUL HANDSHAKE ---
+			// Fetch the 'Simulated Truth' via the interface hub.
+			USovereignSaveableEntityComponent* Soul = IInteractionInterface::Execute_GetSovereignSoul(HitActor);
+
+			if (Soul)
+			{
+				// Isla's Logic: Access metadata even if the Wisp doesn't 'know' the tags yet.
+				TMap<FString, FString> Metadata = Soul->GetUnknownMetaTags();
+
+				// Example: Sensing the species for the UI
+				if (Metadata.Contains("Identity.Species"))
+				{
+					UE_LOG(LogTemp, Log, TEXT("Wisp identified: %s"), *Metadata["Identity.Species"]);
+				}
+			}
+
+			// --- TRIGGER ACTION ---
+			// This fires the C++ Implementation AND the Blueprint 'OnInteract' event.
 			IInteractionInterface::Execute_OnInteract(HitActor, this);
 
-			// SUCCESS DEBUG: Draw a Green Sphere where we hit
-			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.f, 12, FColor::Cyan, false, 2.0f);
+			// FEEDBACK: Cyan is the color of the Spirit
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 12.f, 12, FColor::Cyan, false, 2.0f);
 
 			if (GEngine)
+			{
 				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan,
-					FString::Printf(TEXT("Sensed: %s"), *HitActor->GetName()));
+					FString::Printf(TEXT("Sovereign Target: %s"), *HitActor->GetName()));
+			}
 		}
 		else
 		{
-			// Hit something, but it's not interactable (like a wall)
-			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.f, 8, FColor::Red, false, 1.0f);
+			// We hit a mundane object (Wall, Floor, Non-Sovereign Rock)
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 8.f, 8, FColor::Red, false, 1.0f);
 		}
 	}
 	else
 	{
-		// Total Miss: Draw a thin red line to show where you aimed
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
+		// Total Miss: Show the player their reach
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 0.5f);
 	}
 }
 

@@ -2,14 +2,24 @@
 
 
 #include "Entities/SovereignBaseCharacter.h"
+
+//Core Stats And attritbutes
 #include "Components/SovereignElementComponent.h"
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignControllerComponent.h"
-#include "Components/SovereignQiComponent.h" // Added this include
-#include "GameFramework/Character.h" // Add this include
+#include "Components/SovereignQiComponent.h" // 
+
+//Entinty framework to save information
+#include "Entities/SovereignSaveableEntityComponent.h"
+
+//The ability for Character to move
+#include "GameFramework/Character.h" // 
 #include "GameFramework/CharacterMovementComponent.h"//Core Unreal Character frameworks
+
+//The ability for characters to receive input
 #include "EnhancedInputComponent.h" //core unreal input libraries
 #include "EnhancedInputSubsystems.h" // You'll likely need this for the Mapping Context too
+
 
 ASovereignBaseCharacter::ASovereignBaseCharacter()
 {
@@ -22,31 +32,6 @@ ASovereignBaseCharacter::ASovereignBaseCharacter()
 
 	// 2. CONFIGURE CHARACTER DEFAULTS
 	bUseControllerRotationYaw = false;
-}
-
-void ASovereignBaseCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-
-	if (ControlComponent)
-	{
-		ControlComponent->OnPossessed(NewController);
-	}
-
-	if (AttributeComponent && NewController && NewController->IsPlayerController())
-	{
-		UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is now Player-Controlled."), *GetName());
-	}
-}
-
-void ASovereignBaseCharacter::UnPossessed()
-{
-	if (ControlComponent)
-	{
-		ControlComponent->OnUnpossessed();
-	}
-
-	Super::UnPossessed();
 }
 
 void ASovereignBaseCharacter::BeginPlay()
@@ -70,6 +55,30 @@ void ASovereignBaseCharacter::BeginPlay()
 			}
 		}
 	}
+}
+
+void ASovereignBaseCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (ControlComponent)
+	{
+		ControlComponent->OnPossessed(NewController);
+	}
+
+	if (AttributeComponent && NewController && NewController->IsPlayerController())
+	{
+		UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is now Player-Controlled."), *GetName());
+	}
+}
+void ASovereignBaseCharacter::UnPossessed()
+{
+	if (ControlComponent)
+	{
+		ControlComponent->OnUnpossessed();
+	}
+
+	Super::UnPossessed();
 }
 
 USceneComponent* ASovereignBaseCharacter::GetPossessionAttachmentComponent_Implementation()
@@ -152,11 +161,6 @@ void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-// Update the binding in SetupPlayerInputComponent
-//EIC->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Interact);
-//This doesnt work
-// Update the function body
-
 void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 {
 	// 1. FORCE LOG (Visible on screen regardless of BP)
@@ -173,6 +177,13 @@ void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 		  // 3. BROADCAST TO BLUEPRINT this sint working as intended also does it in the get sense function too
 		//OnActorSensed.Broadcast(Target);
 	}
+}
+void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
+{
+	// For now, we can just log that a character-based entity was touched.
+	// In the future, Erisis might say "Hello" here.
+	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Character %s"),
+		Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
 }
 
 AActor* ASovereignBaseCharacter::GetSensedActor()
@@ -229,4 +240,12 @@ void ASovereignBaseCharacter::Tick(float DeltaTime)
 
 	// Call this every frame so the Blueprint Event and Log fire constantly
 	GetSensedActor();
+}
+
+// Leveling up or evolving both in stats and visuals
+
+void ASovereignBaseCharacter::Evolve()
+{
+	// Base character evolution logic (e.g., check for enough Qi)
+	UE_LOG(LogTemp, Log, TEXT("Base Character Evolving..."));
 }

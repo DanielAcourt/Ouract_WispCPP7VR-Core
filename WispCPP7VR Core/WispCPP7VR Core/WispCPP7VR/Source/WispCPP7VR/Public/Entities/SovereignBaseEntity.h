@@ -3,13 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "GameFramework/Actor.h"
+
 #include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
+
 #include "GameplayTagContainer.h" //Lets us read Gameplay tags
 #include "GameplayTagAssetInterface.h" 
+
+#include "interaction/SovereignEntityInterface.h"
+
 //#include "Interaction/SovereignEntityInterface.h"
 //#include "Interaction/SovereignEntityInterface.h" // Add the Universal Interface
+
 #include "SovereignBaseEntity.generated.h" //Must be last
 
 // Forward declarations to keep compile times fast
@@ -23,7 +29,7 @@ class UStaticMeshComponent;
 // But not the mating and more Advance options
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter, public IGameplayTagAssetInterface 
+class WISPCPP7VR_API ASovereignBaseEntity : public AActor, public IGameplayTagAssetInterface 
 {
 	GENERATED_BODY()
 
@@ -57,9 +63,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
 	FGuid GetSovereignID() const;
 
+
+
+
 	/** * TRIGGER MATING: Checks compatibility and spawns a child if successful.
 	 * Can be called from VR Overlap events or Interaction buttons.
 	 */
+
+
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Gameplay")
 	virtual void AttemptMating(AActor* PotentialPartner);
 

@@ -19,6 +19,7 @@ ASovereignBaseInteractable (Your Physical Layer):
 #include "Entities/SovereignBaseInteractable.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseCharacter.h"
 
@@ -133,16 +134,24 @@ bool ASovereignBaseInteractable::CanBePossessed_Implementation()
 
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
-    if (RequestingController && CanBePossessed_Implementation())
+    // 1. Cast the controller to a PlayerController
+    if (APlayerController* PC = Cast<APlayerController>(RequestingController))
     {
-        // Unpossess the current pawn
-        if (APawn* CurrentPawn = RequestingController->GetPawn())
+        if (CanBePossessed_Implementation())
         {
-            RequestingController->UnPossess();
-        }
+            // 2. THE BRIDGE: Instead of Possess(this), we enable input.
+            // This allows the player to "drive" the rock/actor.
+            this->EnableInput(PC);
 
-        // Possess this entity
-        RequestingController->Possess(this);
+            // 3. UI/Feedback Handshake
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
+                    FString::Printf(TEXT("Spirit Link Established with: %s"), *GetName()));
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("Input Bridge established for non-pawn actor: %s"), *GetName());
+        }
     }
 }
 

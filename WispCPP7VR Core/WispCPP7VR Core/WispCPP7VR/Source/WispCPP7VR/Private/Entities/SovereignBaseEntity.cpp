@@ -18,8 +18,9 @@ ASovereignBaseEntity::ASovereignBaseEntity()
 {
     // 0. CHARACTER DEFAULTS
     PrimaryActorTick.bCanEverTick = true;
-    bCanAffectNavigationGeneration = true;
+    //bCanAffectNavigationGeneration = true;
 
+    /*
     // 1. CONFIGURE THE BUILT-IN CAPSULE
         // We don't use CreateDefaultSubobject here because ACharacter already did it!
     if (UCapsuleComponent* MyCapsule = GetCapsuleComponent())
@@ -27,7 +28,7 @@ ASovereignBaseEntity::ASovereignBaseEntity()
         MyCapsule->InitCapsuleSize(40.f, 90.f);
         MyCapsule->SetCollisionProfileName(TEXT("Pawn"));
     }
-
+    */
     // 2. THE SOUL (SAVE SYSTEM)
     // This component handles the GUID and the metadata tags (Isla's unknown tags)
     SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
@@ -37,13 +38,20 @@ ASovereignBaseEntity::ASovereignBaseEntity()
     // Create the "Master" mesh slot
     EntityMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EntityMesh"));
 
+    // Since we are an AActor now, the Mesh is our Physical Root
+    RootComponent = EntityMesh;
+
+    // 3. Setup Default Collision for your Wisp's LineTrace
+    EntityMesh->SetCollisionProfileName(TEXT("BlockAll"));
+
+    /*
     if (RootComponent)
     {
         EntityMesh->SetupAttachment(RootComponent);
     }
-
+    */
     // Optional: Move the mesh down so it sits at the bottom of the capsule
-    EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+    //EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 }
 
 void ASovereignBaseEntity::BeginPlay()
@@ -340,3 +348,11 @@ void ASovereignBaseEntity::VerifySymmetryLevel()
 	//		// Grant special permission
 	// }
 }
+
+/*
+USovereignSaveableEntityComponent* ASovereignBaseEntity::GetSovereignSoul_Implementation() const
+{
+    // Simply return the component we already have!
+    return SaveDataComponent;
+}
+*/
