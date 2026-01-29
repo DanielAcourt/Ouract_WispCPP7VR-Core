@@ -39,13 +39,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
 	void TogglAutoSensing(bool bNewState);
 
-	// --- Wisp Logic ---
-	/** Declaring Evolve here fixes Error C2509 */
-	virtual void Evolve() override;
 
 	// --- Wisp Logic ---
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
 	void AttemptPossession();
 
+	//Ideally we want a bool stored on the wisp to know if it is possessing anything
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
+	bool IsPossessing();
+
+	//Then another vairable of what actor is besing possessed. 
 	/** Pops the Wisp out of the current host */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
 	void EjectFromHost();
@@ -60,6 +63,11 @@ public:
 	/** Returns the direction the Spirit is currently 'focusing' */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
 	FVector GetSpiritForwardVector() const;
+
+	// --- Wisp Logic ---
+/** Declaring Evolve here fixes Error C2509 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Evolve")
+	virtual void Evolve() override;
 
 protected:
 	/** * INTERACTION LOGIC
@@ -82,6 +90,14 @@ protected:
 	/** The Input Action for Ejecting */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Input")
 	class UInputAction* EjectAction;
+
+	/** Gameplay Truth: Are we currently acting as a Soul for a Vessel? */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Sovereign|Possession")
+	bool bIsPossessing = false;
+
+	/** Direct reference to the current Host for fast access to Metadata/Stats */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Sovereign|Possession")
+	AActor* CurrentHost;
 
 
 private:

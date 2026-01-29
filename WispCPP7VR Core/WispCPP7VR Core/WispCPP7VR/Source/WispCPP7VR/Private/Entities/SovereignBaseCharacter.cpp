@@ -11,6 +11,7 @@
 
 //Entinty framework to save information
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Entities/SovereignPlayerWisp.h" //hard coded reference for now
 
 //The ability for Character to move
 #include "GameFramework/Character.h" // 
@@ -60,45 +61,78 @@ void ASovereignBaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	// 1. COMPONENT INITIALIZATION
 	if (ControlComponent)
 	{
 		ControlComponent->OnPossessed(NewController);
 	}
 
-	if (AttributeComponent && NewController && NewController->IsPlayerController())
+	// 2. PLAYER-SPECIFIC SETUP (Input & UI)
+	if (APlayerController* PC = Cast<APlayerController>(NewController))
 	{
-		UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is now Player-Controlled."), *GetName());
+		// Force the Input System to use this Character's keys (F for Eject/Interact)
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			// Clear the Wisp's old context and add the Vessel's context
+			Subsystem->ClearAllMappings();
+			if (DefaultMappingContext)
+			{
+				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				UE_LOG(LogTemp, Warning, TEXT("Sovereign: Input Context swapped to %s"), *GetName());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Sovereign: %s has NO DefaultMappingContext assigned!"), *GetName());
+			}
+		}
+
+		if (AttributeComponent)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is now Player-Controlled."), *GetName());
+		}
 	}
 }
+
 void ASovereignBaseCharacter::UnPossessed()
 {
+
+	// 1. RUN CUSTOM LOGIC FIRST
+	// The Controller is still valid here, so your component can 
+	// save final stats or notify the AI it needs to take back over.
+
 	if (ControlComponent)
 	{
 		ControlComponent->OnUnpossessed();
 	}
 
-	Super::UnPossessed();
+	// 2. LOG THE EVENT
+	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is no longer possessed."), *GetName());
+
+	// 3. HAND OVER TO ENGINE
+// This clears the Pawn's internal Controller pointer.
+	Super::UnPossessed(); // THIS WAS HERE NEED IT FIRST?
 }
 
-
-//Why are we doing this?
+//Setting Up the Possession Attacthment Component
 USceneComponent* ASovereignBaseCharacter::GetPossessionAttachmentComponent_Implementation()
 {
 	return GetMesh();
 }
-
 void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// 1. Move & Look (Standard)
-		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Move);
-		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Look);
+		// Move & Look: Keep these as 'Triggered' for smooth continuous movement
+		if (MoveAction) EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Move);
+		if (LookAction) EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Look);
 
-		// 2. Interact (THIS IS THE ONE TO CHANGE)
-		EIC->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASovereignBaseCharacter::Interact);
+		// Interact: Use 'Started' to ensure the Eject/Possess happens exactly ONCE per tap
+		if (InteractAction)
+		{
+			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ASovereignBaseCharacter::Interact);
+		}
 	}
 }
 
@@ -162,22 +196,56 @@ void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+//v2.7
+bool ASovereignBaseCharacter::IsPossessing()
+{
+	return false; // The Character is a Vessel, not a Spirit
+}
+
 //INTERACTION
+//v2.6 Current
 
 void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 {
-	// 1. FORCE LOG (Visible on screen regardless of BP)
-	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("SYSTEM: E KEY PRESSED"));
+	// DEBUG: If you don't see this on screen, your Input Binding is broken
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("VESSEL: INTERACT TRIGGERED"));
 
+	// 1. THE INTERNAL CHECK (Is there a soul in here?)
+	// We use the interface to check for attached spirits.
+	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+
+	if (Spirit)
+	{
+		// 2. THE EJECT COMMAND
+		// We cast to the Wisp to trigger its high-level EjectFromHost logic.
+		ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
+		if (Wisp)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
+			Wisp->EjectFromHost();
+
+			// CRITICAL: We return immediately so the player doesn't 
+			// re-sense and re-possess the body in the same frame.
+			return;
+		}
+	}
+
+	// 3. THE EXTERNAL CHECK (Normal world interaction)
+	// If we aren't ejecting, we use our senses to find targets (Evolved Trees, Items, etc.)
 	AActor* Target = GetSensedActor();
-
 	if (Target)
 	{
-		// 2. FORCE LOG TARGET
-		  if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,FString::Printf(TEXT("SYSTEM: HIT ACTOR -> %s"), *Target->GetName()));
-			
-		  // 3. BROADCAST TO BLUEPRINT this sint working as intended also does it in the get sense function too
+		// Log for Debugging
+		UE_LOG(LogTemp, Log, TEXT("Sovereign: Vessel %s sensed target %s"), *GetName(), *Target->GetName());
+
+		// Broadcast to Blueprints (for UI/Highlighters)
 		OnActorSensed.Broadcast(Target);
+
+		// Execute interaction if target speaks the Sovereign language
+		if (Target->Implements<UInteractionInterface>())
+		{
+			IInteractionInterface::Execute_OnInteract(Target, this);
+		}
 	}
 }
 void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
@@ -235,24 +303,34 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 }
 
 //It compilies i am confused with this
+//v2.5 
 AActor* ASovereignBaseCharacter::GetInhabitingSpirit_Implementation()
 {
-	// 1. Get everything stuck to this character (Wisp, items, etc.)
+	// Search ALL actors attached to us, including children of children
 	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
+	GetAttachedActors(AttachedActors, true); // The 'true' is critical for deep search
 
-	for (AActor* Attached : AttachedActors)
+	for (AActor* Actor : AttachedActors)
 	{
-		// 2. Instead of checking for a specific "Wisp" class, 
-		// we ask if the attached actor implements our Sovereign Interface
-		if (Attached && Attached->Implements<UInteractionInterface>())
+		// Does this attached thing (the Wisp) speak the Sovereign language?
+		if (Actor && Actor->Implements<UInteractionInterface>())
 		{
-			// 3. We call the interface function we just made. 
-			// If it returns true, we've found our Soul/Wisp!
-			if (IInteractionInterface::Execute_IsSpiritEntity(Attached))
+			// We ask the actor: "Are you a Spirit/Soul?"
+			// You should define this in your Wisp's .cpp to return 'true'.
+			if (IInteractionInterface::Execute_IsSpiritEntity(Actor))
 			{
-				return Attached;
+				return Actor;
 			}
+		}
+	}
+
+	// FALLBACK: If the deep search failed, check specifically for the Wisp class
+	// (This requires #include "SovereignPlayerWisp.h")
+	for (AActor* Actor : AttachedActors)
+	{
+		if (Actor && Actor->IsA(ASovereignPlayerWisp::StaticClass()))
+		{
+			return Actor;
 		}
 	}
 	return nullptr;

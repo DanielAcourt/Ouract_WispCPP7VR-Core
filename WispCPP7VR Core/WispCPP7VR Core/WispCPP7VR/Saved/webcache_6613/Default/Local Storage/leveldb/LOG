@@ -1,3 +1,14 @@
-2026/01/29-10:40:28.659 1484 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
-2026/01/29-10:40:28.662 1484 Recovering log #8
-2026/01/29-10:40:28.663 1484 Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000008.log 
+2026/01/29-12:29:33.987 4f94 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
+2026/01/29-12:29:33.990 4f94 Recovering log #13
+2026/01/29-12:29:33.991 4f94 Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000013.log 
+2026/01/29-12:30:42.599 768c Level-0 table #17: started
+2026/01/29-12:30:42.603 768c Level-0 table #17: 68710 bytes OK
+2026/01/29-12:30:42.604 768c Delete type=0 #13
+2026/01/29-12:30:42.605 768c Compacting 4@0 + 0@1 files
+2026/01/29-12:30:42.608 768c Generated table #18@0: 4 keys, 9327 bytes
+2026/01/29-12:30:42.608 768c Compacted 4@0 + 0@1 files => 9327 bytes
+2026/01/29-12:30:42.608 768c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/01/29-12:30:42.609 768c Delete type=2 #7
+2026/01/29-12:30:42.609 768c Delete type=2 #11
+2026/01/29-12:30:42.609 768c Delete type=2 #14
+2026/01/29-12:30:42.609 768c Delete type=2 #17

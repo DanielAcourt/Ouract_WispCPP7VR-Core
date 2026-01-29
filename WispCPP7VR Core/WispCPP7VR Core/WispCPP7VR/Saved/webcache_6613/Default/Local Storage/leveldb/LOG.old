@@ -1,5 +1,3 @@
-2026/01/29-10:25:51.927 dbc Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
-2026/01/29-10:25:51.930 dbc Recovering log #4
-2026/01/29-10:25:51.931 dbc Level-0 table #7: started
-2026/01/29-10:25:51.934 dbc Level-0 table #7: 66973 bytes OK
-2026/01/29-10:25:51.937 dbc Delete type=0 #4
+2026/01/29-12:27:46.838 78e4 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
+2026/01/29-12:27:46.842 78e4 Recovering log #13
+2026/01/29-12:27:46.844 78e4 Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000013.log 

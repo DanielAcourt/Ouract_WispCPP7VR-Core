@@ -17,6 +17,7 @@
 class USovereignElementComponent;
 class USovereignControllerComponent;
 class USovereignAttributeComponent;
+class ASovereignPlayerWisp;
 class USovereignQiComponent; // Added this
 class AController; // <--- MUST ADD THIS FOR POSSESSION
 
@@ -43,14 +44,12 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
 	FOnActorSensed OnActorSensed;
 
+	//Ideally we want a bool stored on the wisp to know if it is possessing anything
+	bool IsPossessing();
+
 	// --- IInteractionInterface Implementation ---
 	// This is the "Universal Handshake" your Wisp uses.
 	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
-
-	/** Primary logic for growth/evolution.
-	 * Making it virtual allows children like the Wisp to override it.
-	 */
-	virtual void Evolve();
 
 	/** Since we are an IInteractionInterface, we can implement these standard functions here too */
 	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
@@ -59,6 +58,12 @@ public:
 	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
 	virtual AActor* GetInhabitingSpirit_Implementation() override;
 
+
+
+	/** Primary logic for growth/evolution.
+	 * Making it virtual allows children like the Wisp to override it.
+	 */
+	virtual void Evolve();
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -101,6 +106,8 @@ protected:
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
+
+
 
 	/** The master movement logic for all Sovereign entities */
 	// --- Movement Logic ---
