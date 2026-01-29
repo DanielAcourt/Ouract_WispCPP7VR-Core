@@ -56,6 +56,9 @@ public:
 	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
 
+	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
+	virtual AActor* GetInhabitingSpirit_Implementation() override;
+
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
 

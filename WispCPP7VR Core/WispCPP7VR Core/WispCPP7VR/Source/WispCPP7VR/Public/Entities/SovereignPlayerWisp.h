@@ -46,6 +46,10 @@ public:
 	// --- Wisp Logic ---
 	void AttemptPossession();
 
+	/** Pops the Wisp out of the current host */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
+	void EjectFromHost();
+
 	/** Visuals for the Wisp - Declared ONLY ONCE now */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Vfx")
 	UNiagaraComponent* SpiritEffect;
@@ -74,6 +78,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
 	float QiDrainRate = 0.1f;
+
+	/** The Input Action for Ejecting */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Input")
+	class UInputAction* EjectAction;
 
 
 private:

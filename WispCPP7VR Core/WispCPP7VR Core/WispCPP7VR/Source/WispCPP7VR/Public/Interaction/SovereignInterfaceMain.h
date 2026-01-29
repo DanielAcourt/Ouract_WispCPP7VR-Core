@@ -76,6 +76,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	USceneComponent* GetPossessionAttachmentComponent();
 
+	// Inside IInteractionInterface.h
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	AActor* GetInhabitingSpirit();
+
+	// Inside IInteractionInterface.h
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	bool IsSpiritEntity();
+
 
 };
 

@@ -80,6 +80,8 @@ void ASovereignBaseCharacter::UnPossessed()
 	Super::UnPossessed();
 }
 
+
+//Why are we doing this?
 USceneComponent* ASovereignBaseCharacter::GetPossessionAttachmentComponent_Implementation()
 {
 	return GetMesh();
@@ -100,6 +102,7 @@ void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	}
 }
 
+//How to move and look as a input controller not an AI instruction!!!
 void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 {
 	if (!Controller) return;
@@ -159,6 +162,8 @@ void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+//INTERACTION
+
 void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 {
 	// 1. FORCE LOG (Visible on screen regardless of BP)
@@ -182,6 +187,8 @@ void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
 	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Character %s"),	Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
 }
 
+//Sensing ANother Actor
+
 AActor* ASovereignBaseCharacter::GetSensedActor()
 {
 	if (!Controller) return nullptr;
@@ -199,7 +206,7 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	Params.AddIgnoredActor(this);
 
 	// Perform the thick raycast (Sphere Trace)
-	bool bHit = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity,ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params
+	bool bHit = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params
 	);
 
 	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
@@ -208,7 +215,7 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	if (HitActor)
 	{
 		// 1. Logs to the Output Log (Window -> Output Log)
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"),*HitActor->GetName(), *Hit.Location.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"), *HitActor->GetName(), *Hit.Location.ToString());
 
 		// 2. Fires the Blueprint Event
 		OnActorSensed.Broadcast(HitActor);
@@ -227,6 +234,33 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	return HitActor;
 }
 
+//It compilies i am confused with this
+AActor* ASovereignBaseCharacter::GetInhabitingSpirit_Implementation()
+{
+	// 1. Get everything stuck to this character (Wisp, items, etc.)
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors);
+
+	for (AActor* Attached : AttachedActors)
+	{
+		// 2. Instead of checking for a specific "Wisp" class, 
+		// we ask if the attached actor implements our Sovereign Interface
+		if (Attached && Attached->Implements<UInteractionInterface>())
+		{
+			// 3. We call the interface function we just made. 
+			// If it returns true, we've found our Soul/Wisp!
+			if (IInteractionInterface::Execute_IsSpiritEntity(Attached))
+			{
+				return Attached;
+			}
+		}
+	}
+	return nullptr;
+}
+
+
+//BE CAREFUL USING TICKS//
+//THERE ARE LOTS OF CHARACTERS IN A SCENE SO IF WE USE TOO MANY WE ARE BUGGARED CPU WISE
 void ASovereignBaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -234,9 +268,26 @@ void ASovereignBaseCharacter::Tick(float DeltaTime)
 	// Call this every frame so the Blueprint Event and Log fire constantly
 	GetSensedActor();
 }
+/*
+
+Ideally what we want for the base character is that it has a gate somehow so it doesnt do this tick unless it in controlled by the player or
+
+it make a request
+
+
+void ASovereignBaseCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Only perform the expensive sphere trace if a Human Player is currently controlling this body
+	if (IsLocallyControlled() && IsPlayerController())
+	{
+		GetSensedActor();
+	}
+}*/
+
 
 // Leveling up or evolving both in stats and visuals
-
 void ASovereignBaseCharacter::Evolve()
 {
 	// Base character evolution logic (e.g., check for enough Qi)

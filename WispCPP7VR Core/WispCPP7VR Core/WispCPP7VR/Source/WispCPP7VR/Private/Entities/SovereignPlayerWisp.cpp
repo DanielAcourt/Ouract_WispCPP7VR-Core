@@ -5,7 +5,10 @@
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignQiComponent.h"
 
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
 #include "Components/CapsuleComponent.h"
 
 #include "Kismet/KismetSystemLibrary.h" // <--- CRITICAL FOR THE TRACE
@@ -22,6 +25,7 @@
 #include "NiagaraComponent.h"
 #include "DrawDebugHelpers.h"
 
+//Default Starting Logic
 ASovereignPlayerWisp::ASovereignPlayerWisp()
 {
 	// Force the Movement Component to link to your Capsule
@@ -74,17 +78,29 @@ void ASovereignPlayerWisp::BeginPlay()
 		QiComponent->CurrentQi = 500.0f;
 		QiComponent->QiPurity = 0.8f; // Very pure by default
 	}
+
+	// This makes the Wisp an 'active listener' even when it's just an attached child
+	EnableInput(GetWorld()->GetFirstPlayerController());
 }
 
 void ASovereignPlayerWisp::ConfigureSpiritPhysics()
 {
+	// Ensure the capsule is physically active but ghostly
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
+	// SPIRIT RULES: Pass through characters/items, but stop at walls/floors
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
-	// No Gravity for the Soul
-	GetCharacterMovement()->GravityScale = 0.0f;
+	// The Soul is weightless
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->GravityScale = 0.0f;
+		// Ensure flying mode is active so we don't just 'fall' slowly
+		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+	}
 }
+
 
 void ASovereignPlayerWisp::Tick(float DeltaTime)
 {
@@ -117,6 +133,7 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 	}
 }
 
+
 FVector ASovereignPlayerWisp::GetSpiritForwardVector() const
 {
 	// Priority 1: Use Control Rotation (Player's Eyes/Headset)
@@ -129,6 +146,7 @@ FVector ASovereignPlayerWisp::GetSpiritForwardVector() const
 	return GetActorForwardVector();
 }
 
+//Sensing Logic
 void ASovereignPlayerWisp::TogglAutoSensing(bool bNewState)
 {
 	bIsAutoSensingEnabled = bNewState;
@@ -148,7 +166,6 @@ void ASovereignPlayerWisp::TogglAutoSensing(bool bNewState)
 	// Feedback for the player
 	UE_LOG(LogTemp, Log, TEXT("Wisp Auto-Sensing: %s"), bNewState ? TEXT("ACTIVE") : TEXT("OFF"));
 }
-
 void ASovereignPlayerWisp::UpdateSensingLoop()
 {
 	if (!GetWorld()) return;
@@ -170,7 +187,6 @@ void ASovereignPlayerWisp::UpdateSensingLoop()
 		}
 	}
 }
-
 /*
 void ASovereignPlayerWisp::PerformAutoSensing()
 {
@@ -195,53 +211,57 @@ void ASovereignPlayerWisp::PerformAutoSensing()
 }
 */
 
+
 void ASovereignPlayerWisp::AttemptPossession()
 {
-	// 1. Setup the Trace parameters for EVERYTHING Sovereign
+	// --- SOVEREIGN CHECK: THE TOGGLE LOGIC ---
+	// If the Wisp already has an 'AttachParentActor', it means we are currently 
+	// inhabiting a host. In this state, the button press acts as an 'Eject' command.
+	if (GetRootComponent()->GetAttachParentActor())
+	{
+		UE_LOG(LogTemp, Log, TEXT("Wisp detected active possession. Initiating Eject."));
+		EjectFromHost();
+		return;
+	}
+
+	// --- STEP 1: TARGETING ---
+	// We trace from the Spirit's 'Third Eye' (Control Rotation) rather than actor forward.
 	FVector Start = GetActorLocation();
-
-
-	// Use our new helper function!
 	FVector ViewDir = GetSpiritForwardVector();
 	FVector End = Start + (ViewDir * InteractionDistance);
 
-	//Create A List fo object we can hit
+	// Define which object types the Soul can perceive.
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));		  // Characters/Animals
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)); // Rocks/Plants/Interactables
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));         // Biological Vessels (Erisis/Animals)
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)); // Material Vessels (Rocks/Plants)
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 	FHitResult OutHit;
 
-	// Perform the Trace with a 5-second debug duration
+	// Sphere Trace provides a 'forgiving' volume for possession compared to a thin line.
 	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(),
-		Start,
-		End,
-		PossessionTraceRadius,
-		ObjectTypes,
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration, // This will now show a clear red/green tube
-		OutHit,
-		true,
-		FLinearColor::Red,
-		FLinearColor::Green,
-		5.0f
+		GetWorld(), Start, End, PossessionTraceRadius, ObjectTypes, false,
+		ActorsToIgnore, EDrawDebugTrace::ForDuration, OutHit, true,
+		FLinearColor::Red, FLinearColor::Green, 2.0f
 	);
 
+	// --- STEP 2: VALIDATION ---
 	if (bHit && OutHit.GetActor())
 	{
 		AActor* HitActor = OutHit.GetActor();
+
+		// Check if the target speaks the Sovereign Language (Interface)
 		if (HitActor->Implements<UInteractionInterface>())
 		{
+			// Check if the target's Soul is open for entry.
 			if (IInteractionInterface::Execute_CanBePossessed(HitActor))
 			{
-				IInteractionInterface::Execute_RequestPossession(HitActor, GetController());
+				// Cache the controller before we start the handover.
+				APlayerController* PC = Cast<APlayerController>(GetController());
 
-				// 2. Physical Snap
-				// We attach to the "Soul_Socket". If it doesn't exist, it defaults to the root.
+				// --- STEP 3: PHYSICAL ATTACHMENT ---
+				// Snap the Wisp to the designated 'Soul_Socket' on the host.
 				if (USceneComponent* AttachmentComponent = IInteractionInterface::Execute_GetPossessionAttachmentComponent(HitActor))
 				{
 					this->AttachToComponent(AttachmentComponent,
@@ -249,23 +269,77 @@ void ASovereignPlayerWisp::AttemptPossession()
 						FName("Soul_Socket"));
 				}
 
-				// 3. Spirit State
+				// --- STEP 4: SOUL HANDOVER ---
+				// If the host is a Pawn, the PlayerController migrates into it.
+				if (PC && HitActor->IsA<APawn>())
+				{
+					PC->Possess(Cast<APawn>(HitActor));
+					UE_LOG(LogTemp, Warning, TEXT("Soul migrated to Host: %s"), *HitActor->GetName());
+				}
+
+				// --- STEP 5: SPIRIT STATE MANAGEMENT ---
+				// Hide the Wisp visual but keep Tick active for metabolism/Qi drain.
 				SetActorHiddenInGame(true);
 
-				// This keeps the capsule "alive" for debug drawing but prevents it from blocking movement
+				// Disable physical collision so we don't interfere with the Host's movement,
+				// but keep QueryOnly active so the Wisp remains 'Sensed' by the engine.
 				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 				GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 
-				// Disable Wisp Tick while inside to save performance, 
-				// OR leave it on if you want the "Wisp Drain" to stay active.
 				SetActorTickEnabled(true);
 
-				UE_LOG(LogTemp, Warning, TEXT("Spirit bound to Soul Socket of %s"), *HitActor->GetName());;
+				// Final handshake through the interface
+				IInteractionInterface::Execute_RequestPossession(HitActor, PC);
 			}
 		}
 	}
 }
+//Inital thought by Dan "Need a way to unpossess if i am currently posessing something"
+//We need a way to possess and control that possessed object.
+//We need a way to unposess by pressing F aka the pocesskey
 
+void ASovereignPlayerWisp::EjectFromHost()
+{
+	if (AActor* MyHost = GetRootComponent()->GetAttachParentActor())
+	{
+		// 1. IDENTIFY THE VESSEL
+		APawn* HostPawn = Cast<APawn>(MyHost);
+
+		// 2. The Great Detachment
+		// KeepWorldTransform prevents the Wisp from snapping to a weird offset
+		DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+		// 3. Restore Physicality
+		SetActorHiddenInGame(false);
+
+		// Apply your specific Spirit Physics (Weightless, Ghostly Collision)
+		// Move the Player's 'Will' from the Vessel back to the Soul
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		// 4. Controller Handover
+		// Move the Player's 'Will' from the Vessel back to the Soul
+		if (HostPawn && HostPawn->GetController())
+		{
+			APlayerController* PC = Cast<APlayerController>(HostPawn->GetController());
+			if (PC)
+			{
+				PC->Possess(this);
+
+				// Optional: Give the Wisp a small 'Bup' upwards so it's not stuck in the host's head
+				//Maybe this can be a location we difine like the face or hat extra (3rd person camera location etc)
+
+				AddActorWorldOffset(FVector(0, 0, 50.0f));
+
+				UE_LOG(LogTemp, Warning, TEXT("Soul has exited the vessel: %s"), *MyHost->GetName());
+			}
+		}
+
+		// 5. METABOLISM
+		SetActorTickEnabled(true);
+	}
+}
+
+//Evolving and leveling logic
 void ASovereignPlayerWisp::Evolve()
 {
 	// Call the parent Evolve first (if it has logic)
@@ -275,22 +349,42 @@ void ASovereignPlayerWisp::Evolve()
 	UE_LOG(LogTemp, Warning, TEXT("The Player Spirit is evolving to a higher density!"));
 }
 
+//make sure we have the ability to recieve input
 void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// 1. THIS IS THE KEY: Call the Base version first!
-	// This binds Move, Look, and the Base Interact automatically.
+	// 1. ARCHITECT FOUNDATION: Call the Base version.
+	// This ensures the SovereignBaseCharacter handles movement (WASD/Thumbstick) 
+	// and basic interaction logic before we add Wisp-specific soul powers.
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// 2. Now add Wisp-specific bindings if you have any (like AttemptPossession)
+	// 2. CAST TO ENHANCED INPUT: 
+	// We cast the generic UInputComponent to UEnhancedInputComponent to use the modern input system.
+	// CastChecked will cause a crash (assertion) if the project isn't set up for Enhanced Input, 
+	// which is exactly what we want for debugging.
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		// --- SOUL ABILITY: POSSESSION ---
+		// Triggered: Executes as long as the button is held or the condition is met.
+		// This fires the Sphere Trace to find a host like Erisis or a Rock.
 		if (PossessAction)
 		{
 			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
 		}
+
+		// --- SOUL ABILITY: EJECT ---
+		// Started: Only fires ONCE when the button is first pressed.
+		// This prevents the Wisp from "glitching" out and back into the host in the same frame.
+		if (EjectAction)
+		{
+			EIC->BindAction(EjectAction, ETriggerEvent::Started, this, &ASovereignPlayerWisp::EjectFromHost);
+		}
+
+		// Note: All bindings using 'EIC' must stay inside these brackets!
 	}
 }
 
+
+// Interaction Logic:
 void ASovereignPlayerWisp::Interact(const FInputActionValue& Value)
 {
 	// 1. ARCHITECT TRUTH: Always respect the inheritance chain.
