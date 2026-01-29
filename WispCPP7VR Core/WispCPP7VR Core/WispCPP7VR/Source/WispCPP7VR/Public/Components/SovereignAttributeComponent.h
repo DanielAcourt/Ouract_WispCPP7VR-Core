@@ -23,10 +23,10 @@ public:
 	// Sets default values for this component's properties
 	USovereignAttributeComponent();
 
-	// --- 1. CORE D&D ATTRIBUTES (Vessel Hardware) ---
+	// --- 1. CORE ATTRIBUTES HOMEBREW DND with a twist (Vessel Hardware) ---
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Core Attributes")
-	int32 Strength;
+	int32 Strength;// Represents the physical strength of an object
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Core Attributes")
 	int32 Dexterity;
@@ -49,7 +49,7 @@ public:
 
 	/** Affects RNG rolls and minor environmental chances */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Core Attributes")
-	int32 Luck;
+	int32 Luck; // Represents its ability to affect luckiy things in this game
 
 	/** Derived from Dexterity and Equipment */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Core Attributes")

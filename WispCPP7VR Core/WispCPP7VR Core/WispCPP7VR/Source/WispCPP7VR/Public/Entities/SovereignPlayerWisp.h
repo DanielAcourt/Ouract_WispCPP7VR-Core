@@ -30,6 +30,15 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//User Settings
+	//Trigger Automatic Raycast
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Senses")
+	bool bIsAutoSensingEnabled = true;
+
+	/** Function to flip the switch */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
+	void TogglAutoSensing(bool bNewState);
+
 	// --- Wisp Logic ---
 	/** Declaring Evolve here fixes Error C2509 */
 	virtual void Evolve() override;
@@ -40,6 +49,13 @@ public:
 	/** Visuals for the Wisp - Declared ONLY ONCE now */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Vfx")
 	UNiagaraComponent* SpiritEffect;
+
+	FTimerHandle SensingTimerHandle;
+	void UpdateSensingLoop();
+
+	/** Returns the direction the Spirit is currently 'focusing' */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
+	FVector GetSpiritForwardVector() const;
 
 protected:
 	/** * INTERACTION LOGIC
@@ -58,6 +74,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
 	float QiDrainRate = 0.1f;
+
 
 private:
 	/** Ghostly physics settings */

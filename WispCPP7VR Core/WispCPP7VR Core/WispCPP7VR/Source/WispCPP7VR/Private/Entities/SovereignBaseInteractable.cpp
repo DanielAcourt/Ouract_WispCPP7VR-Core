@@ -70,7 +70,6 @@ bool ASovereignBaseInteractable::CanInteract_Implementation(AActor* Interactor)
 {
     return bIsInteractable && IsValid(Interactor);
 }
-
 void ASovereignBaseInteractable::OnInteract_Implementation(AActor* Interactor)
 {
     // 1. Core Safety Check
@@ -100,22 +99,20 @@ void ASovereignBaseInteractable::OnInteract_Implementation(AActor* Interactor)
 
     UE_LOG(LogTemp, Log, TEXT("%s"), *DebugMessage);
 }
-
 void ASovereignBaseInteractable::OnBeginHover_Implementation()
 {
     // Optional: highlight, sound cue, UI prompt
 }
-
 void ASovereignBaseInteractable::OnEndHover_Implementation()
 {
     // Optional: remove highlight, stop sound
 }
 
+//Interable Name
 FText ASovereignBaseInteractable::GetInteractableName_Implementation()
 {
     return FText::FromString(TEXT("Interactable Object"));
 }
-
 FString ASovereignBaseInteractable::GetInteractionHint_Implementation()
 {
     return TEXT("Interact");
@@ -126,12 +123,12 @@ void ASovereignBaseInteractable::OnSecondaryInteract_Implementation(AActor* Inte
     // Optional secondary action (long press, grip, etc.)
 }
 
+//Possession Functions
 bool ASovereignBaseInteractable::CanBePossessed_Implementation()
 {
     // Note: bCanBePossessed is a protected variable inherited from ASovereignBaseEntity
     return bCanBePossessed;
 }
-
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
     // 1. Cast the controller to a PlayerController
@@ -154,7 +151,6 @@ void ASovereignBaseInteractable::RequestPossession_Implementation(AController* R
         }
     }
 }
-
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {
     return BaseMesh;

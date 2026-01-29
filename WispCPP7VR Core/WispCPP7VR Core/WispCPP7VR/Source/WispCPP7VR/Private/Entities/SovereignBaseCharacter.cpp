@@ -7,7 +7,7 @@
 #include "Components/SovereignElementComponent.h"
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignControllerComponent.h"
-#include "Components/SovereignQiComponent.h" // 
+#include "Components/SovereignQiComponent.h"
 
 //Entinty framework to save information
 #include "Entities/SovereignSaveableEntityComponent.h"
@@ -33,7 +33,6 @@ ASovereignBaseCharacter::ASovereignBaseCharacter()
 	// 2. CONFIGURE CHARACTER DEFAULTS
 	bUseControllerRotationYaw = false;
 }
-
 void ASovereignBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -50,7 +49,7 @@ void ASovereignBaseCharacter::BeginPlay()
 					// Clear existing to prevent double-mapping, then add
 					Subsystem->RemoveMappingContext(DefaultMappingContext);
 					Subsystem->AddMappingContext(DefaultMappingContext, 0);
-					UE_LOG(LogTemp, Log, TEXT("Sovereign: [%s] Input Mapping Context Active."), *GetName());
+					//UE_LOG(LogTemp, Log, TEXT("Sovereign: [%s] Input Mapping Context Active."), *GetName());
 				}
 			}
 		}
@@ -108,15 +107,14 @@ void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 	// 1. Get the Raw Input (-1.0 to 1.0 for each axis)
 	const FVector Input = Value.Get<FVector>();
 
-	// 2. DEBUG FEEDBACK (The Truth Teller)
-	if (GEngine)
+	// 2. DEBUG FEEDBACK (The Truth Teller for movement input)
+	/*	if (GEngine)
 	{
 		// This prints the raw numbers from your IMC to the screen
-		FString DebugMsg = FString::Printf(TEXT("Input -> Forward/Back(Y): %.2f | Right/Left(X): %.2f | Up/Down(Z): %.2f"),
-			Input.Y, Input.X, Input.Z);
-
-		GEngine->AddOnScreenDebugMessage(1, 0.1f, FColor::Yellow, DebugMsg);
+		//FString DebugMsg = FString::Printf(TEXT("Input -> Forward/Back(Y): %.2f | Right/Left(X): %.2f | Up/Down(Z): %.2f"),Input.Y, Input.X, Input.Z);
+		//GEngine->AddOnScreenDebugMessage(1, 0.1f, FColor::Yellow, DebugMsg);
 	}
+	*/
 
 	// 3. Get Camera Directions
 	const FRotator Rotation = Controller->GetControlRotation();
@@ -125,8 +123,8 @@ void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 	const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 	// 4. The Movement Logic
-	// Distance = speed. If 15 is too slow, bump it to 30 or 50.
-	const float Distance = 15.0f;
+	// Distance = speed. If 5 is very slow ,15 normal too slow, bump it to 30 for fast or 50 for medium.
+	const float Distance = 5.0f;
 
 	FVector MoveDelta = (Forward * Input.Y * Distance) +
 		(Right * Input.X * Distance) +
@@ -164,26 +162,24 @@ void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 {
 	// 1. FORCE LOG (Visible on screen regardless of BP)
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("SYSTEM: E KEY PRESSED"));
+	//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("SYSTEM: E KEY PRESSED"));
 
 	AActor* Target = GetSensedActor();
 
 	if (Target)
 	{
 		// 2. FORCE LOG TARGET
-		  if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
-			FString::Printf(TEXT("SYSTEM: HIT ACTOR -> %s"), *Target->GetName()));
-
+		  if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,FString::Printf(TEXT("SYSTEM: HIT ACTOR -> %s"), *Target->GetName()));
+			
 		  // 3. BROADCAST TO BLUEPRINT this sint working as intended also does it in the get sense function too
-		//OnActorSensed.Broadcast(Target);
+		OnActorSensed.Broadcast(Target);
 	}
 }
 void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
 {
 	// For now, we can just log that a character-based entity was touched.
 	// In the future, Erisis might say "Hello" here.
-	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Character %s"),
-		Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
+	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Character %s"),	Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
 }
 
 AActor* ASovereignBaseCharacter::GetSensedActor()
@@ -203,9 +199,7 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	Params.AddIgnoredActor(this);
 
 	// Perform the thick raycast (Sphere Trace)
-	bool bHit = GetWorld()->SweepSingleByChannel(
-		Hit, Start, End, FQuat::Identity,
-		ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params
+	bool bHit = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity,ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params
 	);
 
 	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
@@ -214,20 +208,19 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	if (HitActor)
 	{
 		// 1. Logs to the Output Log (Window -> Output Log)
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"),
-			*HitActor->GetName(), *Hit.Location.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"),*HitActor->GetName(), *Hit.Location.ToString());
 
 		// 2. Fires the Blueprint Event
 		OnActorSensed.Broadcast(HitActor);
 	}
 
 #if !UE_BUILD_SHIPPING
-	DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 1.0f, 0, 1.0f);
+	//DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 1.0f, 0, 1.0f);
 
 	if (bHit)
 	{
 		// Draw a solid sphere where the hit actually occurred
-		DrawDebugSphere(GetWorld(), Hit.Location, Radius, 12, FColor::Green, false, 1.0f);
+		//DrawDebugSphere(GetWorld(), Hit.Location, Radius, 12, FColor::Green, false, 1.0f);
 	}
 #endif
 

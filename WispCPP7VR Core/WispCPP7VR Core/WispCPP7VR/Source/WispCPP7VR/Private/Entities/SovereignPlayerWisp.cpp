@@ -6,8 +6,6 @@
 #include "Components/SovereignQiComponent.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
-
-
 #include "Components/CapsuleComponent.h"
 
 #include "Kismet/KismetSystemLibrary.h" // <--- CRITICAL FOR THE TRACE
@@ -80,14 +78,7 @@ void ASovereignPlayerWisp::BeginPlay()
 
 void ASovereignPlayerWisp::ConfigureSpiritPhysics()
 {
-	// Don't use ECR_Ignore; use ECR_Overlap
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Overlap);
 
-	// Block only the world so you don't fly through mountains
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-
-	// Allow the wisp to pass through most things, but stay within world bounds
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
@@ -99,18 +90,121 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Special Wisp Drain: Being in the world costs a tiny bit of Qi every second
+	// 1. PERSISTENT SOUL VISUALIZATION
+	// If we are attached to something, we are "Possessing" it.
+	if (GetRootComponent()->GetAttachParent())
+	{
+		// Draw a cyan "Soul Capsule" to show where the Wisp is sitting
+		DrawDebugCapsule(
+			GetWorld(),
+			GetActorLocation(),
+			GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),
+			GetCapsuleComponent()->GetScaledCapsuleRadius(),
+			GetActorQuat(),
+			FColor::Cyan,
+			false,   // Persistent? No, we draw it every frame
+			-1.0f,   // LifeTime ( -1 = 1 frame)
+			0,       // Depth priority
+			1.5f     // Thickness
+		);
+	}
+
+	// 2. METABOLISM (Existing Qi Drain)
 	if (QiComponent)
 	{
-		QiComponent->SpendQi(QiDrainRate * DeltaTime);
+		float CurrentDrain = (GetRootComponent()->GetAttachParent()) ? (QiDrainRate * 0.5f) : QiDrainRate;
+		QiComponent->SpendQi(CurrentDrain * DeltaTime);
 	}
 }
+
+FVector ASovereignPlayerWisp::GetSpiritForwardVector() const
+{
+	// Priority 1: Use Control Rotation (Player's Eyes/Headset)
+	if (GetController())
+	{
+		return GetControlRotation().Vector();
+	}
+
+	// Fallback: Use the Actor's physical forward if no controller is found
+	return GetActorForwardVector();
+}
+
+void ASovereignPlayerWisp::TogglAutoSensing(bool bNewState)
+{
+	bIsAutoSensingEnabled = bNewState;
+
+	if (bIsAutoSensingEnabled)
+	{
+		// 1.0f = The loop runs exactly once every second.
+				// true = It will keep repeating.
+		GetWorldTimerManager().SetTimer(SensingTimerHandle, this, &ASovereignPlayerWisp::UpdateSensingLoop, 2.0f, true);
+	}
+	else
+	{
+		// Stop the loop and the drawing
+		GetWorldTimerManager().ClearTimer(SensingTimerHandle);
+	}
+
+	// Feedback for the player
+	UE_LOG(LogTemp, Log, TEXT("Wisp Auto-Sensing: %s"), bNewState ? TEXT("ACTIVE") : TEXT("OFF"));
+}
+
+void ASovereignPlayerWisp::UpdateSensingLoop()
+{
+	if (!GetWorld()) return;
+
+	FVector Start = GetActorLocation();
+	FVector End = Start + (GetControlRotation().Vector() * InteractionDistance);
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	AActor* CurrentActor = nullptr;
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params)) //LR ECC_Camera Or ECC Pawn
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && HitActor->Implements<UInteractionInterface>())
+		{
+			CurrentActor = HitActor;
+		}
+	}
+}
+
+/*
+void ASovereignPlayerWisp::PerformAutoSensing()
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start + (GetControlRotation().Vector() * InteractionDistance);
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && HitActor->Implements<UInteractionInterface>())
+		{
+			// Tell the object it is being looked at (for UI/Glow effects)
+			IInteractionInterface::Execute_OnBeginHover(HitActor);
+
+			// Draw a small "focus" point
+			DrawDebugPoint(GetWorld(), Hit.ImpactPoint, 10.f, FColor::Cyan, false, 0.1f);
+		}
+	}
+}
+*/
 
 void ASovereignPlayerWisp::AttemptPossession()
 {
 	// 1. Setup the Trace parameters for EVERYTHING Sovereign
 	FVector Start = GetActorLocation();
-	FVector End = Start + (GetActorForwardVector() * InteractionDistance);
+
+
+	// Use our new helper function!
+	FVector ViewDir = GetSpiritForwardVector();
+	FVector End = Start + (ViewDir * InteractionDistance);
+
 	//Create A List fo object we can hit
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));		  // Characters/Animals
@@ -120,10 +214,21 @@ void ASovereignPlayerWisp::AttemptPossession()
 	ActorsToIgnore.Add(this);
 	FHitResult OutHit;
 
-	// 2. Perform the Trace
+	// Perform the Trace with a 5-second debug duration
 	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(), Start, End, PossessionTraceRadius, ObjectTypes, false,
-		ActorsToIgnore, EDrawDebugTrace::ForDuration, OutHit, true
+		GetWorld(),
+		Start,
+		End,
+		PossessionTraceRadius,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration, // This will now show a clear red/green tube
+		OutHit,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		5.0f
 	);
 
 	if (bHit && OutHit.GetActor())
@@ -146,7 +251,10 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 				// 3. Spirit State
 				SetActorHiddenInGame(true);
-				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+				// This keeps the capsule "alive" for debug drawing but prevents it from blocking movement
+				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 
 				// Disable Wisp Tick while inside to save performance, 
 				// OR leave it on if you want the "Wisp Drain" to stay active.

@@ -78,6 +78,7 @@ public:
     //Ideally we need this maturity progress and current state to determine an object age deterministically
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
     float MaturityProgress = 0.0f;
+
     //How quickly it ages based on a tick
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
     float MaturityRate = 0.01f;
@@ -86,13 +87,14 @@ public:
     void ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount);
 
     /** --- 5. DYNAMIC DNA (Meta Tags) --- */
-
     UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
     TMap<FString, FString> GetUnknownMetaTags() const;
 
     UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
     void ApplyMetaTags(TMap<FString, FString> LoadedTags);
 
+    //Not sure if worth making a blueprint callable fucntions
+    //UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
     void ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData);
 
 protected:
