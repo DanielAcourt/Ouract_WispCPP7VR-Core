@@ -2,11 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "InteractionInterface.generated.h"
-/*
+#include "SovereignEntityInterface.generated.h"
+
+//Forward Declaration
+class USovereignSaveableEntityComponent;
+//class UStaticMeshComponent;
+
 // 1. The U-Class (The Engine's "Social Security Number" for the interface)
-UINTERFACE(MinimalAPI, Blueprintable)
-class  UInteractionInterface : public UInterface
+//UINTERFACE(MinimalAPI, Blueprintable)
+class  USovereignEntityInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -15,18 +19,41 @@ class  UInteractionInterface : public UInterface
  * 2. The I-Class (The actual Contract/Interface)
  * This is where you define the functions.
  */
-/*
-class WISPCPP7VR_API IInteractionInterface
+
+class WISPCPP7VR_API ISovereignEntityInterface
 {
 	GENERATED_BODY()
 
 public:
-	/** * The Master Interaction Command.
-	 * BlueprintNativeEvent allows C++ to handle the logic (Metabolical)
-	 * while Blueprints handle the visuals (UI/Emitters).
-	 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interaction")
-	void OnInteract(AActor* Interactor);
+
+	/** * Returns the "Sovereign Soul" component.
+		 * This is the 'One Sense of Simulated Truth' for ID and Tags.
+		 */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
+	USovereignSaveableEntityComponent* GetSovereignSoul() const;
+
+	/** * Universal Interaction Command.
+	 * Replaces the old InteractionInterface logic.
+	 */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
+	void OnSovereignInteract(AActor* Interactor);
+
+	/** * Handshake for Possession.
+	 * Allows the Wisp to 'inhabit' any AActor that has this interface.
+	 */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
+	void OnWispPossess(AController* WispController);
+
+	/** Handshake for Unpossession. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
+	void OnWispUnpossess();
+
+	//Function For pickup
+
+	//Function For consume?
+
+	//Function for Equip
+
 };
 
 
@@ -77,32 +104,3 @@ The Big Picture for your 2025 System
 Since you are handling unknown tags and a new meta-system, this interface is your "Safe Zone." Even if you create a brand new type of magical plant in six months that the system has never seen before, as long as that plant has this interface, your player will be able to touch it and trigger logic immediately.
 */
 
-/*// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
-
-#include "CoreMinimal.h"
-#include "UObject/Interface.h"
-
-// 1. The UINTERFACE (For Unreal's internal engine use)
-UINTERFACE(MinimalAPI, Blueprintable)
-class WISPCPP7VR_API UInteractionInterface : public UInterface
-{
-	GENERATED_BODY()
-};
-
-/**
- * 2. The IInterface (The "Contract" your Actors will actually use)
- 
-class WISPCPP7VR_API IInteractionInterface
-{
-	GENERATED_BODY()
-
-public:
-	/** * This is the main function.
-	 * Using BlueprintNativeEvent means C++ does the "work"
-	 * and Blueprints can do the "visuals/juice".
-	 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interaction")
-	void OnInteract(AActor* Interactor);
-}; */

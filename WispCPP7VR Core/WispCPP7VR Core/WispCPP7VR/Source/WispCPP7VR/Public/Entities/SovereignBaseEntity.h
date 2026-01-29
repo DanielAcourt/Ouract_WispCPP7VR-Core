@@ -8,6 +8,8 @@
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
 #include "GameplayTagContainer.h" //Lets us read Gameplay tags
 #include "GameplayTagAssetInterface.h" 
+//#include "Interaction/SovereignEntityInterface.h"
+//#include "Interaction/SovereignEntityInterface.h" // Add the Universal Interface
 #include "SovereignBaseEntity.generated.h" //Must be last
 
 // Forward declarations to keep compile times fast

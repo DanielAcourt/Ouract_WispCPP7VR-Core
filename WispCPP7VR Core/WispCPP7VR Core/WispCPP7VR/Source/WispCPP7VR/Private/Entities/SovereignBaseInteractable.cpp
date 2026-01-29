@@ -22,29 +22,46 @@ ASovereignBaseInteractable (Your Physical Layer):
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseCharacter.h"
 
-// The constructor
 ASovereignBaseInteractable::ASovereignBaseInteractable()
 {
+    // 1. Performance: Rocks don't need to tick. 
+    // If they grow, the Soul Component's timer handles it, not the Actor's tick.
     PrimaryActorTick.bCanEverTick = false;
 
-    // --- THE FIX ---
-    // Instead of creating a new mesh, we just point to the one the parent made.
-    // EntityMesh is inherited from ASovereignBaseEntity.
-    BaseMesh = EntityMesh;
+    // 2. The Clean Pointer Logic:
+    // We don't create a 'BaseMesh'. We simply use the EntityMesh inherited from the parent.
+    // If you need a specific name for Blueprints, use an alias, but stay in C++ reality.
 
-    // Now, anything we do to BaseMesh is actually happening to EntityMesh!
-    if (BaseMesh)
+    if (EntityMesh)
     {
-        // No need for SetupAttachment here because the Parent 
-        // constructor already attached EntityMesh to the Root!
+        // 3. Collision Logic: Optimized for VR and Interaction Traces
+        EntityMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-        BaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        BaseMesh->SetCollisionResponseToAllChannels(ECR_Block);
-        BaseMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-        BaseMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+        // Block everything by default to ensure the Rock feels 'solid'
+        EntityMesh->SetCollisionResponseToAllChannels(ECR_Block);
 
-        // Use the same location offset as the parent
-        BaseMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+        // CRITICAL: Ensure Visibility is blocked so the Wisp's LineTrace hits it.
+        EntityMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+        // 4. Visual Offset: 
+        // Be careful with hardcoded offsets like -90.f. 
+        // For a Rock (AActor), the root is usually at the center. 
+        // Only use -90.f if this is a Character (to account for the capsule).
+        if (IsA<ACharacter>())
+        {
+            EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+        }
+        else
+        {
+            EntityMesh->SetRelativeLocation(FVector::ZeroVector);
+        }
+    }
+
+    // 5. The Soul Handshake:
+    // Ensure the Soul Component is initialized. If it's not in the parent, create it here.
+    if (!SaveDataComponent)
+    {
+        SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
     }
 }
 
