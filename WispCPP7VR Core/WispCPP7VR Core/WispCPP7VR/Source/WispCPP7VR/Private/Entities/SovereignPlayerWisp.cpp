@@ -214,18 +214,22 @@ void ASovereignPlayerWisp::PerformAutoSensing()
 }
 */
 
-
-void ASovereignPlayerWisp::AttemptPossession()
+void ASovereignPlayerWisp::HandlePossessionLifecycle()
 {
 	// --- SOVEREIGN CHECK: THE TOGGLE LOGIC ---
-	// Using our State Variables instead of querying the physics tree for speed.
 	if (bIsPossessing)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Sovereign: Wisp detected active possession. Initiating Eject."));
 		EjectFromHost();
-		return;
 	}
+	else
+	{
+		AttemptPossession();
+	}
+}
 
+void ASovereignPlayerWisp::AttemptPossession()
+{
 	// --- STEP 1: TARGETING ---
 	FVector Start = GetActorLocation();
 	FVector ViewDir = GetSpiritForwardVector();
@@ -293,17 +297,7 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 bool ASovereignPlayerWisp::IsPossessing()
 {
-	// i want this to have a public varible in game so i can see if i am poissing somthing
-	// secondly what GUID i am possessing
-	//A link to that actor i am possessing
-	// A timer of how loong i am possing
-	//What state i am training this possessed creature in.
-
-	// am i taking qi from object or giving?
-	// how much is the qi conversion
-	//is it neutral? I sneutral feasible?
-	
-	return true; // The Wisp identifies as a Spirit
+	return bIsPossessing;
 }
 
 //Inital thought by Dan "Need a way to unpossess if i am currently posessing something"
@@ -377,33 +371,16 @@ void ASovereignPlayerWisp::Evolve()
 void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// 1. ARCHITECT FOUNDATION: Call the Base version.
-	// This ensures the SovereignBaseCharacter handles movement (WASD/Thumbstick) 
-	// and basic interaction logic before we add Wisp-specific soul powers.
+	// This ensures the SovereignBaseCharacter handles movement (WASD/Thumbstick),
+	// contextual interaction ('E'), and the Possession lifecycle ('F').
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// 2. CAST TO ENHANCED INPUT: 
 	// We cast the generic UInputComponent to UEnhancedInputComponent to use the modern input system.
-	// CastChecked will cause a crash (assertion) if the project isn't set up for Enhanced Input, 
-	// which is exactly what we want for debugging.
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// --- SOUL ABILITY: POSSESSION ---
-		// Triggered: Executes as long as the button is held or the condition is met.
-		// This fires the Sphere Trace to find a host like Erisis or a Rock.
-		if (PossessAction)
-		{
-			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
-		}
-
-		// --- SOUL ABILITY: EJECT ---
-		// Started: Only fires ONCE when the F "possession" button is first pressed.
-		// This prevents the Wisp from "glitching" out and back into the host in the same frame.
-		if (EjectAction)
-		{
-			EIC->BindAction(EjectAction, ETriggerEvent::Started, this, &ASovereignPlayerWisp::EjectFromHost);
-		}
-
-		// Note: All bindings using 'EIC' must stay inside these brackets!
+		// Note: All core bindings (Move, Look, Interact, Possess) are now
+		// centralized in ASovereignBaseCharacter for consistent behavior across all entities.
 	}
 }
 

@@ -133,6 +133,12 @@ void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 		{
 			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ASovereignBaseCharacter::Interact);
 		}
+
+		// Handle the Possession lifecycle (F key)
+		if (PossessAction)
+		{
+			EIC->BindAction(PossessAction, ETriggerEvent::Started, this, &ASovereignBaseCharacter::HandlePossessionLifecycle);
+		}
 	}
 }
 
@@ -210,30 +216,9 @@ void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 	// DEBUG: If you don't see this on screen, your Input Binding is broken
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("VESSEL: INTERACT TRIGGERED"));
 
+	// --- SOVEREIGN UPGRADE: E is only for contextual interaction ---
 
-	//v 2.8 (works but shouldnt happen here but in the possession logic.)
-	// 1. THE INTERNAL CHECK (Is there a soul in here?)
-	// We use the interface to check for attached spirits.
-	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
-
-	if (Spirit)
-	{
-		// 2. THE EJECT COMMAND
-		// We cast to the Wisp to trigger its high-level EjectFromHost logic.
-		ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
-		if (Wisp)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
-			Wisp->EjectFromHost();
-
-			// CRITICAL: We return immediately so the player doesn't 
-			// re-sense and re-possess the body in the same frame.
-			return;
-		}
-	}
-
-	// 3. THE EXTERNAL CHECK (Normal world interaction)
-	// If we aren't ejecting, we use our senses to find targets (Evolved Trees, Items, etc.)
+	// THE EXTERNAL CHECK (Normal world interaction)
 	AActor* Target = GetSensedActor();
 	if (Target)
 	{
@@ -250,6 +235,29 @@ void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 		}
 	}
 }
+
+void ASovereignBaseCharacter::HandlePossessionLifecycle()
+{
+	// 1. THE INTERNAL CHECK (Is there a soul in here?)
+	// We use the interface to check for attached spirits.
+	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+
+	if (Spirit)
+	{
+		// 2. THE EJECT COMMAND
+		// We cast to the Wisp to trigger its high-level EjectFromHost logic.
+		ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
+		if (Wisp)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
+			Wisp->EjectFromHost();
+			return;
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is not inhabited by a soul, but 'F' was pressed."), *GetName());
+}
+
 void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
 {
 	// For now, we can just log that a character-based entity was touched.
@@ -285,7 +293,7 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	if (HitActor)
 	{
 		// 1. Logs to the Output Log (Window -> Output Log)
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"), *HitActor->GetName(), *Hit.Location.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("Sovereign Sense: Hit Actor [%s] at Location [%s]"), *HitActor->GetName(), *Hit.Location.ToString());
 
 		// 2. Fires the Blueprint Event
 		OnActorSensed.Broadcast(HitActor);

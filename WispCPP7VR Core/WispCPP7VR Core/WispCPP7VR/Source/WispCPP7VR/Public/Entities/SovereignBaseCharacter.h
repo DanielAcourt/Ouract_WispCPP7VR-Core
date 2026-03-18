@@ -58,6 +58,8 @@ public:
 	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
 	virtual AActor* GetInhabitingSpirit_Implementation() override;
 
+	/** Handles the 'F' key logic: Possession if a Wisp, Ejection if a Vessel */
+	virtual void HandlePossessionLifecycle();
 
 
 	/** Primary logic for growth/evolution.
