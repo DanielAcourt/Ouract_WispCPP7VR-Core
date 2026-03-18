@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Entities/SovereignBaseInteractable.h"
 #include "GameFramework/Character.h" 
+#include "Interaction/SovereignInterfaceMain.h"
+#include "Entities/SovereignBaseInteractable.h"
+
 
 //This means i need a Input SetupPlayerInputComponent
 #include "InputActionValue.h" // For FInputActionValue
@@ -15,8 +17,9 @@
 class USovereignElementComponent;
 class USovereignControllerComponent;
 class USovereignAttributeComponent;
+class ASovereignPlayerWisp;
 class USovereignQiComponent; // Added this
-class AController; // <--- MUST ADD THIS FOR POSSESSION
+class AController ; // <--- MUST ADD THIS FOR POSSESSION
 
 // This creates a custom event node for your Blueprints
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor);
@@ -26,7 +29,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor
  * The 'Master Vessel' for everything from Erisis to Dragons.
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseCharacter : public ASovereignBaseInteractable
+class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IInteractionInterface
 {
 	GENERATED_BODY()
 	
@@ -41,10 +44,39 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
 	FOnActorSensed OnActorSensed;
 
+	//Ideally we want a bool stored on the wisp to know if it is possessing anything
+	bool IsPossessing();
+
+	// --- IInteractionInterface Implementation ---
+	// This is the "Universal Handshake" your Wisp uses.
+	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+
+	/** Since we are an IInteractionInterface, we can implement these standard functions here too */
+	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
+	virtual void OnInteract_Implementation(AActor* Interactor) override;
+
+	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
+	virtual AActor* GetInhabitingSpirit_Implementation() override;
+
+
+
+	/** Primary logic for growth/evolution.
+	 * Making it virtual allows children like the Wisp to override it.
+	 */
+	virtual void Evolve();
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
 
-protected: // Changed from public to protected for better security
+protected: 
+
+
+
+	/** Every Sovereign Entity needs the Soul Hub */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignSaveableEntityComponent* SaveDataComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	bool bCanBePossessed = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
 	USovereignAttributeComponent* AttributeComponent; // Renamed to match Wisp code
@@ -65,7 +97,6 @@ protected: // Changed from public to protected for better security
 
 	/** The main interaction logic triggered by the Input Action */
 	virtual void Interact(const FInputActionValue& Value);
-
 	/** Get the component to attach to */
 	virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
 
@@ -75,6 +106,8 @@ protected:
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
+
+
 
 	/** The master movement logic for all Sovereign entities */
 	// --- Movement Logic ---
@@ -93,9 +126,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* LookAction;
 
+
+	//Handles all Interaction Between 2 entities
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* InteractAction;
 
+	//Checks if player can Possess or i possessing
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* PossessAction;
 	

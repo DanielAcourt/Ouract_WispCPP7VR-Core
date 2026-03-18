@@ -42,4 +42,21 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Evolution")
 	bool bIsBiologicalOrigin = false;
+
+
+	//vERSION 3,2 iDEA
+	/*
+	UENUM(BlueprintType)
+		enum class ESovereignAttribute : uint8
+	{
+		Strength,
+		Dexterity,
+		Constitution,
+		Intelligence,
+		Wisdom,
+		Charisma,
+		Luck,
+		MAX // Used for array sizing
+	};
+	*/
 };

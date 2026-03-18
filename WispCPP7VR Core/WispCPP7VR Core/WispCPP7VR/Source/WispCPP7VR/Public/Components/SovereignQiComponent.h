@@ -42,6 +42,38 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	float TotalQiAccumulated;
 
+
+	/** Periodic check for elemental friction and density refinement */
+	void SymmetryCheck(float DeltaTime);
+
+
+
+	//qi Affinity pointing to light or dark. This needs to acts as a default affintiy
+	//also which element.
+	//Needs to be stored in an array with amounts for each Fire, Earth, Water, Wind, 
+	//0 is there default everything by its nature will have a dfark/light and a nature.
+
+	//Elemental Affinty
+	/** The spiritual alignment. Positive = Light, Negative = Dark. 0 = Neutral/Primal. */
+/** Spiritual Alignment: Positive = Light, Negative = Dark. 0 = Primal/Neutral. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi")
+	float SpiritualAlignment = 0.0f;
+
+	/** * Elemental Resonance.
+	 * Keys: "Fire", "Earth", "Water", "Wind"
+	 * Values: Resonance levels.
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
+	TMap<FName, float> ElementalResonance;
+
+	/** New function to handle specific elemental absorption */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
+	void AbsorbElementalQi(FName Element, float Amount, float SourcePurity);
+
+
+	/** Helper to initialize the default elements */
+	void InitializeElements();
+
 	// --- 2. LOGIC FUNCTIONS ---
 
 	/** * Adds Qi to the pool. Mixing different purities will shift the overall QiPurity.
@@ -62,8 +94,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
 	void ResetDensity();
 
+
+
 protected:
 	virtual void BeginPlay() override;
+
+	/** Internal: Creates a "Residual" tag when two elements clash violently */
+	void GenerateConflictTag(FName ElementA, FName ElementB);
 
 public:
 	/** * Override the ability to save the component data to the save slot or json file

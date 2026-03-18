@@ -2,13 +2,19 @@
 
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
+
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "SaveSystem/SovereignSpawnerUtils.h" 
 #include "SaveSystem/SovereignGameData.h" 
+
 #include "Entities/SovereignSaveableEntityComponent.h"
+
 #include "Components/CapsuleComponent.h" // Add this include!
 #include "Components/StaticMeshComponent.h"
+#include "Components/SovereignBioComponent.h"
+
 #include "GameplayTagsManager.h"
+
 #include "Engine/World.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
@@ -18,8 +24,17 @@ ASovereignBaseEntity::ASovereignBaseEntity()
 {
     // 0. CHARACTER DEFAULTS
     PrimaryActorTick.bCanEverTick = true;
-    bCanAffectNavigationGeneration = true;
 
+    float Interval = GetHeartbeatInterval();
+    /*
+    if (Interval > 0.0f)
+    {
+        GetWorldTimerManager().SetTimer(HeartbeatTimerHandle, this, &ASovereignBaseEntity::OnSovereignHeartbeat, Interval, true);
+    }
+    */
+    //bCanAffectNavigationGeneration = true;
+
+    /*
     // 1. CONFIGURE THE BUILT-IN CAPSULE
         // We don't use CreateDefaultSubobject here because ACharacter already did it!
     if (UCapsuleComponent* MyCapsule = GetCapsuleComponent())
@@ -27,7 +42,7 @@ ASovereignBaseEntity::ASovereignBaseEntity()
         MyCapsule->InitCapsuleSize(40.f, 90.f);
         MyCapsule->SetCollisionProfileName(TEXT("Pawn"));
     }
-
+    */
     // 2. THE SOUL (SAVE SYSTEM)
     // This component handles the GUID and the metadata tags (Isla's unknown tags)
     SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
@@ -37,27 +52,125 @@ ASovereignBaseEntity::ASovereignBaseEntity()
     // Create the "Master" mesh slot
     EntityMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EntityMesh"));
 
+    // Since we are an AActor now, the Mesh is our Physical Root
+    RootComponent = EntityMesh;
+
+    // This allows the Wisp to possess the "Soul"
+    bCanBePossessed = true;
+
+    // 3. Setup Default Collision for your Wisp's LineTrace
+    EntityMesh->SetCollisionProfileName(TEXT("BlockAll"));
+
+
+
+    /*
     if (RootComponent)
     {
         EntityMesh->SetupAttachment(RootComponent);
     }
-
+    */
     // Optional: Move the mesh down so it sits at the bottom of the capsule
-    EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+    //EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+}
+
+void ASovereignBaseEntity::VerifySymmetryLevel()
+{
+    // Placeholder for Symmetry Kernel Check
+    // This is where you would grant permissions based on the TrustSignature,
+    // and attributes like Luck or Charisma.
+    // For example:
+    // if (TrustSignature > 1000 && GetAttributeComponent()->Luck > 50)
+    // {
+    //		// Grant special permission
+    // }
 }
 
 void ASovereignBaseEntity::BeginPlay()
 {
+    //Force being play
     Super::BeginPlay();
 
-    // Determine Heartbeat timing based on performance settings
-    float Interval = 0.0f;
+    // 1. Manifest the Soul's History (The March 23, 2017 logic)
+    if (SaveDataComponent)
+    {
+        SaveDataComponent->InitializeSoul();
+    }
+
+    // After InitializeSoul()
+    if (SaveDataComponent)
+    {
+        // If this soul is over 500 Sovereign Years old, force it to the final growth stage
+        float TotalDays = (FDateTime::Now() - SaveDataComponent->BirthTimestamp).GetTotalDays();
+        float SovYears = TotalDays / 5.6f;
+
+        if (SovYears > 500.0f)
+        {
+            CurrentGrowthStage = 7; // The "Ancient" or "Tree" stage
+            RefreshVisuals();
+        }
+    }
+
+    // 2. Now it is safe to talk to the World and TimerManager!
+    float Interval = GetHeartbeatInterval();
+
+    if (Interval > 0.0f)
+    {
+        GetWorldTimerManager().SetTimer(
+            HeartbeatTimerHandle,
+            this,
+            &ASovereignBaseEntity::OnSovereignHeartbeat,
+            Interval,
+            true
+        );
+    }
+
     switch (UpdateFrequency)
     {
-    case EUpdateFrequency::Realtime: Interval = 0.0f; break;
-    case EUpdateFrequency::Standard: Interval = 1.0f; break;
-    case EUpdateFrequency::Slow:     Interval = 10.0f; break;
-    case EUpdateFrequency::Dormant:  Interval = -1.0f; break;
+
+    case EUpdateFrequency::Faster:
+
+
+        //Time dilation and slowing world down
+        /*
+        case EUpdateFrequency::Faster: 
+    // 1. High-frequency logic update (Realtime)
+    Interval = 0.0f; 
+
+    // 2. The Time Warp: 
+    // We slow the world down by 5x (0.2), 
+    // but we speed THIS entity up by 5x (5.0) to compensate.
+    // Result: The world looks slow to you, but you move at normal speed.
+    
+    if (UWorld* World = GetWorld())
+    {
+        // Slow down everything else
+        World->GetWorldSettings()->SetTimeDilation(0.2f); 
+        
+        // Overclock only the Sovereign Soul
+        this->CustomTimeDilation = 5.0f; 
+        
+        UE_LOG(LogTemp, Warning, TEXT("Sovereign: Faster Frequency Engaged. Time Dilated."));
+    }
+    break;
+        */
+
+    case EUpdateFrequency::Realtime: Interval = 0.0f; break;   // 0.0 = Every Frame
+
+    case EUpdateFrequency::Standard: Interval = 1.0f; break;   // 1 Second
+
+    case EUpdateFrequency::Slow:     Interval = 10.0f; break;  // 10 Seconds
+
+    case EUpdateFrequency::Slower:   Interval = 30.0f; break;  // 30 Seconds
+
+    case EUpdateFrequency::Slowest:  Interval = 60.0f; break;  // 60 Seconds (1 Minute)
+
+    case EUpdateFrequency::Glacier:  Interval = 360.0f; break; // 360 Seconds (6 Minutes)
+
+    case EUpdateFrequency::Dormant:  Interval = -1.0f; break;  // Disable Heartbeat
+
+    //case EUpdateFrequency::Standard: Interval = 30.0f; break;
+    //case EUpdateFrequency::Faster:     Interval = 60.0f; break;
+    //case EUpdateFrequency::SuperFast:  Interval = 360.0f; break;
     }
 
     if (Interval > 0.0f)
@@ -76,9 +189,28 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
 {
     if (SaveDataComponent)
     {
+        // 1. SOUL GROWTH
         // Increment Maturity (This is how the Oak Seed eventually becomes a Sprout)
         SaveDataComponent->MaturityProgress += (SaveDataComponent->MaturityRate);
 
+        // 2. BIOLOGICAL CONSUMPTION
+        // We find the BioComponent and tell it to process one 'Heartbeat' of time
+        if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
+        {
+            // Calculate the actual seconds passed since last heartbeat
+            float HeartbeatSeconds = GetWorldTimerManager().GetTimerRate(HeartbeatTimerHandle);
+            Bio->UpdateMetabolism(HeartbeatSeconds);
+        }
+
+        // 3. EVOLUTION CHECK
+        if (SaveDataComponent->MaturityProgress >= 1.0f)
+        {
+            SaveDataComponent->MaturityProgress = 0.0f;
+            Evolve();
+        }
+
+        //old logic
+        /*
         // Check for Evolution (Threshold met, move to next growth stage)
         if (SaveDataComponent->MaturityProgress >= 1.0f)
         {
@@ -86,24 +218,106 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
             SaveDataComponent->MaturityProgress = 0.0f;
             Evolve();
         }
+        */
     }
 }
 
+void ASovereignBaseEntity::CheckForEvolution()
+{
+    /*
+    if (!SaveDataComponent) return;
+
+    // 1. GET THE HARDWARE DATA
+    auto AttrComp = FindComponentByClass<USovereignAttributeComponent>();
+    if (!AttrComp) return;
+
+    // 2. THE COMPOSITE POWER CALCULATION
+    // We use the prestige Level (int32) + the scientific Experience (double)
+    double TotalPower = (double)AttrComp->Strength + AttrComp->StrengthExperience +
+        (double)AttrComp->Intelligence + AttrComp->IntelligenceExperience +
+        (double)AttrComp->Wisdom + AttrComp->WisdomExperience;
+
+    //Can we do this smarter like in an array, SO that the training matches the stored experience? in an enum + douuble?
+
+
+    // 3. APPLY THE SPECIES TAX (Difficulty)
+    // SpeciesData->ClassLevelModifier: 1.0 (Chicken), 50.0 (Dragon)
+    float Difficulty = SpeciesData ? SpeciesData->ClassLevelModifier : 1.0f;
+    double NormalizedPower = TotalPower / (double)Difficulty;
+
+    // 4. EVOLUTION TRIGGER
+    // Requirements scale exponentially: Stage 1 needs 100 power, Stage 2 needs 200, etc.
+    float PowerRequirement = (float)(CurrentGrowthStage + 1) * 100.0f;
+    */
+
+
+    //if (NormalizedPower >= PowerRequirement)
+    //{
+        Evolve();
+    //}
+}
+
+//version 3.2 Updated a fair bit to handshake with the biocomponent does this mean everything that a base enity has a bio component? ideally i would want its child to?
 void ASovereignBaseEntity::Evolve()
 {
-    // Ensure we have a Data Asset and haven't hit the end of the 8 stages
-    if (SpeciesData && CurrentGrowthStage < (SpeciesData->GrowthStages.Num() - 1))
+    // Evolution is a massive biological strain
+    if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
     {
-        CurrentGrowthStage++;
-        RefreshVisuals();
+        // 1. BURN THE ENTIRE PHARMACY
+        // This clears all Carbs, Proteins, Fats, etc., to fuel the cellular shift.
+        Bio->NutrientReserves.Empty();
 
-        UE_LOG(LogTemp, Log, TEXT("Sovereign: %s evolved to stage %d"), *GetName(), CurrentGrowthStage);
+        // Optional: Re-initialize with 0s if your logic requires the keys to exist
+        // or just let the next 'Consume' call re-populate the keys.
+
+        Bio->Hunger = 0.0f;
+        Bio->Entropy += 10.0f; // Rapid aging occurs during evolution
+
+        // The Mass is permanently increased (Physical Prestige)
+        Bio->MassExperience += 5.0;
+        Bio->Mass = FMath::FloorToInt(Bio->MassExperience);
+    }
+
+    // Trigger the Visual Shift (Mesh/Particle swap)
+    RefreshVisuals();
+}
+
+//Like growing their is a gestatin state should evolving be locked into a state witha  progress bar this progress needs ot be manipulated by timme it can go upo or down
+//down = smaller deniser therfore more mass but smaller. 
+//U can hone your magic to a refine state increase your max potenitals for rebirths??
+
+/* Version 3.3
+
+Goal to Make evolution a process not a pop use same logic for eggs to be hatched?
+Basically if state is progress how does it progress chicken, Incemination, birth egg, incubate egg, hatch , egg, chick then growing levels of maturity
+I want to capture the groweth at each stage you cant go back without rebith 
+therfore cookie click logic in a slow meditation game.
+
+void ASovereignBaseEntity::ProcessEvolution(float DeltaTime)
+{
+    if (CurrentState != ESovereignState::Gesticulating) return;
+
+    // Gestation speed is modified by local Qi and Bio Health
+    float GestationSpeed = CalculateGestationSpeed();
+    GestationProgress += GestationSpeed * DeltaTime;
+
+    // REFINEMENT LOGIC:
+    // If we are 'honing' (Magic focus), we sacrifice size for density
+    if (bIsHoningSoul)
+    {
+        RefineDensity(DeltaTime);
+    }
+
+    if (GestationProgress >= 100.0f)
+    {
+        CompleteEvolution();
     }
 }
+*/
 
 void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
 {
-    if (!PotentialPartner) return;
+    if (!PotentialPartner || !IsReadyForMating()) return;
 
     ASovereignBaseEntity* PartnerActor = Cast<ASovereignBaseEntity>(PotentialPartner);
 
@@ -138,6 +352,7 @@ bool ASovereignBaseEntity::IsReadyForMating() const
     return TimeSinceLastMating >= SaveDataComponent->MatingCooldownDuration;
 }
 
+
 FGuid ASovereignBaseEntity::GetSovereignID() const
 {
     return SaveDataComponent ? SaveDataComponent->EntityID : FGuid();
@@ -160,18 +375,6 @@ void ASovereignBaseEntity::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    if (UWorld* World = GetWorld())
-    {
-        UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>();
-        if (Registry && SaveDataComponent)
-        {
-            Registry->UnregisterActor(SaveDataComponent->EntityID);
-        }
-    }
-    Super::EndPlay(EndPlayReason);
-}
 
 void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* InData)
 {
@@ -329,14 +532,49 @@ void ASovereignBaseEntity::IngestSovereignTag(FString IncomingTagString)
     }
 }
 
-void ASovereignBaseEntity::VerifySymmetryLevel()
+
+
+ //version 3.31
+//is this ok down here?
+
+float ASovereignBaseEntity::GetHeartbeatInterval() const
 {
-	// Placeholder for Symmetry Kernel Check
-	// This is where you would grant permissions based on the TrustSignature,
-	// and attributes like Luck or Charisma.
-	// For example:
-	// if (TrustSignature > 1000 && GetAttributeComponent()->Luck > 50)
-	// {
-	//		// Grant special permission
-	// }
+    switch (UpdateFrequency)
+    {
+    case EUpdateFrequency::Realtime: return 0.0f; // Use Tick instead
+    case EUpdateFrequency::Standard: return 1.0f;
+    case EUpdateFrequency::Slow:     return 10.0f;
+    case EUpdateFrequency::Slower:   return 30.0f;
+    case EUpdateFrequency::Slowest:  return 60.0f;
+    case EUpdateFrequency::Glacier:  return 360.0f;
+    case EUpdateFrequency::Dormant:  return -1.0f; // Disable timer
+
+    // NEW TRUTHS:
+    //case EUpdateFrequency::Seasonal: return 7200.0f;  // 2 Hours
+    //case EUpdateFrequency::Epoch:    return 43200.0f; // 12 Hours
+
+    default:                         return 1.0f;
+    }
+}
+
+/*
+USovereignSaveableEntityComponent* ASovereignBaseEntity::GetSovereignSoul_Implementation() const
+{
+    // Simply return the component we already have!
+    return SaveDataComponent;
+}
+*/
+
+//Put end at the bottem makes sense?
+void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (UWorld* World = GetWorld())
+    {
+        UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>();
+        if (Registry && SaveDataComponent)
+        {
+            Registry->UnregisterActor(SaveDataComponent->EntityID);
+        }
+    }
+    Super::EndPlay(EndPlayReason);
 }

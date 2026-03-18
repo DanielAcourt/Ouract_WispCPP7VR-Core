@@ -3,25 +3,41 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "SaveSystem/SovereignGameData.h" 
+#include "GameFramework/Actor.h"
+
+#include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
 #include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
-#include "GameplayTagContainer.h"
-#include "GameplayTagAssetInterface.h"
-#include "SovereignBaseEntity.generated.h"
+
+#include "GameplayTagContainer.h" //Lets us read Gameplay tags
+#include "GameplayTagAssetInterface.h" 
+
+#include "interaction/SovereignEntityInterface.h"
+
+//#include "Interaction/SovereignEntityInterface.h"
+//#include "Interaction/SovereignEntityInterface.h" // Add the Universal Interface
+
+#include "SovereignBaseEntity.generated.h" //Must be last
 
 // Forward declarations to keep compile times fast
 class USovereignSaveableEntityComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
 
+
+//The problem with this current approach is i start by inheriting from ACharacter,
+// what we reaslly need is a base which is AActor and APawn and has this interaction.
+// But not the mating and more Advance options
+
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public ACharacter, public IGameplayTagAssetInterface 
+class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
 {
 	GENERATED_BODY()
 
 public:
 	ASovereignBaseEntity();
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
+	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
 
 	/** The Unique Identity Signature for this class. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity")
@@ -31,6 +47,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
 	FGameplayTagContainer GameplayTags;
 
+	/** The Gameplay Tags that this Enity is checking against. */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
 	void IngestSovereignTag(FString IncomingTagString);
 
@@ -49,9 +66,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
 	FGuid GetSovereignID() const;
 
+
 	/** * TRIGGER MATING: Checks compatibility and spawns a child if successful.
 	 * Can be called from VR Overlap events or Interaction buttons.
 	 */
+
+
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Gameplay")
 	virtual void AttemptMating(AActor* PotentialPartner);
 
@@ -67,7 +87,10 @@ public:
 protected:
 	/** Can this entity be possessed by a Sovereign Spirit? */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
-	bool bCanBePossessed = false;
+	bool bCanBePossessed = true;
+
+	/** Calculates the float delay based on the UpdateFrequency enum */
+	float GetHeartbeatInterval() const; // Add this line!
 
 	// --- Components ---
 
@@ -105,6 +128,7 @@ protected:
 protected:
 	void VerifySymmetryLevel();
 
+
 	/** The 'Passport' for this entity's species and trust level */
 /** The "Advanced" data asset defining growth stages, health, and species attributes */
 	// Note: class keyword here handles the forward declaration inline
@@ -115,8 +139,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Growth")
 	int32 CurrentGrowthStage = 0;
 
-	/** How often this entity processes logic (Realtime, Standard, Slow, Dormant) */
-	UPROPERTY(EditAnywhere, Category = "Sovereign|Performance")
+	/** How often this entity processes logic */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Performance")
 	EUpdateFrequency UpdateFrequency = EUpdateFrequency::Standard;
 
 	/** Swaps the Static Mesh based on the current Growth Stage index */
@@ -128,8 +152,19 @@ protected:
 	/** The recurring timer handle for the heartbeat logic */
 	FTimerHandle HeartbeatTimerHandle;
 
+	/** If true, the Soul uses the ManualBirthDate instead of the current time on first spawn */
+	UPROPERTY(EditAnywhere, Category = "Sovereign|Identity")
+	bool bUseManualBirthDate = false;
+
+	/** Format: "2017.03.23-16.00.00" (Year.Month.Day-Hour.Minute.Second) */
+	UPROPERTY(EditAnywhere, Category = "Sovereign|Identity", meta = (EditCondition = "bUseManualBirthDate"))
+	FString ManualBirthDate = "2017.03.23-16.00.00";
+
 	/** The logic function that runs growth progress and checks for Evolution */
 	void OnSovereignHeartbeat();
+
+	//can i evolve?
+	void CheckForEvolution();
 
 	/** Callback function for when a mesh has been asynchronously loaded. */
 	void OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr);

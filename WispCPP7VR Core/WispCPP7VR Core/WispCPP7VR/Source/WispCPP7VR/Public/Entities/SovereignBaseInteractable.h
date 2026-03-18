@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignBaseEntity.h"
 #include "Interaction/SovereignInterfaceMain.h"
-
 #include "SovereignBaseInteractable.generated.h"
 
 class USovereignSaveableEntityComponent;
+
+// 1. Setup the Trace for EVERYTHING Sovereign
+
+
 
 /**
  * 

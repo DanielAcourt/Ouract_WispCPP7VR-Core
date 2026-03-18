@@ -23,10 +23,19 @@ class WISPCPP7VR_API IInteractionInterface
 	GENERATED_BODY()
 
 public:
+
+	/** * THE MASTER KEY:
+ * Returns the Sovereign Soul (The 'One Sense of Simulated Truth').
+ * This allows the Wisp to read IDs, Tags, and Qi from any interactable object.
+ */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Core")
+	class USovereignSaveableEntityComponent* GetSovereignSoul() const;
+
 	/** * The Master Interaction Command.
 	 * BlueprintNativeEvent allows C++ to handle the logic (Metabolical)
 	 * while Blueprints handle the visuals (UI/Emitters).
 	 */
+
 	 // Triggered when the Wisp or Bee looks at this object
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interaction")
 	void OnBeginHover();
@@ -66,6 +75,19 @@ public:
 	/** NEW: Returns the component to attach the spirit to when possessed */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	USceneComponent* GetPossessionAttachmentComponent();
+
+	// Inside IInteractionInterface.h
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	AActor* GetInhabitingSpirit();
+
+	// Inside IInteractionInterface.h
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	bool IsSpiritEntity();
+
+	//Adding this so the interface can pass along wether it has been Possessed and therefore can release the wisp
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	void RequestSoulEject();
 
 
 };

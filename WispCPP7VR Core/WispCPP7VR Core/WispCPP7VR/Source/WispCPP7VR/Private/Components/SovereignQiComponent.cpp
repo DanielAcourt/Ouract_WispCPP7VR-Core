@@ -3,6 +3,10 @@
 
 #include "Components/SovereignQiComponent.h"
 #include "Entities/SovereignBaseEntity.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
+
+//#include "Components/Sover"
+
 #include "Kismet/KismetMathLibrary.h"
 
 USovereignQiComponent::USovereignQiComponent()
@@ -73,15 +77,41 @@ bool USovereignQiComponent::SpendQi(float Amount)
 
 void USovereignQiComponent::ProcessQiFlow(float DeltaTime, int32 WisdomStat)
 {
-	// PASSIVE REGENERATION
-	// This represents the soul "breathing" the weave.
-	// Wisdom determines the rate, Purity determines the quality of that rate.
-	float RegenRate = (static_cast<float>(WisdomStat) * 0.1f) * QiPurity;
+	// 1. ANCESTRAL REFINEMENT
+	// Souls older than 100 Sovereign Years get a "Passive Refinement" bonus.
+	// Their purity slowly creeps up toward 1.0 just by existing.
+	if (QiPurity < 1.0f)
+	{
+		float RefinementRate = 0.00001f; // Incredibly slow, rewarding years of life
+		QiPurity += RefinementRate * DeltaTime;
+	}
 
+	// 2. PASSIVE REGENERATION
+	float RegenRate = (static_cast<float>(WisdomStat) * 0.1f) * QiPurity;
 	if (CurrentQi < MaxQiCapacity)
 	{
 		CurrentQi = FMath::Min(CurrentQi + (RegenRate * DeltaTime), MaxQiCapacity);
 	}
+}
+void USovereignQiComponent::AbsorbElementalQi(FName Element, float Amount, float SourcePurity)
+{
+	// 1. Blend the raw Qi first (Blends Purity and updates TotalAccumulated)
+	AbsorbQi(Amount, SourcePurity);
+
+	// 2. Update the specific Elemental Resonance
+	float* CurrentResonance = ElementalResonance.Find(Element);
+	if (CurrentResonance)
+	{
+		*CurrentResonance += (Amount * SourcePurity);
+	}
+	else
+	{
+		ElementalResonance.Add(Element, (Amount * SourcePurity));
+	}
+
+	// 3. Alignment Shift (The Light/Dark balance)
+	if (Element == "Shadow" || Element == "Void") SpiritualAlignment -= 0.1f;
+	if (Element == "Holy" || Element == "Light") SpiritualAlignment += 0.1f;
 }
 
 void USovereignQiComponent::ResetDensity()
@@ -89,54 +119,89 @@ void USovereignQiComponent::ResetDensity()
 	TotalQiAccumulated = 0.0f;
 }
 
+void USovereignQiComponent::GenerateConflictTag(FName ElementA, FName ElementB)
+{
+	// 1. Get the Entity
+	ASovereignBaseEntity* Owner = Cast<ASovereignBaseEntity>(GetOwner());
+	if (!Owner) return;
 
+	// 2. Use the getter we put in the Entity.h
+	USovereignSaveableEntityComponent* Soul = Owner->GetSaveDataComponent();
+
+	if (Soul)
+	{
+		FString ConflictName = FString::Printf(TEXT("Residual.%s_%s"), *ElementA.ToString(), *ElementB.ToString());
+
+		// 3. This now works because we included the header in step 3
+		Soul->AddUnknownTag(ConflictName, TEXT("Manifested via Elemental Friction"));
+
+		// 4. Pressure/Coal effect: Permanent density gain
+		TotalQiAccumulated += 25.0f;
+
+		UE_LOG(LogTemp, Warning, TEXT("Sovereign: %s forged a new Truth: %s"), *Owner->GetName(), *ConflictName);
+	}
+}
 
 TMap<FString, FString> USovereignQiComponent::GetSaveData()
 {
-	TMap<FString, FString> Data;
+	// 1. Start with any data from the Base Component (Symmetry/Metadata)
+	TMap<FString, FString> Data = Super::GetSaveData();
 
-	// Convert floats to Strings for the JSON Suitcase
+	// 2. Core Qi Stats
 	Data.Add(TEXT("Qi.Current"), FString::SanitizeFloat(CurrentQi));
 	Data.Add(TEXT("Qi.Max"), FString::SanitizeFloat(MaxQiCapacity));
 	Data.Add(TEXT("Qi.Purity"), FString::SanitizeFloat(QiPurity));
 	Data.Add(TEXT("Qi.Total"), FString::SanitizeFloat(TotalQiAccumulated));
 
-	UE_LOG(LogTemp, Log, TEXT("QiComponent %s: GetSaveData called. CurrentQi: %f"), *GetName(), CurrentQi);
+	// 3. Spiritual Alignment (Light/Dark Truth)
+	Data.Add(TEXT("Qi.Alignment"), FString::SanitizeFloat(SpiritualAlignment));
+
+	// 4. Elemental Resonance Map
+	// This allows Isla's system to handle any number of nature tags (Fire, Earth, etc.)
+	for (const TPair<FName, float>& Elem : ElementalResonance)
+	{
+		FString Key = FString::Printf(TEXT("Qi.Elem.%s"), *Elem.Key.ToString());
+		Data.Add(Key, FString::SanitizeFloat(Elem.Value));
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("QiComponent %s: Ancestral Data Packed. Purity: %f"), *GetName(), QiPurity);
+
 	return Data;
 }
-
 void USovereignQiComponent::RestoreSaveData(const TMap<FString, FString>& Data)
 {
-	// Use Find() to get a pointer to the value. 
-		// This is "Defensive": if the key is missing, the pointer is null and we don't crash.
+	// 1. ANCESTRAL FOUNDATION
+	// Call Super to restore base component metadata (Symmetry/Trust signatures)
+	Super::RestoreSaveData(Data);
 
-		// The incoming map is the entire "Suitcase" for the actor.
-	// We must politely check for keys prefixed with our own component name.
-	const FString ComponentPrefix = GetName() + TEXT(".");
-	int32 FoundKeys = 0;
+	// 2. CORE SPIRITUAL STATS
+	// We use Find() to get a pointer; if the save file is missing a key, we just don't update it.
+	if (const FString* Val = Data.Find(TEXT("Qi.Current")))   CurrentQi = FCString::Atof(**Val);
+	if (const FString* Val = Data.Find(TEXT("Qi.Max")))       MaxQiCapacity = FCString::Atof(**Val);
+	if (const FString* Val = Data.Find(TEXT("Qi.Purity")))    QiPurity = FCString::Atof(**Val);
+	if (const FString* Val = Data.Find(TEXT("Qi.Total")))     TotalQiAccumulated = FCString::Atof(**Val);
+	if (const FString* Val = Data.Find(TEXT("Qi.Alignment"))) SpiritualAlignment = FCString::Atof(**Val);
 
-	if (const FString* FoundQi = Data.Find(TEXT("Qi.Current")))
+	// 3. DYNAMIC ELEMENTAL MANIFESTATION
+	// We clear the current map to ensure the saved truth is the only truth.
+	ElementalResonance.Empty();
+
+	// Loop through the entire "Suitcase" looking for our specific Elemental Prefix
+	for (const TPair<FString, FString>& Pair : Data)
 	{
-		CurrentQi = FCString::Atof(**FoundQi);
-		FoundKeys++;
+		if (Pair.Key.StartsWith(TEXT("Qi.Elem.")))
+		{
+			// "Qi.Elem.Fire" -> RightChop(8) -> "Fire"
+			FString ElementName = Pair.Key.RightChop(8);
+			float ElementValue = FCString::Atof(*Pair.Value);
+
+			ElementalResonance.Add(FName(*ElementName), ElementValue);
+
+			UE_LOG(LogTemp, Verbose, TEXT("Sovereign: Restored %s resonance at %f"), *ElementName, ElementValue);
+		}
 	}
 
-	if (const FString* FoundMax = Data.Find(TEXT("Qi.Max")))
-	{
-		MaxQiCapacity = FCString::Atof(**FoundMax);
-		FoundKeys++;
-	}
-
-	if (const FString* FoundPurity = Data.Find(TEXT("Qi.Purity")))
-	{
-		QiPurity = FCString::Atof(**FoundPurity);
-		FoundKeys++;
-	}
-
-	if (const FString* FoundTotal = Data.Find(TEXT("Qi.Total")))
-	{
-		TotalQiAccumulated = FCString::Atof(**FoundTotal);
-		FoundKeys++;
-	}
+	UE_LOG(LogTemp, Log, TEXT("QiComponent [%s] Restored: Purity %f, Alignment %f"),
+		*GetName(), QiPurity, SpiritualAlignment);
 }
 

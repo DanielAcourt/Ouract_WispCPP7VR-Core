@@ -19,32 +19,50 @@ ASovereignBaseInteractable (Your Physical Layer):
 #include "Entities/SovereignBaseInteractable.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseCharacter.h"
 
-// The constructor
 ASovereignBaseInteractable::ASovereignBaseInteractable()
 {
+    // 1. Performance: Rocks don't need to tick. 
+    // If they grow, the Soul Component's timer handles it, not the Actor's tick.
     PrimaryActorTick.bCanEverTick = false;
 
-    // --- THE FIX ---
-    // Instead of creating a new mesh, we just point to the one the parent made.
-    // EntityMesh is inherited from ASovereignBaseEntity.
-    BaseMesh = EntityMesh;
+    // 2. The Clean Pointer Logic:
+    // We don't create a 'BaseMesh'. We simply use the EntityMesh inherited from the parent.
+    // If you need a specific name for Blueprints, use an alias, but stay in C++ reality.
 
-    // Now, anything we do to BaseMesh is actually happening to EntityMesh!
-    if (BaseMesh)
+    if (EntityMesh)
     {
-        // No need for SetupAttachment here because the Parent 
-        // constructor already attached EntityMesh to the Root!
+        // 3. Collision Logic: Optimized for VR and Interaction Traces
+        EntityMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-        BaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        BaseMesh->SetCollisionResponseToAllChannels(ECR_Block);
-        BaseMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-        BaseMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+        // Block everything by default to ensure the Rock feels 'solid'
+        EntityMesh->SetCollisionResponseToAllChannels(ECR_Block);
 
-        // Use the same location offset as the parent
-        BaseMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+        // CRITICAL: Ensure Visibility is blocked so the Wisp's LineTrace hits it.
+        EntityMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+        // 4. Visual Offset: 
+        // Be careful with hardcoded offsets like -90.f. 
+        // For a Rock (AActor), the root is usually at the center. 
+        // Only use -90.f if this is a Character (to account for the capsule).
+        if (IsA<ACharacter>())
+        {
+            EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+        }
+        else
+        {
+            EntityMesh->SetRelativeLocation(FVector::ZeroVector);
+        }
+    }
+
+    // 5. The Soul Handshake:
+    // Ensure the Soul Component is initialized. If it's not in the parent, create it here.
+    if (!SaveDataComponent)
+    {
+        SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
     }
 }
 
@@ -52,7 +70,6 @@ bool ASovereignBaseInteractable::CanInteract_Implementation(AActor* Interactor)
 {
     return bIsInteractable && IsValid(Interactor);
 }
-
 void ASovereignBaseInteractable::OnInteract_Implementation(AActor* Interactor)
 {
     // 1. Core Safety Check
@@ -82,22 +99,20 @@ void ASovereignBaseInteractable::OnInteract_Implementation(AActor* Interactor)
 
     UE_LOG(LogTemp, Log, TEXT("%s"), *DebugMessage);
 }
-
 void ASovereignBaseInteractable::OnBeginHover_Implementation()
 {
     // Optional: highlight, sound cue, UI prompt
 }
-
 void ASovereignBaseInteractable::OnEndHover_Implementation()
 {
     // Optional: remove highlight, stop sound
 }
 
+//Interable Name
 FText ASovereignBaseInteractable::GetInteractableName_Implementation()
 {
     return FText::FromString(TEXT("Interactable Object"));
 }
-
 FString ASovereignBaseInteractable::GetInteractionHint_Implementation()
 {
     return TEXT("Interact");
@@ -108,27 +123,34 @@ void ASovereignBaseInteractable::OnSecondaryInteract_Implementation(AActor* Inte
     // Optional secondary action (long press, grip, etc.)
 }
 
+//Possession Functions
 bool ASovereignBaseInteractable::CanBePossessed_Implementation()
 {
     // Note: bCanBePossessed is a protected variable inherited from ASovereignBaseEntity
     return bCanBePossessed;
 }
-
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
-    if (RequestingController && CanBePossessed_Implementation())
+    // 1. Cast the controller to a PlayerController
+    if (APlayerController* PC = Cast<APlayerController>(RequestingController))
     {
-        // Unpossess the current pawn
-        if (APawn* CurrentPawn = RequestingController->GetPawn())
+        if (CanBePossessed_Implementation())
         {
-            RequestingController->UnPossess();
-        }
+            // 2. THE BRIDGE: Instead of Possess(this), we enable input.
+            // This allows the player to "drive" the rock/actor.
+            this->EnableInput(PC);
 
-        // Possess this entity
-        RequestingController->Possess(this);
+            // 3. UI/Feedback Handshake
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
+                    FString::Printf(TEXT("Spirit Link Established with: %s"), *GetName()));
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("Input Bridge established for non-pawn actor: %s"), *GetName());
+        }
     }
 }
-
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {
     return BaseMesh;
