@@ -17,6 +17,30 @@ public:
 	// Sets default values for this component's properties
 	USovereignElementComponent();
 
+	// --- 3. RESISTANCES (Defense Layers) ---
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	float FireAffinity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	float EarthAffinity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	float WindAffinity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	float WaterAffinity;
+
+	// Maybe electric?
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	float SlowResistance;
+
+
+	// Sovereign Save Interface Overrides (triggers the saving of data on this componet really important but i though tit inherited this fromt he parent class,)
+	virtual TMap<FString, FString> GetSaveData() override;
+	virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

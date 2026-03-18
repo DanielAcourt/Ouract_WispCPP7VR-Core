@@ -210,6 +210,8 @@ void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 	// DEBUG: If you don't see this on screen, your Input Binding is broken
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("VESSEL: INTERACT TRIGGERED"));
 
+
+	//v 2.8 (works but shouldnt happen here but in the possession logic.)
 	// 1. THE INTERNAL CHECK (Is there a soul in here?)
 	// We use the interface to check for attached spirits.
 	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
@@ -346,6 +348,8 @@ void ASovereignBaseCharacter::Tick(float DeltaTime)
 	// Call this every frame so the Blueprint Event and Log fire constantly
 	GetSensedActor();
 }
+
+//v3.2
 /*
 
 Ideally what we want for the base character is that it has a gate somehow so it doesnt do this tick unless it in controlled by the player or

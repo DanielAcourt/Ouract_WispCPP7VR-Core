@@ -37,22 +37,63 @@ struct FItemDefaults : public FTableRowBase
 };
 
 UENUM(BlueprintType)
-enum class EGrowthState : uint8
+enum class ESovereignGrowthStage : uint8
 {
-    Seed,
-    Sprout,
-    Mature
+    // 0-2: The Beginning (High Vulnerability)
+    Inception,   // Concept/Ghost/Egg-Phase 
+
+    //1 of  2 a half possible for clones with increase mutattion?
+
+    //Has mother and father
+    Seed,        // Dormant/Egg
+    Sprout,      // Just emerged/Hatchling
+
+    // 3-5: The Development (Rapid Growth)
+    Juvenile,     // Juvenile/Young/Sapling
+    Adolescent,       // Adolescent/Fledgling/Shrub
+    Adult,        // Adult/Prime Can make babies 
+
+    // 6-9: The Beyond (High Power)
+    Elder, // Ancient/Venerable Can make babies but has a hit in chance and increased danger for females
+    Mature,
+    Retired,
+    Deteriorating,
+
+    GoldenCore, 
+   
+    Mythical,
+    Legendary,   // Mythic (Replacing Seed1-3 with Tier labels) rare to have children
+    
+    PrimalSpirit,
+    Eternal,     // Peak Evolution Almost imposibble to have children
+    Godly,      // Cant Have children no matter the buffs or abilities can rebirth and use those stats in another form
+
+    MAX UMETA(Hidden)
 };
 
 // --- 1. GLOBAL SCOPE ENUMS (This must be OUTSIDE of any class/struct) ---
+//Version 3.0 Expanded
+
 UENUM(BlueprintType)
 enum class EUpdateFrequency : uint8
 {
-    Realtime    UMETA(DisplayName = "Every Frame (Wisps/Animals)"),
-    Standard    UMETA(DisplayName = "Every 1 Second (Plants/Growth)"),
-    Slow        UMETA(DisplayName = "Every 10 Seconds (Geology/Rocks)"),
-    Dormant     UMETA(DisplayName = "Only on Interaction (Statues/Fences)")
+    //check my math
+    Faster      UMETA(DisplayName = "Every Frame (Wisps/NPCS)"),
+    Realtime    UMETA(DisplayName = "Every Frame (Wisps/NPCS)"),  // Key things NPCS,Dragons Wisps etc very limted
+
+    Standard    UMETA(DisplayName = "Every 1 Second (Animals/Active)"), // active hunter more dexitiry
+
+    Slow        UMETA(DisplayName = "Every 10 Seconds (Animals/Passive)"), //animals herbivor slow grazers
+
+    Slower      UMETA(DisplayName = "Every 30 Seconds (Creatures/Bees)"), //30 seconds
+
+    Slowest     UMETA(DisplayName = "Every 60 Seconds (Plants/Rocks)"), //minute / Poissible bee level?
+    Glacier     UMETA(DisplayName = "Every 360 Seconds (Geological/Rocks)"), //hour fice numbers
+    Dormant     UMETA(DisplayName = "Only on Interaction (Events/Fences)")
 };
+
+
+//Should i conside this the bae lement and expirment?
 
 UENUM(BlueprintType)
 enum class ESovereignElement : uint8
@@ -93,13 +134,17 @@ struct FEntitySaveData
 
     UPROPERTY()
     TArray<FGuid> MatingHistory;
+
+    // Inside SovereignGameData.h
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|SaveData")
+    ESovereignGrowthStage SavedGrowthStage; // Update the type name here!
     // -----------------
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FTransform WorldTransform;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    EGrowthState CurrentState;
+    //UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    //EGrowthState CurrentState;
 
     /** * THE SECRET SAUCE: Handles tags the system can't know in advance.
      * This is where your "Key:Value" scraper saves its data.
@@ -116,4 +161,7 @@ struct FEntitySaveData
     // We save the frequency so the heartbeat restores correctly!
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign")
     EUpdateFrequency SavedFrequency;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Elements")
+    TMap<ESovereignElement, float> ElementalAffinities;
 };

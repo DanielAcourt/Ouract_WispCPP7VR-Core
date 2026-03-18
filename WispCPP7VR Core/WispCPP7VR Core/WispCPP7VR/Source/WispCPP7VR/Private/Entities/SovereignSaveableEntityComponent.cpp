@@ -32,6 +32,53 @@ void USovereignSaveableEntityComponent::BeginPlay()
 			Registry->RegisterActor(EntityID, GetOwner());
 		}
 	}
+
+	if (!BirthTimestamp.GetTicks())
+	{
+		BirthTimestamp = FDateTime::Now(); // Only set if this is a brand new soul
+	}
+}
+
+void USovereignSaveableEntityComponent::InitializeSoul()
+{
+	// 1. IDENTITY CHECK
+	if (!EntityID.IsValid()) { EntityID = FGuid::NewGuid(); }
+
+	// 2. BIRTHRIGHT DETERMINATION
+	if (BirthTimestamp.GetTicks() == 0)
+	{
+		if (bUseManualBirthDate)
+		{
+			// Attempt to parse your specific date: March 23, 2017, 4:00 PM
+			if (FDateTime::Parse(ManualBirthDate, BirthTimestamp))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Sovereign: Ancestral Soul manifested. Birth set to: %s"), *BirthTimestamp.ToString());
+			}
+			else
+			{
+				// Fallback if the string is typed wrong
+				BirthTimestamp = FDateTime::Now();
+				UE_LOG(LogTemp, Error, TEXT("Sovereign: Failed to parse ManualBirthDate! Defaulting to Now."));
+			}
+		}
+		else
+		{
+			BirthTimestamp = FDateTime::Now();
+		}
+	}
+
+	// 3. THE TIME DILATION CALCULATION
+	FTimespan RealWorldAge = FDateTime::Now() - BirthTimestamp;
+
+	// Total days since 2017 is roughly 3,260+ days
+	float TotalRealDays = RealWorldAge.GetTotalDays();
+
+	// In our logic: 5.6 Real Days = 1 Sovereign Year
+	float SovereignYearsOld = TotalRealDays / 5.6f;
+
+	// Change 'Success' to 'Warning' or 'Log'
+	UE_LOG(LogTemp, Warning, TEXT("Sovereign ID [%s] is %f Sovereign Years old."),
+		*EntityID.ToString(), SovereignYearsOld);
 }
 
 void USovereignSaveableEntityComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -334,6 +381,23 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 			UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Passing entire %d-key suitcase to %s for restore."), AllData.Num(), *Comp->GetName());
 			SaveInterface->RestoreSaveData(AllData);
 		}
+	}
+}
+
+//Version 3.0 Added
+// Inside the Heartbeat or Action trigger
+void USovereignSaveableEntityComponent::TrainAttribute(float& Attribute, float GainAmount, float ClassDifficulty)
+{
+	// ClassDifficulty: 1.0 for Chicken, 10.0 for Dragon, 5.0 for Glass-Willow
+	// The more complex the entity, the smaller the gain per action.
+	float ActualGain = GainAmount / ClassDifficulty;
+
+	Attribute += ActualGain;
+
+	// Check if the integer part has changed (Dungeon Siege style level up)
+	if (FMath::FloorToInt(Attribute) > FMath::FloorToInt(Attribute - ActualGain))
+	{
+		//OnAttributeLevelUp(Attribute);
 	}
 }
 

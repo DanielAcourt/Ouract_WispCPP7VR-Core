@@ -1,5 +1,1 @@
-2026/01/21-14:30:06.331 8de4 Log #3: 3 ops saved to Table #4 OK
-2026/01/21-14:30:06.334 8de4 Archiving C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613_1\Default\Site Characteristics Database/000003.log: OK
-2026/01/21-14:30:06.334 8de4 Table #4: 3 entries OK
-2026/01/21-14:30:06.335 8de4 Archiving C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613_1\Default\Site Characteristics Database/MANIFEST-000001: OK
-2026/01/21-14:30:06.343 8de4 **** Repaired leveldb C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613_1\Default\Site Characteristics Database; recovered 1 files; 207 bytes. Some data may have been lost. ****
+2026/01/21-14:30:06.351 8de4 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613_1\Default\Site Characteristics Database/MANIFEST-000001

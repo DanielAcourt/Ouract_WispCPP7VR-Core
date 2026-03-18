@@ -19,7 +19,7 @@ class USovereignControllerComponent;
 class USovereignAttributeComponent;
 class ASovereignPlayerWisp;
 class USovereignQiComponent; // Added this
-class AController; // <--- MUST ADD THIS FOR POSSESSION
+class AController ; // <--- MUST ADD THIS FOR POSSESSION
 
 // This creates a custom event node for your Blueprints
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor);
@@ -126,9 +126,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* LookAction;
 
+
+	//Handles all Interaction Between 2 entities
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* InteractAction;
 
+	//Checks if player can Possess or i possessing
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* PossessAction;
 	

@@ -59,16 +59,19 @@ void ASovereignPlayerWisp::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//PrimaryActorTick.bCanEverTick = true;
+	//PrimaryActorTick.bStartWithTickEnabled = false; // Stay dark until needed
+
 	// Initialize the Wisp with "Spirit" stats
 	// We access these from the parent ASovereignBaseCharacter
 	if (AttributeComponent)
 	{
-		AttributeComponent->Strength = 1;      // Spirit cannot lift rocks
-		AttributeComponent->Constitution = 5;  // Spirit is fragile if hit by magic
-		AttributeComponent->Intelligence = 25; // Spirit is pure mind
+		//AttributeComponent->Strength = 1;      // Spirit cannot lift rocks
+		//AttributeComponent->Constitution = 5;  // Spirit is fragile if hit by magic
+		//AttributeComponent->Intelligence = 25; // Spirit is pure mind
 
 		// Wisps are eternal energy; they don't hunger for meat
-		AttributeComponent->Hunger = 100.0f;
+		//AttributeComponent->Hunger = 100.0f;
 	}
 
 	if (QiComponent)
@@ -132,7 +135,6 @@ void ASovereignPlayerWisp::Tick(float DeltaTime)
 	}
 }
 
-
 FVector ASovereignPlayerWisp::GetSpiritForwardVector() const
 {
 	// Priority 1: Use Control Rotation (Player's Eyes/Headset)
@@ -186,6 +188,8 @@ void ASovereignPlayerWisp::UpdateSensingLoop()
 		}
 	}
 }
+
+//Version X Old idea but kinda of want to refine for later
 /*
 void ASovereignPlayerWisp::PerformAutoSensing()
 {
@@ -289,12 +293,23 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 bool ASovereignPlayerWisp::IsPossessing()
 {
+	// i want this to have a public varible in game so i can see if i am poissing somthing
+	// secondly what GUID i am possessing
+	//A link to that actor i am possessing
+	// A timer of how loong i am possing
+	//What state i am training this possessed creature in.
+
+	// am i taking qi from object or giving?
+	// how much is the qi conversion
+	//is it neutral? I sneutral feasible?
+	
 	return true; // The Wisp identifies as a Spirit
 }
 
 //Inital thought by Dan "Need a way to unpossess if i am currently posessing something"
 //We need a way to possess and control that possessed object.
 //We need a way to unposess by pressing F aka the pocesskey
+
 void ASovereignPlayerWisp::EjectFromHost()
 {
 
@@ -321,6 +336,7 @@ void ASovereignPlayerWisp::EjectFromHost()
 
 	// 3. THE GREAT DETACHMENT
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
+
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
 	// 4. Force the Handover
@@ -380,7 +396,7 @@ void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		}
 
 		// --- SOUL ABILITY: EJECT ---
-		// Started: Only fires ONCE when the button is first pressed.
+		// Started: Only fires ONCE when the F "possession" button is first pressed.
 		// This prevents the Wisp from "glitching" out and back into the host in the same frame.
 		if (EjectAction)
 		{

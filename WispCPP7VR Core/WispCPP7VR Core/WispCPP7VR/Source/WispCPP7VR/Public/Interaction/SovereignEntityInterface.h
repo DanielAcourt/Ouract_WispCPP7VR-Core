@@ -30,7 +30,6 @@ public:
 	/** * Returns the "Sovereign Soul" (The Hub).
 		 * This is how Isla reads unknown tags on a Rock or a Wolf.
 		 */
-	//Not implmente kinda a duplicate code
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	USovereignSaveableEntityComponent* GetSovereignSoul() const;
@@ -38,7 +37,7 @@ public:
 	/** * The Handshake for the Wisp.
 	 * Replaces native 'Possess' for non-pawns (like Rocks).
 	 */
-	 //When the Wisps Enters An Actor or character
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	void OnWispEnter(AController* WispController);
 

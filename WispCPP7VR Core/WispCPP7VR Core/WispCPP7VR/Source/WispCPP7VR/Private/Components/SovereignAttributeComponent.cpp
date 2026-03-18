@@ -14,8 +14,10 @@ USovereignAttributeComponent::USovereignAttributeComponent()
 	// Default internal values to prevent crashes before sync
 	Strength = 10;
 	Dexterity = 10;
+
 	Constitution = 10;
 	Intelligence = 10;
+
 	Wisdom = 10;
 	Charisma = 10;
 
@@ -23,7 +25,11 @@ USovereignAttributeComponent::USovereignAttributeComponent()
 	ArmourClass = 10;
 
 	CurrentHealth = 1.0f;
-	CurrentStamina = 1.0f;
+	
+	//moved to bio component
+	//CurrentStamina = 1.0f;
+
+	//DefaultDifficalty = 1.0f
 }
 
 void USovereignAttributeComponent::BeginPlay()
@@ -35,7 +41,8 @@ void USovereignAttributeComponent::BeginPlay()
 
 	// Start the vessel at full health/stamina based on its new stats
 	CurrentHealth = GetMaxHealth();
-	CurrentStamina = GetMaxStamina();
+
+	//CurrentStamina = GetMaxStamina();
 }
 
 void USovereignAttributeComponent::SyncStatsFromEntity()
@@ -58,6 +65,11 @@ void USovereignAttributeComponent::SyncStatsFromEntity()
 
 		UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is syncing attributes from its Saveable Entity Component."), *GetOwner()->GetName());
 
+
+		//Strength = SaveComp->GetBaseStat("Strength");
+		//dev
+		// etc
+		
 		// In a later step, we will hook these up to your Meta-Tag system!
 		// Example: Strength = SaveComp->GetBaseStat("Strength");
 	}
@@ -68,14 +80,27 @@ float USovereignAttributeComponent::GetMaxHealth() const
 	// D&D Formula: Constitution acts as the multiplier.
 	// We use 10.0f as a base, so 10 Con = 100 HP.
 	return static_cast<float>(Constitution) * 10.0f;
+
+
+	// Implementation of your "Version 3.0" Idea:
+		// We use the floor of Constitution (the Level) plus the fractional Experience.
+	//float BaseValue = 100.0f; // Every Sovereign entity starts with a 100 HP vessel
+	//float GrowthScaling = 15.0f; // HP gained per point of Constitution
+
+	//return BaseValue + (static_cast<float>(Constitution) * GrowthScaling);
 }
 
+/*
 float USovereignAttributeComponent::GetMaxStamina() const
 {
-	// Stamina is a mix of physical toughness and agility
-	return (static_cast<float>(Constitution) + static_cast<float>(Dexterity)) * 5.0f;
-}
+	// Stamina uses both Agility (Dex) and Toughness (Con)
+	//float BaseValue = 50.0f;
+	//return BaseValue;
+	//+ (static_cast<float>(Constitution + Dexterity) * 5.0f);
 
+	return 1;
+}
+*/
 void USovereignAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -93,7 +118,11 @@ void USovereignAttributeComponent::TickComponent(float DeltaTime, ELevelTick Tic
 			PossessionBonus = 1.5f; // 50% faster regen and slower decay while player is inside
 		}
 	}
+}
 
+
+//Moving to biocomponent
+/*
 	// 2. DECAY VITALS (Modified by Possession and Constitution)
 	// High Constitution makes you hardy; Possession focus makes you "forget" hunger briefly
 	float DecayMult = 1.0f / (PossessionBonus * (1.0f + (Constitution * 0.01f)));
@@ -140,28 +169,41 @@ void USovereignAttributeComponent::TickComponent(float DeltaTime, ELevelTick Tic
 		}
 	}
 }
+*/
+
 
 TMap<FString, FString> USovereignAttributeComponent::GetSaveData()
 {
 	TMap<FString, FString> Data;
 
-	// Core Stats
+	// Core Physical based Stats
 	Data.Add(TEXT("STR"), FString::FromInt(Strength));
 	Data.Add(TEXT("DEX"), FString::FromInt(Dexterity));
 	Data.Add(TEXT("CON"), FString::FromInt(Constitution));
+
+	//Core Magical and Ai logic level based stats
 	Data.Add(TEXT("INT"), FString::FromInt(Intelligence));
 	Data.Add(TEXT("WIS"), FString::FromInt(Wisdom));
 	Data.Add(TEXT("CHA"), FString::FromInt(Charisma));
+
+	//bonus stats to improve gameplay drop rate level up rolls etc
 	Data.Add(TEXT("LCK"), FString::FromInt(Luck));
+
+	//basic Armour defens// before any gear
 	Data.Add(TEXT("AC"), FString::FromInt(ArmourClass));
 
+
+	//Moved to bio
+	/*
 	// Vitals
 	Data.Add(TEXT("HP"), FString::SanitizeFloat(CurrentHealth));
 	Data.Add(TEXT("STM"), FString::SanitizeFloat(CurrentStamina));
+
 	Data.Add(TEXT("HGR"), FString::SanitizeFloat(Hunger));
 	Data.Add(TEXT("HYD"), FString::SanitizeFloat(Hydration));
 	Data.Add(TEXT("FTG"), FString::SanitizeFloat(Fatigue));
 	Data.Add(TEXT("TRD"), FString::SanitizeFloat(Tiredness));
+	*/
 
 	// Resistances
 	Data.Add(TEXT("R_PHY"), FString::SanitizeFloat(PhysicalResistance));
@@ -177,26 +219,34 @@ void USovereignAttributeComponent::RestoreSaveData(const TMap<FString, FString>&
 	auto GetInt = [&](FString Key, int32& Target) { if (Data.Contains(Key)) Target = FCString::Atoi(*Data[Key]); };
 	auto GetFlt = [&](FString Key, float& Target) { if (Data.Contains(Key)) Target = FCString::Atof(*Data[Key]); };
 	
-	//Core Stats
-	GetInt(TEXT("Attr.STR"), Strength);
-	GetInt(TEXT("Attr.DEX"), Dexterity);
-	GetInt(TEXT("Attr.CON"), Constitution);
-	GetInt(TEXT("Attr.INT"), Intelligence);
-	GetInt(TEXT("Attr.WIS"), Wisdom);
-	GetInt(TEXT("Attr.CHA"), Charisma);
-	GetInt(TEXT("Attr.LCK"), Luck);
-	GetInt(TEXT("Attr.AC"), ArmourClass);
 
-	//Vitals
-	GetFlt(TEXT("Vitals.HP"), CurrentHealth);
-	GetFlt(TEXT("Vitals.STM"), CurrentStamina);
-	GetFlt(TEXT("Vitals.HGR"), Hunger);
-	GetFlt(TEXT("Vitals.HYD"), Hydration);
-	GetFlt(TEXT("Vitals.FTG"), Fatigue);
-	GetFlt(TEXT("Vitals.TRD"), Tiredness);
+	// Use the exact strings from your JSON file
+	FString P = TEXT("AttributeComponent.");
+
+	//Core Stats
+	GetInt(P + TEXT("STR"), Strength);
+	GetInt(P + TEXT("DEX"), Dexterity);
+	GetInt(P + TEXT("CON"), Constitution);
+	GetInt(P + TEXT("INT"), Intelligence);
+	GetInt(P + TEXT("WIS"), Wisdom);
+	GetInt(P + TEXT("CHA"), Charisma);
+	GetInt(P + TEXT("LCK"), Luck);
+	GetInt(P + TEXT("AC"), ArmourClass);
+
+	//Vitals - moving to bio component
+	/*
+	GetFlt(P + TEXT("HP"), CurrentHealth);
+	GetFlt(P + TEXT("STM"), CurrentStamina);
+	GetFlt(P + TEXT("HGR"), Hunger);
+	GetFlt(P + TEXT("HYD"), Hydration);
+	GetFlt(P + TEXT ("FTG"), Fatigue);
+	GetFlt(P + TEXT("TRD"), Tiredness);
+	*/
 
 	//ressistances
-	GetFlt(TEXT("Res.PHY"), PhysicalResistance);
-	GetFlt(TEXT("Res.MAG"), MagicalResistance);
-	GetFlt(TEXT("Res.MEN"), MentalResistance);
+	GetFlt(P + TEXT("PHY"), PhysicalResistance);
+	GetFlt(P + TEXT("MAG"), MagicalResistance);
+	GetFlt(P + TEXT("MEN"), MentalResistance);
+
+
 }
