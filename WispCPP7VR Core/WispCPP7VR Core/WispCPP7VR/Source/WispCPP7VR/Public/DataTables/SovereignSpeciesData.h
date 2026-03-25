@@ -17,9 +17,9 @@ struct FSovereignGrowthStage
 {
     GENERATED_BODY()
 
-    /** The 3D model for this specific stage */
+    /** The 3D model for this specific stage (Static or Skeletal) */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")
-    TSoftObjectPtr<UStaticMesh> StageMesh;
+    TSoftObjectPtr<UStreamableRenderAsset> StageMesh;
 
     /** NEW: Scaling factor for this stage (1.0 = Default) */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")

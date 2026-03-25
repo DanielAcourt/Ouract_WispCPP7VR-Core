@@ -22,6 +22,7 @@
 class USovereignSaveableEntityComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
+class UMeshComponent;
 
 
 //The problem with this current approach is i start by inheriting from ACharacter,
@@ -29,12 +30,16 @@ class UStaticMeshComponent;
 // But not the mating and more Advance options
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
+class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public ISovereignEntityInterface
 {
 	GENERATED_BODY()
 
 public:
 	ASovereignBaseEntity();
+
+	// --- ISovereignEntityInterface Implementation ---
+	virtual USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+	virtual UMeshComponent* GetPrimaryMesh_Implementation() const override;
 
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
@@ -60,7 +65,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Primary logic for moving from one growth stage to the next */
-	virtual void Evolve();
+	virtual void Evolve_Implementation() override;
 
 	/** Returns the unique Save System ID for this specific entity */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
@@ -143,9 +148,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Performance")
 	EUpdateFrequency UpdateFrequency = EUpdateFrequency::Standard;
 
-	/** Swaps the Static Mesh based on the current Growth Stage index */
+	/** Swaps the Mesh based on the current Growth Stage index */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Visuals")
-	void RefreshVisuals();
+	virtual void RefreshVisuals();
 
 	// --- Internal Logic ---
 
@@ -167,5 +172,5 @@ protected:
 	void CheckForEvolution();
 
 	/** Callback function for when a mesh has been asynchronously loaded. */
-	void OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr);
+	void OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> LoadedMeshPtr);
 };

@@ -67,7 +67,7 @@ public:
 	// --- Wisp Logic ---
 /** Declaring Evolve here fixes Error C2509 */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Evolve")
-	virtual void Evolve() override;
+	virtual void Evolve_Implementation() override;
 
 protected:
 	/** * INTERACTION LOGIC

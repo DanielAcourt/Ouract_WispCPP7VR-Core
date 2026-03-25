@@ -270,9 +270,18 @@ void ASovereignPlayerWisp::AttemptPossession()
 				}
 
 				// --- STEP 5: SOUL HANDOVER ---
-				if (PC && HitActor->IsA<APawn>())
+				if (PC)
 				{
-					PC->Possess(Cast<APawn>(HitActor));
+					if (HitActor->IsA<APawn>())
+					{
+						PC->Possess(Cast<APawn>(HitActor));
+					}
+					else
+					{
+						// For non-pawns, we manage the 'Spirit Link' state manually
+						// instead of using native possession.
+						UE_LOG(LogTemp, Warning, TEXT("Non-Pawn Spirit Link established with: %s"), *HitActor->GetName());
+					}
 					UE_LOG(LogTemp, Warning, TEXT("Soul migrated to Host: %s"), *HitActor->GetName());
 				}
 
@@ -326,13 +335,7 @@ void ASovereignPlayerWisp::EjectFromHost()
 	SetActorTickEnabled(true);
 
 	// 2. IDENTITY: Cache the host before we break the bond
-	APawn* HostPawn = Cast<APawn>(CurrentHost);
-	APlayerController* PC = nullptr;
-
-	if (HostPawn)
-	{
-		PC = Cast<APlayerController>(HostPawn->GetController());
-	}
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 
 	// 3. THE GREAT DETACHMENT
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
@@ -364,10 +367,10 @@ void ASovereignPlayerWisp::EjectFromHost()
 }
 
 //Evolving and leveling logic
-void ASovereignPlayerWisp::Evolve()
+void ASovereignPlayerWisp::Evolve_Implementation()
 {
 	// Call the parent Evolve first (if it has logic)
-	Super::Evolve();
+	Super::Evolve_Implementation();
 
 	// Wisp-specific evolution logic (e.g., change particle color)
 	UE_LOG(LogTemp, Warning, TEXT("The Player Spirit is evolving to a higher density!"));

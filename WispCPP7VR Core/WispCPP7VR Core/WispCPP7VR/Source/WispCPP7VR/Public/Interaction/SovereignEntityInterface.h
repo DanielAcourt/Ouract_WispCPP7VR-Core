@@ -31,22 +31,20 @@ public:
 		 * This is how Isla reads unknown tags on a Rock or a Wolf.
 		 */
 
+	/** Returns the Sovereign Soul (The 'One Sense of Simulated Truth'). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	USovereignSaveableEntityComponent* GetSovereignSoul() const;
 
-	/** * The Handshake for the Wisp.
-	 * Replaces native 'Possess' for non-pawns (like Rocks).
-	 */
-
+	/** The Handshake for the Wisp (Replaces native 'Possess' for non-pawns). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	void OnWispEnter(AController* WispController);
 
-	//When the Wisps Exits An Actor or character
+	/** When the Wisps Exits An Actor or character. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	void OnWispExit();
 
-	/** Returns the mesh so the Wisp knows where the "Physical Center" is. */
+	/** Returns the primary mesh (Skeletal or Static) of this entity. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
-	UPrimitiveComponent* GetPrimaryMesh() const;
+	class UMeshComponent* GetPrimaryMesh() const;
 public:
 };

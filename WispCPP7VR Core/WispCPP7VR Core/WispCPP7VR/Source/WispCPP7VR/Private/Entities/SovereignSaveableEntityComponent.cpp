@@ -143,9 +143,16 @@ void USovereignSaveableEntityComponent::ReceiveElementalEnergy(ESovereignElement
 	// 3. EVOLUTION CHECK
 	if (MaturityProgress >= 1.0f)
 	{
-		if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
+		if (AActor* Owner = GetOwner())
 		{
-			MyEntity->Evolve();
+			if (Owner->Implements<UInteractionInterface>())
+			{
+				IInteractionInterface::Execute_Evolve(Owner);
+			}
+			else if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner))
+			{
+				MyEntity->Evolve();
+			}
 		}
 	}
 }

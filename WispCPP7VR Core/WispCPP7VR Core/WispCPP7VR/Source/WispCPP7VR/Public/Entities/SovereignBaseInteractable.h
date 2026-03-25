@@ -29,11 +29,6 @@ public:
 
 protected:
 
-    // This is what was missing!
-    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Components")
-    class UStaticMeshComponent* BaseMesh;
-    // this needs testing this might not be the smartest way to do this as the default pawn come with a standard base mesh.
-
     /** Master interaction gate */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Interaction")
     bool bIsInteractable = true;
