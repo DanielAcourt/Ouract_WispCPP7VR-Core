@@ -31,6 +31,10 @@ ASovereignBaseCharacter::ASovereignBaseCharacter()
 	AttributeComponent = CreateDefaultSubobject<USovereignAttributeComponent>(TEXT("AttributeComponent"));
 	QiComponent = CreateDefaultSubobject<USovereignQiComponent>(TEXT("QiComponent"));
 
+	// --- SOVEREIGN UPGRADE: Fix Entity Issues ---
+	// Initialize the Soul Hub for the Character tier
+	SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("CharacterSoul"));
+
 	// 2. CONFIGURE CHARACTER DEFAULTS
 	bUseControllerRotationYaw = false;
 }
@@ -134,11 +138,7 @@ void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ASovereignBaseCharacter::Interact);
 		}
 
-		// Handle the Possession lifecycle (F key)
-		if (PossessAction)
-		{
-			EIC->BindAction(PossessAction, ETriggerEvent::Started, this, &ASovereignBaseCharacter::HandlePossessionLifecycle);
-		}
+		// Note: PossessAction binding is now handled by ASovereignBaseEntity
 	}
 }
 

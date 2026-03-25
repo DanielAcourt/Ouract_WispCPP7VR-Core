@@ -59,7 +59,7 @@ public:
 	virtual AActor* GetInhabitingSpirit_Implementation() override;
 
 	/** Handles the 'F' key logic: Possession if a Wisp, Ejection if a Vessel */
-	virtual void HandlePossessionLifecycle();
+	virtual void HandlePossessionLifecycle() override;
 
 
 	/** Primary logic for growth/evolution.
@@ -133,9 +133,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	class UInputAction* InteractAction;
 
-	//Checks if player can Possess or i possessing
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	class UInputAction* PossessAction;
 	
 };
 

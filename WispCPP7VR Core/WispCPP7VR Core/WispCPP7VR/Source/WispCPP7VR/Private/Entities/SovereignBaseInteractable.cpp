@@ -64,6 +64,10 @@ ASovereignBaseInteractable::ASovereignBaseInteractable()
     {
         SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
     }
+
+    // --- SOVEREIGN UPGRADE: Fix BaseMesh Null Pointer ---
+    // Point the interaction alias to the physical mesh slot
+    BaseMesh = EntityMesh;
 }
 
 bool ASovereignBaseInteractable::CanInteract_Implementation(AActor* Interactor)
@@ -153,5 +157,6 @@ void ASovereignBaseInteractable::RequestPossession_Implementation(AController* R
 }
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {
-    return BaseMesh;
+    // Return the physical body if the alias is missing for some reason
+    return BaseMesh ? BaseMesh : (USceneComponent*)EntityMesh;
 }

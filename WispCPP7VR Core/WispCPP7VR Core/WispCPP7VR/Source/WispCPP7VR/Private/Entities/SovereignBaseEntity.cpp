@@ -3,6 +3,9 @@
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
 
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "SaveSystem/SovereignSpawnerUtils.h" 
 #include "SaveSystem/SovereignGameData.h" 
@@ -373,6 +376,42 @@ void ASovereignBaseEntity::GetOwnedGameplayTags(FGameplayTagContainer& TagContai
 void ASovereignBaseEntity::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+}
+
+void ASovereignBaseEntity::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        // Handle the Possession lifecycle (F key)
+        if (PossessAction)
+        {
+            EIC->BindAction(PossessAction, ETriggerEvent::Started, this, &ASovereignBaseEntity::HandlePossessionLifecycle);
+        }
+    }
+}
+
+void ASovereignBaseEntity::HandlePossessionLifecycle()
+{
+    // 1. THE INTERNAL CHECK (Is there a soul in here?)
+    // We use the interface to check for attached spirits.
+    AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+
+    if (Spirit)
+    {
+        // 2. THE EJECT COMMAND
+        // We cast to the Wisp to trigger its high-level EjectFromHost logic.
+        ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
+        if (Wisp)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
+            Wisp->EjectFromHost();
+            return;
+        }
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is not inhabited by a soul, but 'F' was pressed."), *GetName());
 }
 
 

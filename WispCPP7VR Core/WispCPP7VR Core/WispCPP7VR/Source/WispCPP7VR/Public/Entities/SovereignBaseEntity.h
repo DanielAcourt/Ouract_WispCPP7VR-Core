@@ -84,6 +84,12 @@ public:
 	/** Called by the Spawn Manager after the actor has been spawned. */
 	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
 
+	/** Master Possession command (F Key) */
+	virtual void HandlePossessionLifecycle();
+
+	// Bind input for all entities
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
+
 protected:
 	/** Can this entity be possessed by a Sovereign Spirit? */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
@@ -126,6 +132,10 @@ protected:
 
 
 protected:
+	/** Input Assets - Common to all Sovereign entities */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	class UInputAction* PossessAction;
+
 	void VerifySymmetryLevel();
 
 
