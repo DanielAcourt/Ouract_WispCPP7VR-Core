@@ -45,7 +45,7 @@ public:
 	FOnActorSensed OnActorSensed;
 
 	//Ideally we want a bool stored on the wisp to know if it is possessing anything
-	bool IsPossessing();
+	virtual bool IsPossessing();
 
 	// --- IInteractionInterface Implementation ---
 	// This is the "Universal Handshake" your Wisp uses.

@@ -82,4 +82,7 @@ public:
     /** Get the component to attach to */
     virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
 
+    /** Eject the soul and clean up input */
+    virtual void RequestSoulEject_Implementation() override;
+
 };

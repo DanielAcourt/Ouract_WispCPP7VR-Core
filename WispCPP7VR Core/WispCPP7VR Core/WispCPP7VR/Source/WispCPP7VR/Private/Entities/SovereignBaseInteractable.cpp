@@ -155,3 +155,19 @@ USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Im
 {
     return BaseMesh;
 }
+void ASovereignBaseInteractable::RequestSoulEject_Implementation()
+{
+    // Clean up the Input Bridge
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        this->DisableInput(PC);
+    }
+
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange,
+            FString::Printf(TEXT("Spirit Link Severed with: %s"), *GetName()));
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("Input Bridge severed for non-pawn actor: %s"), *GetName());
+}

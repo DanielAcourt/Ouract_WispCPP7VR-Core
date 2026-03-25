@@ -279,8 +279,15 @@ void ASovereignPlayerWisp::AttemptPossession()
 				// --- STEP 6: SPIRIT STATE MANAGEMENT ---
 				SetActorHiddenInGame(true);
 
-				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 				GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+				// Disable movement and sensing
+				if (GetCharacterMovement())
+				{
+					GetCharacterMovement()->StopMovementImmediately();
+					GetCharacterMovement()->DisableMovement();
+				}
 
 				SetActorTickEnabled(true);
 
@@ -293,17 +300,7 @@ void ASovereignPlayerWisp::AttemptPossession()
 
 bool ASovereignPlayerWisp::IsPossessing()
 {
-	// i want this to have a public varible in game so i can see if i am poissing somthing
-	// secondly what GUID i am possessing
-	//A link to that actor i am possessing
-	// A timer of how loong i am possing
-	//What state i am training this possessed creature in.
-
-	// am i taking qi from object or giving?
-	// how much is the qi conversion
-	//is it neutral? I sneutral feasible?
-	
-	return true; // The Wisp identifies as a Spirit
+	return bIsPossessing;
 }
 
 //Inital thought by Dan "Need a way to unpossess if i am currently posessing something"
@@ -320,19 +317,31 @@ void ASovereignPlayerWisp::EjectFromHost()
 		return;
 	}
 
+	// Cache necessary references
+	AActor* CachedHost = CurrentHost;
+	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	// If we are possessing a Pawn, the controller is on the Host.
+	if (!PC)
+	{
+		if (APawn* HostPawn = Cast<APawn>(CachedHost))
+		{
+			PC = Cast<APlayerController>(HostPawn->GetController());
+		}
+	}
+
+	// 2. IDENTITY: Cache the host before we break the bond
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject failed - No PlayerController found on Wisp or Host!"));
+		return;
+	}
+
 	// 1. Unhide and Enable Physics FIRST
 	SetActorHiddenInGame(false);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ConfigureSpiritPhysics(); // Re-apply wisp specific physics
 	SetActorTickEnabled(true);
-
-	// 2. IDENTITY: Cache the host before we break the bond
-	APawn* HostPawn = Cast<APawn>(CurrentHost);
-	APlayerController* PC = nullptr;
-
-	if (HostPawn)
-	{
-		PC = Cast<APlayerController>(HostPawn->GetController());
-	}
 
 	// 3. THE GREAT DETACHMENT
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
@@ -340,23 +349,22 @@ void ASovereignPlayerWisp::EjectFromHost()
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
 	// 4. Force the Handover
-	if (PC)
-	{
-		// Move the Wisp to a safe spot so it's not inside the character's collision
-		AddActorWorldOffset(FVector(0, 0, 80.f));
+	// Move the Wisp to a safe spot so it's not inside the character's collision
+	AddActorWorldOffset(EjectOffset);
 
-		// This is the magic line that actually moves your camera/controls
+	// If the PC was possessing the host, return it to the Wisp
+	if (PC->GetPawn() != this)
+	{
 		PC->Possess(this);
-
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected."));
 	}
 
-	//4.a FallBack
-
-	else
+	// Call interface to cleanup host (e.g., disable input bridge)
+	if (CachedHost->Implements<UInteractionInterface>())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject failed - No Controller found on Host!"));
+		IInteractionInterface::Execute_RequestSoulEject(CachedHost);
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected."));
 
 	// 5. Cleanup
 	bIsPossessing = false;
@@ -392,7 +400,7 @@ void ASovereignPlayerWisp::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// This fires the Sphere Trace to find a host like Erisis or a Rock.
 		if (PossessAction)
 		{
-			EIC->BindAction(PossessAction, ETriggerEvent::Triggered, this, &ASovereignPlayerWisp::AttemptPossession);
+			EIC->BindAction(PossessAction, ETriggerEvent::Started, this, &ASovereignPlayerWisp::AttemptPossession);
 		}
 
 		// --- SOUL ABILITY: EJECT ---
