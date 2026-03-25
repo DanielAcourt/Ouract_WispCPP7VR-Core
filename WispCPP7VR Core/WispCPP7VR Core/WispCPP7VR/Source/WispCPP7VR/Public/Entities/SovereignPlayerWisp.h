@@ -69,6 +69,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Evolve")
 	virtual void Evolve() override;
 
+	/** Overridden to handle 'AttemptPossession' or 'Eject' based on state */
+	virtual void HandlePossessionLifecycle() override;
+
 protected:
 	/** * INTERACTION LOGIC
 		 * This is the raycast that lets you press 'E' to evolve trees/bees Core raycast logic
