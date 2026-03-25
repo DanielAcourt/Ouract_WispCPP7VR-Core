@@ -46,6 +46,7 @@ void USovereignQiComponent::AbsorbQi(float Amount, float SourcePurity)
 	TotalQiAccumulated += Amount;
 
 	// 3. CHECK FOR EVOLUTION
+	/*
 	ASovereignBaseEntity* Owner = Cast<ASovereignBaseEntity>(GetOwner());
 	if (Owner)
 	{
@@ -56,6 +57,7 @@ void USovereignQiComponent::AbsorbQi(float Amount, float SourcePurity)
 			Owner->Evolve();
 		}
 	}
+	*/
 }
 
 bool USovereignQiComponent::SpendQi(float Amount)

@@ -1,0 +1,32 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\private\\components\\sovereignbiocomponent.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\x64\\wispcpp7vreditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.inclorderunreal5_4.h.pch",
+        "Includes": [
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\wispcpp7vr\\definitions.wispcpp7vr.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\components\\sovereignbiocomponent.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\components\\sovereignbasecomponent.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\interaction\\sovereignsaveinterface.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignsaveinterface.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignbasecomponent.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignbiocomponent.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\entities\\sovereignbaseentity.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\savesystem\\sovereigngamedata.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\source\\runtime\\gameplaytags\\classes\\gameplaytagcontainer.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\source\\runtime\\core\\public\\misc\\comparisonutility.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\gameplaytags\\uht\\gameplaytagcontainer.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereigngamedata.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\datatables\\sovereignspeciesdata.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignspeciesdata.generated.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\source\\runtime\\gameplaytags\\classes\\gameplaytagassetinterface.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\gameplaytags\\uht\\gameplaytagassetinterface.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\interaction\\sovereignentityinterface.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignentityinterface.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignbaseentity.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

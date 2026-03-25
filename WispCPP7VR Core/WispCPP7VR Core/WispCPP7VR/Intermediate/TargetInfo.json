@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "WispCPP7VR",
+			"Path": "..\\Source\\WispCPP7VR.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "WispCPP7VREditor",
+			"Path": "..\\Source\\WispCPP7VREditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}

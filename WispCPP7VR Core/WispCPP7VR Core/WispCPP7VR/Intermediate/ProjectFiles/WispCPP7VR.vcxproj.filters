@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\..\.vsconfig" />
+    <Filter Include="Config">
+      <UniqueIdentifier>{FA535FFB-25E1-3D20-B416-52F9BE21E06E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config\Android">
+      <UniqueIdentifier>{1797D593-7CC5-3812-9193-8AAD12A3DA98}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\Android\AndroidEngine.ini">
+      <Filter>Config\Android</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEditor.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEngine.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultGame.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultGameplayTags.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultInput.ini">
+      <Filter>Config</Filter>
+    </None>
+    <Filter Include="Config\Mac">
+      <UniqueIdentifier>{C34A53DE-7A2E-391F-9292-A84444E41B18}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\Mac\MacEngine.ini">
+      <Filter>Config\Mac</Filter>
+    </None>
+    <Filter Include="Config\VisionOS">
+      <UniqueIdentifier>{54FB6262-BE34-3FD1-8608-DAEF798947B6}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\VisionOS\VisionOSDeviceProfiles.ini">
+      <Filter>Config\VisionOS</Filter>
+    </None>
+    <None Include="..\..\Config\VisionOS\VisionOSEngine.ini">
+      <Filter>Config\VisionOS</Filter>
+    </None>
+    <Filter Include="Source">
+      <UniqueIdentifier>{F31BBDD1-B3E8-3BCC-9652-680E16935819}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\WispCPP7VR.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\Source\WispCPP7VREditor.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <Filter Include="Source\WispCPP7VR">
+      <UniqueIdentifier>{FC4779FE-17CD-3CFD-9FC0-74AB25BD8A2B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\WispCPP7VR\Private">
+      <UniqueIdentifier>{EB61584D-0BC8-313F-9C37-F5364087BC71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\WispCPP7VR\Private\Components">
+      <UniqueIdentifier>{D33A4CB0-FFA3-303B-B7AE-4B1BF8BE2034}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignAttributeComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignBaseComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignBioComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignControllerComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignElementComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Components\SovereignQiComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Components</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\CoreModules">
+      <UniqueIdentifier>{34AC334A-CCA7-3070-BB70-2DDCDFCB9030}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\CoreModules\WispsGameModeBase.cpp">
+      <Filter>Source\WispCPP7VR\Private\CoreModules</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\DataTables">
+      <UniqueIdentifier>{D28BA65B-FAD4-3260-9285-7B4B0263CEAE}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\DataTables\SovereignDataTypes.cpp">
+      <Filter>Source\WispCPP7VR\Private\DataTables</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\DataTables\SovereignSpeciesData.cpp">
+      <Filter>Source\WispCPP7VR\Private\DataTables</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\Entities">
+      <UniqueIdentifier>{DA556E97-9B07-3923-A296-08BA00E1CED6}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignBaseCharacter.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignBaseEntity.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignBaseInteractable.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignPawn.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignPlayerWisp.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignSaveableEntityComponent.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Entities\SovereignSaveTerminal.cpp">
+      <Filter>Source\WispCPP7VR\Private\Entities</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\Interaction">
+      <UniqueIdentifier>{0C08108D-D6C6-3E50-93F7-90EB8AFB8A8B}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Interaction\SovereignEntityInterface.cpp">
+      <Filter>Source\WispCPP7VR\Private\Interaction</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Interaction\SovereignInterfaceMain.cpp">
+      <Filter>Source\WispCPP7VR\Private\Interaction</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Interaction\SovereignSaveInterface.cpp">
+      <Filter>Source\WispCPP7VR\Private\Interaction</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\SaveSystem">
+      <UniqueIdentifier>{FAADB9D8-0A06-3B05-A375-FC682322CB19}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignActorRegistry.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignGameData.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignJsonUtils.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignSaveGame.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignSaveManager.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignSpawnerUtils.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\SovereignWorldSubsystem.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\SaveSystem\UActorRegistry.cpp">
+      <Filter>Source\WispCPP7VR\Private\SaveSystem</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Private\Subsystems">
+      <UniqueIdentifier>{18785271-8D47-3C2D-8EC2-8E8BB23EEA89}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\Subsystems\SovereignSpawnManager.cpp">
+      <Filter>Source\WispCPP7VR\Private\Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WispCPP7VR\Private\VrMasterItem.cpp">
+      <Filter>Source\WispCPP7VR\Private</Filter>
+    </ClCompile>
+    <Filter Include="Source\WispCPP7VR\Public">
+      <UniqueIdentifier>{2753C0E7-89F5-3DB8-B999-5B4A74FDB70B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\WispCPP7VR\Public\Components">
+      <UniqueIdentifier>{BFBDB889-E95D-37A8-929E-5D8C5C8B120E}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignAttributeComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignBaseComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignBioComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignControllerComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignElementComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Components\SovereignQiComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Components</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\CoreModules">
+      <UniqueIdentifier>{A91FF9ED-20D4-3997-99F9-F6B4A157454C}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\CoreModules\WispsGameModeBase.h">
+      <Filter>Source\WispCPP7VR\Public\CoreModules</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\DataTables">
+      <UniqueIdentifier>{35ECDF4C-E8D8-3DDE-AB01-A2B2D1D9BF83}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\DataTables\SovereignDataTypes.h">
+      <Filter>Source\WispCPP7VR\Public\DataTables</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\DataTables\SovereignSpeciesData.h">
+      <Filter>Source\WispCPP7VR\Public\DataTables</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\Entities">
+      <UniqueIdentifier>{7E02026C-4916-3C28-8B7F-802805EE93F4}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignBaseCharacter.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignBaseEntity.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignBaseInteractable.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignPawn.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignPlayerWisp.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignSaveableEntityComponent.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Entities\SovereignSaveTerminal.h">
+      <Filter>Source\WispCPP7VR\Public\Entities</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\Interaction">
+      <UniqueIdentifier>{8FB0C2F8-D1F7-3CEB-BEE5-0F977BE8C9CD}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Interaction\SovereignEntityInterface.h">
+      <Filter>Source\WispCPP7VR\Public\Interaction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Interaction\SovereignInterfaceMain.h">
+      <Filter>Source\WispCPP7VR\Public\Interaction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Interaction\SovereignSaveInterface.h">
+      <Filter>Source\WispCPP7VR\Public\Interaction</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\SaveSystem">
+      <UniqueIdentifier>{188C69B1-4554-3833-B3E6-6FF4B30C8CA7}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignActorRegistry.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignGameData.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignJsonUtils.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignSaveGame.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignSaveManager.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignSpawnerUtils.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\SovereignWorldSubsystem.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\SaveSystem\UActorRegistry.h">
+      <Filter>Source\WispCPP7VR\Public\SaveSystem</Filter>
+    </ClInclude>
+    <Filter Include="Source\WispCPP7VR\Public\Subsystems">
+      <UniqueIdentifier>{C8EB1E1C-CD9D-3146-8C2C-C89662E49865}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\Subsystems\SovereignSpawnManager.h">
+      <Filter>Source\WispCPP7VR\Public\Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\WispCPP7VR\Public\VrMasterItem.h">
+      <Filter>Source\WispCPP7VR\Public</Filter>
+    </ClInclude>
+    <None Include="..\..\Source\WispCPP7VR\WispCPP7VR.Build.cs">
+      <Filter>Source\WispCPP7VR</Filter>
+    </None>
+    <ClCompile Include="..\..\Source\WispCPP7VR\WispCPP7VR.cpp">
+      <Filter>Source\WispCPP7VR</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\WispCPP7VR\WispCPP7VR.h">
+      <Filter>Source\WispCPP7VR</Filter>
+    </ClInclude>
+    <None Include="..\..\WispCPP7VR.uproject" />
+  </ItemGroup>
+</Project>

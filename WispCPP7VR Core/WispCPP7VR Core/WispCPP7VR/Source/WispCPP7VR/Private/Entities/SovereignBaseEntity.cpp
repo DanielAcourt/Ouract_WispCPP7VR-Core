@@ -211,7 +211,7 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
         if (SaveDataComponent->MaturityProgress >= 1.0f)
         {
             SaveDataComponent->MaturityProgress = 0.0f;
-            IInteractionInterface::Execute_Evolve(this);
+            //IInteractionInterface::Execute_Evolve(this);
         }
 
         //old logic
@@ -229,7 +229,7 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
 
 void ASovereignBaseEntity::CheckForEvolution()
 {
-    IInteractionInterface::Execute_Evolve(this);
+    //IInteractionInterface::Execute_Evolve(this);
     /*
     if (!SaveDataComponent) return;
 
@@ -264,8 +264,11 @@ void ASovereignBaseEntity::CheckForEvolution()
 }
 
 //version 3.2 Updated a fair bit to handshake with the biocomponent does this mean everything that a base enity has a bio component? ideally i would want its child to?
+
+/*
 void ASovereignBaseEntity::Evolve_Implementation()
 {
+    /*
     // Evolution is a massive biological strain
     if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
     {
@@ -283,10 +286,10 @@ void ASovereignBaseEntity::Evolve_Implementation()
         Bio->MassExperience += 5.0;
         Bio->Mass = FMath::FloorToInt(Bio->MassExperience);
     }
-
+    */
     // Trigger the Visual Shift (Mesh/Particle swap)
-    RefreshVisuals();
-}
+    //RefreshVisuals();
+
 
 //Like growing their is a gestatin state should evolving be locked into a state witha  progress bar this progress needs ot be manipulated by timme it can go upo or down
 //down = smaller deniser therfore more mass but smaller. 
@@ -405,7 +408,8 @@ void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* In
 void ASovereignBaseEntity::RefreshVisuals()
 {
     // 1. Fast Exit: Basic safety checks
-    UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    //UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    /*
     if (!PrimaryMesh || !SpeciesData) return;
 
     // 2. Index Validation
@@ -414,7 +418,7 @@ void ASovereignBaseEntity::RefreshVisuals()
         UE_LOG(LogTemp, Warning, TEXT("[%s] Invalid Growth Stage: %d"), *GetName(), CurrentGrowthStage);
         return;
     }
-
+    */
     // 3. Get the Soft Pointer to the mesh
     TSoftObjectPtr<UStreamableRenderAsset> NewMeshPtr = SpeciesData->GrowthStages[CurrentGrowthStage].StageMesh;
 
@@ -435,7 +439,8 @@ void ASovereignBaseEntity::RefreshVisuals()
 
 void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> LoadedMeshPtr)
 {
-    UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    //UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    /*
     if (!PrimaryMesh || !LoadedMeshPtr.IsValid()) return;
 
     UStreamableRenderAsset* Asset = LoadedMeshPtr.Get();
@@ -448,6 +453,7 @@ void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> L
             SMC->SetStaticMesh(SMesh);
         }
     }
+    
     // Handle Skeletal Mesh
     else if (USkeletalMesh* SkMesh = Cast<USkeletalMesh>(Asset))
     {
@@ -462,6 +468,7 @@ void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> L
     PrimaryMesh->SetRelativeScale3D(FVector(StageScale));
 
     UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
+    */
 }
 
 void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID)

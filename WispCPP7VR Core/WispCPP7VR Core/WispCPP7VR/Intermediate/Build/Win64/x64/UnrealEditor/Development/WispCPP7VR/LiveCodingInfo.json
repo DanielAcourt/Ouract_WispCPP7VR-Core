@@ -1,0 +1,44 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.WispCPP7VR.1.cpp.obj": [
+			"SovereignActorRegistry.gen.cpp.obj",
+			"SovereignAttributeComponent.gen.cpp.obj",
+			"SovereignBaseCharacter.gen.cpp.obj",
+			"SovereignBaseComponent.gen.cpp.obj",
+			"SovereignBaseEntity.gen.cpp.obj",
+			"SovereignBaseInteractable.gen.cpp.obj",
+			"SovereignBioComponent.gen.cpp.obj",
+			"SovereignControllerComponent.gen.cpp.obj",
+			"SovereignDataTypes.gen.cpp.obj",
+			"SovereignElementComponent.gen.cpp.obj",
+			"SovereignEntityInterface.gen.cpp.obj",
+			"SovereignGameData.gen.cpp.obj",
+			"SovereignInterfaceMain.gen.cpp.obj",
+			"SovereignJsonUtils.gen.cpp.obj"
+		],
+		"Module.WispCPP7VR.2.cpp.obj": [
+			"SovereignPawn.gen.cpp.obj",
+			"SovereignPlayerWisp.gen.cpp.obj",
+			"SovereignQiComponent.gen.cpp.obj",
+			"SovereignSaveableEntityComponent.gen.cpp.obj",
+			"SovereignSaveGame.gen.cpp.obj",
+			"SovereignSaveInterface.gen.cpp.obj",
+			"SovereignSaveManager.gen.cpp.obj",
+			"SovereignSaveTerminal.gen.cpp.obj",
+			"SovereignSpawnerUtils.gen.cpp.obj",
+			"SovereignSpawnManager.gen.cpp.obj",
+			"SovereignSpeciesData.gen.cpp.obj",
+			"SovereignWorldSubsystem.gen.cpp.obj",
+			"UActorRegistry.gen.cpp.obj",
+			"VrMasterItem.gen.cpp.obj",
+			"WispCPP7VR.init.gen.cpp.obj",
+			"WispsGameModeBase.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"SovereignAttributeComponent.cpp.obj",
+			"SovereignBaseComponent.cpp.obj",
+			"SovereignBioComponent.cpp.obj",
+			"SovereignControllerComponent.cpp.obj"
+		]
+	}
+}

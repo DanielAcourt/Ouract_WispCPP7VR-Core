@@ -65,7 +65,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Primary logic for moving from one growth stage to the next */
-	virtual void Evolve_Implementation() override;
+	//virtual void Evolve_Implementation() override;
 
 	/** Returns the unique Save System ID for this specific entity */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")

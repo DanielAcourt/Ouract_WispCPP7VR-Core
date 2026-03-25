@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\private\\components\\sovereignelementcomponent.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\x64\\wispcpp7vreditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.inclorderunreal5_4.h.pch",
+        "Includes": [
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\wispcpp7vr\\definitions.wispcpp7vr.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\components\\sovereignelementcomponent.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\components\\sovereignbasecomponent.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\source\\wispcpp7vr\\public\\interaction\\sovereignsaveinterface.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignsaveinterface.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignbasecomponent.generated.h",
+            "c:\\users\\danie\\unreal projects\\2027\\repo\\ouract_wispcpp7vr-core\\wispcpp7vr core\\wispcpp7vr core\\wispcpp7vr\\intermediate\\build\\win64\\unrealeditor\\inc\\wispcpp7vr\\uht\\sovereignelementcomponent.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

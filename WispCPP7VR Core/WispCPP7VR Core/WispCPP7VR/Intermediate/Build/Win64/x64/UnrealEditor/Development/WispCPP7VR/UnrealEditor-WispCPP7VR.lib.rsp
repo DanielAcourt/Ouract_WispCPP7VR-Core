@@ -1,0 +1,43 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-WispCPP7VR.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/WispCPP7VREditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.InclOrderUnreal5_4.h.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/Module.WispCPP7VR.1.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/Module.WispCPP7VR.2.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/WispCPP7VR.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/VrMasterItem.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignAttributeComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignBaseComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignBioComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignControllerComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignElementComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignQiComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/WispsGameModeBase.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignDataTypes.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSpeciesData.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignBaseCharacter.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignBaseEntity.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignBaseInteractable.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignPawn.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignPlayerWisp.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSaveableEntityComponent.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSaveTerminal.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignEntityInterface.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignInterfaceMain.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSaveInterface.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignActorRegistry.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignGameData.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignJsonUtils.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSaveGame.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSaveManager.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSpawnerUtils.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignWorldSubsystem.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/UActorRegistry.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/SovereignSpawnManager.cpp.obj"
+"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/Default.rc2.res"
+/OUT:"C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Intermediate/Build/Win64/x64/UnrealEditor/Development/WispCPP7VR/UnrealEditor-WispCPP7VR.lib"

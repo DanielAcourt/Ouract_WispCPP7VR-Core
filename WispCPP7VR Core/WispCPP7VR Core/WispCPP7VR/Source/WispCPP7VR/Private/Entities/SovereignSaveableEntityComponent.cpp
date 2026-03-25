@@ -145,6 +145,7 @@ void USovereignSaveableEntityComponent::ReceiveElementalEnergy(ESovereignElement
 	{
 		if (AActor* Owner = GetOwner())
 		{
+			/*
 			if (Owner->Implements<UInteractionInterface>())
 			{
 				IInteractionInterface::Execute_Evolve(Owner);
@@ -153,6 +154,7 @@ void USovereignSaveableEntityComponent::ReceiveElementalEnergy(ESovereignElement
 			{
 				MyEntity->Evolve();
 			}
+			*/
 		}
 	}
 }
