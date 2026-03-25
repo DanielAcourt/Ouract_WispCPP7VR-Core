@@ -32,10 +32,13 @@ protected:
     // This is what was missing!
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Components")
     class UStaticMeshComponent* BaseMesh;
+    // this needs testing this might not be the smartest way to do this as the default pawn come with a standard base mesh.
 
     /** Master interaction gate */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Interaction")
     bool bIsInteractable = true;
+
+    // there is not controller?
 
 public:
     /* =========================
@@ -81,5 +84,7 @@ public:
 
     /** Get the component to attach to */
     virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
+
+    // there is not Unpossessoin logic here?
 
 };

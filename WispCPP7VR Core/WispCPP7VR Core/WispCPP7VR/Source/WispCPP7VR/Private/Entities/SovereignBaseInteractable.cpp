@@ -30,6 +30,9 @@ ASovereignBaseInteractable::ASovereignBaseInteractable()
     PrimaryActorTick.bCanEverTick = false;
 
     // 2. The Clean Pointer Logic:
+    // KEY Architural NOTE DAN 25/03/2026
+    // // this doubles up the logic as we have a bash mesh and an enioty mesh not good for longterm development
+    // 
     // We don't create a 'BaseMesh'. We simply use the EntityMesh inherited from the parent.
     // If you need a specific name for Blueprints, use an alias, but stay in C++ reality.
 
@@ -129,6 +132,7 @@ bool ASovereignBaseInteractable::CanBePossessed_Implementation()
     // Note: bCanBePossessed is a protected variable inherited from ASovereignBaseEntity
     return bCanBePossessed;
 }
+
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
     // 1. Cast the controller to a PlayerController
