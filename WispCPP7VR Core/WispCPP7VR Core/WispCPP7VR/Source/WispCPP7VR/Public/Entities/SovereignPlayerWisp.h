@@ -45,8 +45,7 @@ public:
 	void AttemptPossession();
 
 	//Ideally we want a bool stored on the wisp to know if it is possessing anything
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
-	bool IsPossessing();
+	virtual bool IsPossessing() override;
 
 	//Then another vairable of what actor is besing possessed. 
 	/** Pops the Wisp out of the current host */
@@ -83,6 +82,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
 	float PossessionTraceRadius = 50.0f;
+
+	/** Offset applied to the Wisp when ejecting from a host */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	FVector EjectOffset = FVector(0.f, 0.f, 100.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
 	float QiDrainRate = 0.1f;

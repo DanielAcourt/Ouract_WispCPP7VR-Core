@@ -139,7 +139,7 @@ void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 //How to move and look as a input controller not an AI instruction!!!
 void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 {
-	if (!Controller) return;
+	if (!Controller || IsPossessing()) return;
 
 	// 1. Get the Raw Input (-1.0 to 1.0 for each axis)
 	const FVector Input = Value.Get<FVector>();
@@ -181,6 +181,8 @@ void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 }
 void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 {
+	if (IsPossessing()) return;
+
 	// 1. Extract the 2D Axis data (X = Mouse X / Yaw, Y = Mouse Y / Pitch)
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
