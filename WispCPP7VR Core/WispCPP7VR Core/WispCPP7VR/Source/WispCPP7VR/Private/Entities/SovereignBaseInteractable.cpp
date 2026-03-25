@@ -157,5 +157,5 @@ void ASovereignBaseInteractable::RequestPossession_Implementation(AController* R
 }
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {
-    return BaseMesh;
+    return EntityMesh;
 }

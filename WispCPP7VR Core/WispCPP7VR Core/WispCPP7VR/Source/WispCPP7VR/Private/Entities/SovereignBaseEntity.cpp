@@ -20,6 +20,11 @@
 #include "Engine/AssetManager.h"
 #include "TimerManager.h"
 
+UMeshComponent* ASovereignBaseEntity::GetPrimaryMesh_Implementation() const
+{
+    return EntityMesh;
+}
+
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
     // 0. CHARACTER DEFAULTS
@@ -206,7 +211,7 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
         if (SaveDataComponent->MaturityProgress >= 1.0f)
         {
             SaveDataComponent->MaturityProgress = 0.0f;
-            Evolve();
+            IInteractionInterface::Execute_Evolve(this);
         }
 
         //old logic
@@ -224,6 +229,7 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
 
 void ASovereignBaseEntity::CheckForEvolution()
 {
+    IInteractionInterface::Execute_Evolve(this);
     /*
     if (!SaveDataComponent) return;
 
@@ -253,12 +259,12 @@ void ASovereignBaseEntity::CheckForEvolution()
 
     //if (NormalizedPower >= PowerRequirement)
     //{
-        Evolve();
+        // Evolve_Implementation();
     //}
 }
 
 //version 3.2 Updated a fair bit to handshake with the biocomponent does this mean everything that a base enity has a bio component? ideally i would want its child to?
-void ASovereignBaseEntity::Evolve()
+void ASovereignBaseEntity::Evolve_Implementation()
 {
     // Evolution is a massive biological strain
     if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
@@ -399,7 +405,8 @@ void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* In
 void ASovereignBaseEntity::RefreshVisuals()
 {
     // 1. Fast Exit: Basic safety checks
-    if (!EntityMesh || !SpeciesData) return;
+    UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    if (!PrimaryMesh || !SpeciesData) return;
 
     // 2. Index Validation
     if (!SpeciesData->GrowthStages.IsValidIndex(CurrentGrowthStage))
@@ -409,41 +416,52 @@ void ASovereignBaseEntity::RefreshVisuals()
     }
 
     // 3. Get the Soft Pointer to the mesh
-    TSoftObjectPtr<UStaticMesh> NewMeshPtr = SpeciesData->GrowthStages[CurrentGrowthStage].StageMesh;
+    TSoftObjectPtr<UStreamableRenderAsset> NewMeshPtr = SpeciesData->GrowthStages[CurrentGrowthStage].StageMesh;
 
-    // 4. Optimization: Check if the mesh is already loaded and set
-    // This prevents redundant logic if Evolve() is called multiple times
-    if (NewMeshPtr.Get() == EntityMesh->GetStaticMesh() && !NewMeshPtr.IsNull())
+    // 4. Optimization: Check if the mesh is already loaded
+    if (NewMeshPtr.Get() && !NewMeshPtr.IsPending())
     {
+        OnMeshLoaded(NewMeshPtr);
         return;
     }
 
     // 5. The "Sovereign" Load Strategy: Asynchronous Loading
-    if (NewMeshPtr.IsPending())
+    if (NewMeshPtr.IsPending() || !NewMeshPtr.Get())
     {
         FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
         StreamableManager.RequestAsyncLoad(NewMeshPtr.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ASovereignBaseEntity::OnMeshLoaded, NewMeshPtr));
     }
-    else
-    {
-        // Mesh is already loaded, so just apply it.
-        OnMeshLoaded(NewMeshPtr);
-    }
 }
 
-void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr)
+void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> LoadedMeshPtr)
 {
-    if (LoadedMeshPtr.IsValid())
+    UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+    if (!PrimaryMesh || !LoadedMeshPtr.IsValid()) return;
+
+    UStreamableRenderAsset* Asset = LoadedMeshPtr.Get();
+
+    // Handle Static Mesh
+    if (UStaticMesh* SMesh = Cast<UStaticMesh>(Asset))
     {
-        EntityMesh->SetStaticMesh(LoadedMeshPtr.Get());
-
-        // 6. Scale/Physical Logic (The "Symmetry" adjustment)
-        // Adjust the scale based on the growth stage defined in the data asset
-        float StageScale = SpeciesData->GrowthStages[CurrentGrowthStage].VisualScale;
-        EntityMesh->SetRelativeScale3D(FVector(StageScale));
-
-        UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
+        if (UStaticMeshComponent* SMC = Cast<UStaticMeshComponent>(PrimaryMesh))
+        {
+            SMC->SetStaticMesh(SMesh);
+        }
     }
+    // Handle Skeletal Mesh
+    else if (USkeletalMesh* SkMesh = Cast<USkeletalMesh>(Asset))
+    {
+        if (USkeletalMeshComponent* SKMC = Cast<USkeletalMeshComponent>(PrimaryMesh))
+        {
+            SKMC->SetSkeletalMeshAsset(SkMesh);
+        }
+    }
+
+    // 6. Scale/Physical Logic (The "Symmetry" adjustment)
+    float StageScale = SpeciesData->GrowthStages[CurrentGrowthStage].VisualScale;
+    PrimaryMesh->SetRelativeScale3D(FVector(StageScale));
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
 }
 
 void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID)

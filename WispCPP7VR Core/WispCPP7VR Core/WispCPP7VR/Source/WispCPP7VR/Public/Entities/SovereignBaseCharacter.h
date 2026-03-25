@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h" 
 #include "Interaction/SovereignInterfaceMain.h"
+#include "Interaction/SovereignEntityInterface.h"
 #include "Entities/SovereignBaseInteractable.h"
 
 
@@ -29,12 +30,16 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor
  * The 'Master Vessel' for everything from Erisis to Dragons.
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IInteractionInterface
+class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IInteractionInterface, public ISovereignEntityInterface
 {
 	GENERATED_BODY()
 	
 public:
     ASovereignBaseCharacter();
+
+	// --- Sovereign Interfaces Implementation ---
+	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+	virtual class UMeshComponent* GetPrimaryMesh_Implementation() const override;
 
 	// This is the built-in Unreal function we are overriding
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -47,10 +52,6 @@ public:
 	//Ideally we want a bool stored on the wisp to know if it is possessing anything
 	bool IsPossessing();
 
-	// --- IInteractionInterface Implementation ---
-	// This is the "Universal Handshake" your Wisp uses.
-	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
-
 	/** Since we are an IInteractionInterface, we can implement these standard functions here too */
 	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
@@ -58,16 +59,25 @@ public:
 	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
 	virtual AActor* GetInhabitingSpirit_Implementation() override;
 
-
-
 	/** Primary logic for growth/evolution.
 	 * Making it virtual allows children like the Wisp to override it.
 	 */
-	virtual void Evolve();
+	virtual void Evolve_Implementation() override;
+
+	/** Updates the Skeletal Mesh based on Species Data */
+	virtual void RefreshVisuals();
+
 	// This tells the engine we want to run code every frame
 	virtual void Tick(float DeltaTime) override;
 
 protected: 
+	/** The "Advanced" data asset defining growth stages, health, and species attributes */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data", meta = (AllowPrivateAccess = "true"))
+	class USovereignSpeciesData* SpeciesData;
+
+	/** Which of the 8 growth stages are we currently in? (0 to 7) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Growth")
+	int32 CurrentGrowthStage = 0;
 
 
 
@@ -103,6 +113,9 @@ protected:
 
 protected:
 	virtual void BeginPlay() override;
+
+	/** Callback function for when a mesh has been asynchronously loaded. */
+	void OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> LoadedMeshPtr);
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;

@@ -12,6 +12,7 @@
 //Entinty framework to save information
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignPlayerWisp.h" //hard coded reference for now
+#include "DataTables/SovereignSpeciesData.h"
 
 //The ability for Character to move
 #include "GameFramework/Character.h" // 
@@ -20,7 +21,14 @@
 //The ability for characters to receive input
 #include "EnhancedInputComponent.h" //core unreal input libraries
 #include "EnhancedInputSubsystems.h" // You'll likely need this for the Mapping Context too
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 
+
+UMeshComponent* ASovereignBaseCharacter::GetPrimaryMesh_Implementation() const
+{
+	return GetMesh();
+}
 
 ASovereignBaseCharacter::ASovereignBaseCharacter()
 {
@@ -31,12 +39,16 @@ ASovereignBaseCharacter::ASovereignBaseCharacter()
 	AttributeComponent = CreateDefaultSubobject<USovereignAttributeComponent>(TEXT("AttributeComponent"));
 	QiComponent = CreateDefaultSubobject<USovereignQiComponent>(TEXT("QiComponent"));
 
+	SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
+
 	// 2. CONFIGURE CHARACTER DEFAULTS
 	bUseControllerRotationYaw = false;
 }
 void ASovereignBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	RefreshVisuals();
 
 	// Only run this if we are controlled by a Human (Local Player)
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -370,8 +382,59 @@ void ASovereignBaseCharacter::Tick(float DeltaTime)
 
 
 // Leveling up or evolving both in stats and visuals
-void ASovereignBaseCharacter::Evolve()
+void ASovereignBaseCharacter::Evolve_Implementation()
 {
 	// Base character evolution logic (e.g., check for enough Qi)
 	UE_LOG(LogTemp, Log, TEXT("Base Character Evolving..."));
+	RefreshVisuals();
+}
+
+void ASovereignBaseCharacter::RefreshVisuals()
+{
+	UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+	if (!PrimaryMesh || !SpeciesData) return;
+
+	if (!SpeciesData->GrowthStages.IsValidIndex(CurrentGrowthStage)) return;
+
+	TSoftObjectPtr<UStreamableRenderAsset> NewMeshPtr = SpeciesData->GrowthStages[CurrentGrowthStage].StageMesh;
+
+	if (NewMeshPtr.Get() && !NewMeshPtr.IsPending())
+	{
+		OnMeshLoaded(NewMeshPtr);
+		return;
+	}
+
+	if (NewMeshPtr.IsPending() || !NewMeshPtr.Get())
+	{
+		FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
+		StreamableManager.RequestAsyncLoad(NewMeshPtr.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ASovereignBaseCharacter::OnMeshLoaded, NewMeshPtr));
+	}
+}
+
+void ASovereignBaseCharacter::OnMeshLoaded(TSoftObjectPtr<UStreamableRenderAsset> LoadedMeshPtr)
+{
+	UMeshComponent* PrimaryMesh = IInteractionInterface::Execute_GetPrimaryMesh(this);
+	if (!PrimaryMesh || !LoadedMeshPtr.IsValid()) return;
+
+	UStreamableRenderAsset* Asset = LoadedMeshPtr.Get();
+
+	if (USkeletalMesh* SkMesh = Cast<USkeletalMesh>(Asset))
+	{
+		if (USkeletalMeshComponent* SKMC = Cast<USkeletalMeshComponent>(PrimaryMesh))
+		{
+			SKMC->SetSkeletalMeshAsset(SkMesh);
+		}
+	}
+	else if (UStaticMesh* SMesh = Cast<UStaticMesh>(Asset))
+	{
+		if (UStaticMeshComponent* SMC = Cast<UStaticMeshComponent>(PrimaryMesh))
+		{
+			SMC->SetStaticMesh(SMesh);
+		}
+	}
+
+	float StageScale = SpeciesData->GrowthStages[CurrentGrowthStage].VisualScale;
+	PrimaryMesh->SetRelativeScale3D(FVector(StageScale));
+
+	UE_LOG(LogTemp, Log, TEXT("[%s] Character visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
 }

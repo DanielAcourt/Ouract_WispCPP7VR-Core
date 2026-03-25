@@ -28,6 +28,10 @@ public:
  * Returns the Sovereign Soul (The 'One Sense of Simulated Truth').
  * This allows the Wisp to read IDs, Tags, and Qi from any interactable object.
  */
+	/** * THE MASTER KEY:
+	 * Returns the Sovereign Soul (The 'One Sense of Simulated Truth').
+	 * This allows the Wisp to read IDs, Tags, and Qi from any interactable object.
+	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Core")
 	class USovereignSaveableEntityComponent* GetSovereignSoul() const;
 
@@ -76,20 +80,25 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	USceneComponent* GetPossessionAttachmentComponent();
 
-	// Inside IInteractionInterface.h
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	/** Returns the Wisp or Spirit currently residing in this vessel. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	AActor* GetInhabitingSpirit();
 
-	// Inside IInteractionInterface.h
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	/** Returns true if this actor itself is a Spirit or Wisp. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	bool IsSpiritEntity();
 
-	//Adding this so the interface can pass along wether it has been Possessed and therefore can release the wisp
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
+	/** Command to the vessel to force the ejection of the residing spirit. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Possession")
 	void RequestSoulEject();
 
+	/** Trigger the evolution process of the entity. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Evolution")
+	void Evolve();
 
+	/** Returns the primary mesh (Skeletal or Static) of this entity. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Visuals")
+	class UMeshComponent* GetPrimaryMesh() const;
 };
 
 
