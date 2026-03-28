@@ -1,0 +1,8 @@
+{
+  "unreal_sim_state": {
+    "evaporation_prediction": 0.05,
+    "algae_density": 0.1,
+    "survival_risk_level": 0.0
+  },
+  "warnings": []
+}

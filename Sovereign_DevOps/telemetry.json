@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-03-28T12:00:00Z",
+  "tank_id": "DansOfficeTank_0",
+  "hardware_telemetry": {
+    "temp_c": 24.5,
+    "ph_val": 7.0,
+    "water_depth_mm": 500.0
+  }
+}
