@@ -5,6 +5,7 @@
 - **SSoT Level 0**: Timeline and Mission Log.
 - **SSoT Level 1**: `AGENTS.md` (Constitutional Logic).
 - **SSoT Level 2**: `identity.json` (Internal Logic/Schema).
+- **Backlog**: `BACKLOG.md` (Trello-Style Ticket Board).
 
 ## 1. Timeline
 
