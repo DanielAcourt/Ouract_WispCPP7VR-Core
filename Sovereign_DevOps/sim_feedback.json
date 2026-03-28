@@ -1,8 +1,14 @@
 {
   "unreal_sim_state": {
     "evaporation_prediction": 0.05,
-    "algae_density": 0.1,
-    "survival_risk_level": 0.0
+    "algae_density": 0.3, // A fair amount of algae not harming plants but making tank look dirty
+    "survival_risk_level": 0.2 // Because alge clings to Anubias
   },
-  "warnings": []
+  "warnings": [Black Hair Algae Groweth]
+  "Suggestions":[Water changes and filter/pump get CO2 in tank]
+  //Add new option so i can give observations feedback
+  //Needs to be timestamps
+  //Needs to have User ID of who did observation
+  //Needs to have a clear method for feedback and to feed into devlopment as well as "Fishtank"/Product control and maintance, training etc
+   "Observations":[Raised Values due to aglae amount in real world and reason for risk "Because alge clings to Anubias" Check COmments in code ]
 }
