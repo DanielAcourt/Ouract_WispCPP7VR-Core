@@ -23,7 +23,7 @@ The core of every entity in the Sovereign Framework is the **Soul**. This actor 
 ---
 
 ## 🛸 Possession Lifecycle & SOP
-Possession is a critical mechanic governed by a strict **Standard Operating Procedure (SOP)** to prevent actor-state corruption and ensure visual consistency in VR.
+Possession is a critical mechanic governed by a strict **Standard Operating Procedure (SOP)** to prevent actor-state corruption and ensure visual consistency in VR. The lifecycle is managed by `HandlePossessionLifecycle()`, which toggles between entering and exiting a host.
 
 ### The "Sovereign Rule" for Transforms
 All attachments during the possession lifecycle **must** use:
@@ -31,11 +31,19 @@ All attachments during the possession lifecycle **must** use:
 This ensures the possessing Spirit does not inherit the scale of its host Vessel, maintaining visual integrity.
 
 ### Technical Implementation Sequence:
-1.  **Sever Spirit Link:** Request `SoulEject` on the host (which calls `DisableInput`).
-2.  **Detach Spirit:** Safely unbind the Spirit from the Vessel.
-3.  **Restore Visibility:** Reactivate collision and visibility for the Spirit.
-4.  **Teleport:** Move the Spirit to its defined `EjectOffset`.
-5.  **Re-possess:** Hand control back to the Player Controller (if the host was a Pawn).
+
+#### 1. Entering a Host (`AttemptPossession`)
+*   **Targeting:** Performs a `SphereTraceSingleForObjects` to find a valid Vessel.
+*   **Validation:** Checks `CanBePossessed()` via the `IInteractionInterface`.
+*   **Attachment:** Uses the "Sovereign Rule" to attach to the target's `GetPossessionAttachmentComponent()`.
+*   **Control Handover:** The Player Controller `Possess()`es the target Pawn.
+*   **Spirit State:** The Spirit actor is hidden, and collision is set to `QueryOnly` to avoid physical interference while inhabiting the host.
+
+#### 2. Exiting a Host (`EjectFromHost`)
+*   **Unhide & Physics:** Restores the Spirit's visibility and `QueryAndPhysics` collision.
+*   **Detachment:** Calls `DetachFromActor(FDetachmentTransformRules::KeepWorldTransform)`.
+*   **Safe Offset:** Applies a safe world offset (e.g., `Z + 80.0f`) to prevent the Spirit from spawning inside the host's collision.
+*   **Re-possession:** Control is handed back to the Spirit actor via `PC->Possess(this)`.
 
 ---
 
@@ -51,8 +59,8 @@ The Sovereign Framework features advanced "Digital Twin" capabilities, allowing 
 
 ## 🎮 Input Conventions
 The framework enforces a standardized input model to ensure a consistent user experience:
-*   **[F] Key:** Possession lifecycle (Initiate Possession / Unpossess / Eject).
-*   **[E] Key:** Contextual Interaction (Harvesting, Activating, Conversing).
+*   **[F] Key:** Possession lifecycle (Initiate Possession / Unpossess / Eject). Bound to `HandlePossessionLifecycle`.
+*   **[E] Key:** Contextual Interaction (Harvesting, Activating, Conversing). Bound to `Interact`.
 
 ---
 
