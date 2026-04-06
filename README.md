@@ -64,7 +64,7 @@ The framework enforces a standardized input model to ensure a consistent user ex
 
 ---
 
-## 🛠️ Technical Features
+## 🏗️ Framework Capabilities (The StoreFront)
 *   **Interface-Based Possession:** Decoupled `IInteractionInterface` allows any Actor to become a possessable Vessel.
 *   **Asynchronous Asset Loading:** Uses `FStreamableManager` for zero-hitch mesh updates and entity evolution.
 *   **Data-Driven Spawning:** `USovereignSpawnManager` utilizes `USovereignSpeciesData` for class-agnostic, async actor instantiation.
@@ -72,6 +72,6 @@ The framework enforces a standardized input model to ensure a consistent user ex
 
 ---
 
-## 📜 Development Guidelines
+## 📜 Architectural Standards & Guidelines
 *   **Sovereign_DevOps/:** The "Neutral Zone" for shared data (telemetry.json, sim_feedback.json) and documentation.
 *   **Polite Persistence:** Saveable components extract only their relevant keys from the "Suitcase" (`TMap<FString, FString>`), ensuring clean data management.
