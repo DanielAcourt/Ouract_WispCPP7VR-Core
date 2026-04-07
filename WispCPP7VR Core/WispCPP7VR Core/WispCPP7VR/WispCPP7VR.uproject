@@ -26,6 +26,18 @@
 		{
 			"Name": "OpenXRHandTracking",
 			"Enabled": true
+		},
+		{
+			"Name": "AudioCQTests",
+			"Enabled": true
+		},
+		{
+			"Name": "FunctionalTestingEditor",
+			"Enabled": true
+		},
+		{
+			"Name": "TestFramework",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

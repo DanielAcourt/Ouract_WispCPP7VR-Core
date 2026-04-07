@@ -1,16 +1,13 @@
-2026/03/25-12:44:33.372 a8f8 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
-2026/03/25-12:44:33.378 a8f8 Recovering log #27
-2026/03/25-12:44:33.378 a8f8 Level-0 table #29: started
-2026/03/25-12:44:33.383 a8f8 Level-0 table #29: 70888 bytes OK
-2026/03/25-12:44:33.383 a8f8 Recovering log #29
-2026/03/25-12:44:33.385 a8f8 Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000029.log 
-2026/03/25-12:44:33.387 a8f8 Delete type=0 #27
-2026/03/25-12:44:33.387 661c Compacting 4@0 + 1@1 files
-2026/03/25-12:44:33.393 661c Generated table #30@0: 7 keys, 12588 bytes
-2026/03/25-12:44:33.393 661c Compacted 4@0 + 1@1 files => 12588 bytes
-2026/03/25-12:44:33.393 661c compacted to: files[ 0 1 1 0 0 0 0 ]
-2026/03/25-12:44:33.394 661c Delete type=2 #18
-2026/03/25-12:44:33.394 661c Delete type=2 #21
-2026/03/25-12:44:33.394 661c Delete type=2 #24
-2026/03/25-12:44:33.394 661c Delete type=2 #26
-2026/03/25-12:44:33.394 661c Delete type=2 #29
+2026/04/06-15:31:54.841 a22c Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/06-15:31:54.845 a22c Recovering log #41
+2026/04/06-15:31:54.848 a22c Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000041.log 
+2026/04/06-15:31:54.848 a22c Delete type=2 #43
+2026/04/06-15:31:54.849 b120 Compacting 4@0 + 1@1 files
+2026/04/06-15:31:54.855 b120 Generated table #44@0: 7 keys, 15200 bytes
+2026/04/06-15:31:54.855 b120 Compacted 4@0 + 1@1 files => 15200 bytes
+2026/04/06-15:31:54.856 b120 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/06-15:31:54.857 b120 Delete type=2 #30
+2026/04/06-15:31:54.857 b120 Delete type=2 #33
+2026/04/06-15:31:54.857 b120 Delete type=2 #35
+2026/04/06-15:31:54.857 b120 Delete type=2 #39
+2026/04/06-15:31:54.857 b120 Delete type=2 #42

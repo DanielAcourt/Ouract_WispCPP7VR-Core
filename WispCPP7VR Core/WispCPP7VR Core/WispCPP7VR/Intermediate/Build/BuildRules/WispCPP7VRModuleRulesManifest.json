@@ -1,0 +1,9 @@
+{
+	"SourceFiles": [
+		"C:\\Users\\Danie\\Unreal Projects\\2027\\repo\\Ouract_WispCPP7VR-Core\\WispCPP7VR Core\\WispCPP7VR Core\\WispCPP7VR\\Source\\WispCPP7VRTests\\WispCPP7VRTests.Build.cs",
+		"C:\\Users\\Danie\\Unreal Projects\\2027\\repo\\Ouract_WispCPP7VR-Core\\WispCPP7VR Core\\WispCPP7VR Core\\WispCPP7VR\\Source\\WispCPP7VR\\WispCPP7VR.Build.cs",
+		"C:\\Users\\Danie\\Unreal Projects\\2027\\repo\\Ouract_WispCPP7VR-Core\\WispCPP7VR Core\\WispCPP7VR Core\\WispCPP7VR\\Source\\WispCPP7VR.Target.cs",
+		"C:\\Users\\Danie\\Unreal Projects\\2027\\repo\\Ouract_WispCPP7VR-Core\\WispCPP7VR Core\\WispCPP7VR Core\\WispCPP7VR\\Source\\WispCPP7VREditor.Target.cs"
+	],
+	"EngineVersion": "5.7.3"
+}

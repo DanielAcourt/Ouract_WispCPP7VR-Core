@@ -1,27 +1,37 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. All Rights Reserved. Confidential & Proprietary.
 
 using UnrealBuildTool;
 
 public class WispCPP7VR : ModuleRules
 {
-	public WispCPP7VR(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+    public WispCPP7VR(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-	
-		PublicDependencyModuleNames.AddRange(new string[] {  "Core",
-                "CoreUObject",
-                "Engine",
-                "InputCore",
-                "EnhancedInput",
-                "Json",
-                "JsonUtilities",
-                "GameplayTags",
-                "GameplayTasks",
-                "Niagara",           // <--- ADD THIS
-                "NavigationSystem",  // Recommended for your AI/Dragons
-                "AIModule",           // Recommended for your Entity logic
-                "UMG", });
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Core",
+            "CoreUObject",
+            "Engine",
+            "InputCore",
+            "EnhancedInput",
+            "Json",
+            "JsonUtilities",
+            "GameplayTags",
+            "GameplayTasks",
+            "Niagara",
+            "NavigationSystem",
+            "AIModule",
+            "UMG"
+        });
+
+        // Enable automation tests
+        if (Target.bBuildTests)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] {
+                "FunctionalTesting",
+                "AutomationTest"
+            });
+        }
 
         // Modules that should ONLY be included when building for the Editor
         if (Target.Type == TargetType.Editor)
@@ -30,9 +40,10 @@ public class WispCPP7VR : ModuleRules
                 new string[]
                 {
                     "AssetTools",
-                    "UnrealEd"
-                }
+                    "UnrealEd",
+                    "TestFramework"  // Add testing framework for editor
+				}
             );
         }
-	}
+    }
 }
