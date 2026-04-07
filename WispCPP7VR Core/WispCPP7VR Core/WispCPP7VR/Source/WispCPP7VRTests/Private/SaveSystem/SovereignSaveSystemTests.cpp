@@ -24,7 +24,7 @@
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignEntityDataInitializationTest,
     "SaveSystem.Initialization.EntityDataDefaults",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignEntityDataInitializationTest::RunTest(const FString& Parameters)
@@ -32,14 +32,14 @@ bool FSovereignEntityDataInitializationTest::RunTest(const FString& Parameters)
     // Test default constructor initializes all properties correctly
     FEntitySaveData Entity;
 
-    TestTrue("Default GUID is initialized", Entity.MyGUID.IsValid());
-    TestEqual("Default bIsFemale is false", Entity.bIsFemale, false);
-    TestEqual("Default OffspringCount is 0", Entity.OffspringCount, 0);
-    TestEqual("Default SavedGrowthStage is Inception", 
+    TestTrue(TEXT("Default GUID is initialized"), Entity.MyGUID.IsValid());
+    TestEqual(TEXT("Default bIsFemale is false"), Entity.bIsFemale, false);
+    TestEqual(TEXT("Default OffspringCount is 0"), Entity.OffspringCount, 0);
+    TestEqual(TEXT("Default SavedGrowthStage is Inception"),
         static_cast<uint8>(Entity.SavedGrowthStage), 
         static_cast<uint8>(ESovereignGrowthStage::Inception)
     );
-    TestEqual("Default SavedFrequency is Standard",
+    TestEqual(TEXT("Default SavedFrequency is Standard"),
         static_cast<uint8>(Entity.SavedFrequency),
         static_cast<uint8>(EUpdateFrequency::Standard)
     );
@@ -53,7 +53,7 @@ bool FSovereignEntityDataInitializationTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignGUIDUniquenessTest,
     "SaveSystem.Registry.GUIDUniqueness",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignGUIDUniquenessTest::RunTest(const FString& Parameters)
@@ -81,7 +81,7 @@ bool FSovereignGUIDUniquenessTest::RunTest(const FString& Parameters)
         }
     }
 
-    TestEqual("Created 50 unique entities", Entities.Num(), 50);
+    TestEqual(TEXT("Created 50 unique entities"), Entities.Num(), 50);
     return true;
 }
 
@@ -91,7 +91,7 @@ bool FSovereignGUIDUniquenessTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignJsonSerializationTest,
     "SaveSystem.Serialization.JSONRobustness",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignJsonSerializationTest::RunTest(const FString& Parameters)
@@ -113,11 +113,11 @@ bool FSovereignJsonSerializationTest::RunTest(const FString& Parameters)
     JsonObject->SetStringField(TEXT("ClassPath"), OriginalEntity.ClassPath);
 
     // Verify serialization produced valid JSON
-    TestTrue("JSON object created successfully", JsonObject.IsValid());
-    TestTrue("GUID field exists", JsonObject->HasField(TEXT("MyGUID")));
-    TestTrue("bIsFemale field exists", JsonObject->HasField(TEXT("bIsFemale")));
-    TestEqual("bIsFemale value correct", JsonObject->GetBoolField(TEXT("bIsFemale")), true);
-    TestEqual("OffspringCount value correct", static_cast<int32>(JsonObject->GetNumberField(TEXT("OffspringCount"))), 5);
+    TestTrue(TEXT("JSON object created successfully"), JsonObject.IsValid());
+    TestTrue(TEXT("GUID field exists"), JsonObject->HasField(TEXT("MyGUID")));
+    TestTrue(TEXT("bIsFemale field exists"), JsonObject->HasField(TEXT("bIsFemale")));
+    TestEqual(TEXT("bIsFemale value correct"), JsonObject->GetBoolField(TEXT("bIsFemale")), true);
+    TestEqual(TEXT("OffspringCount value correct"), static_cast<int32>(JsonObject->GetNumberField(TEXT("OffspringCount"))), 5);
 
     return true;
 }
@@ -128,7 +128,7 @@ bool FSovereignJsonSerializationTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignSoftReferenceResilienceTest,
     "SaveSystem.References.SoftReferenceFallback",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignSoftReferenceResilienceTest::RunTest(const FString& Parameters)
@@ -137,15 +137,15 @@ bool FSovereignSoftReferenceResilienceTest::RunTest(const FString& Parameters)
 
     // Test empty ClassPath doesn't break serialization
     Entity.ClassPath = TEXT("");
-    TestTrue("Empty ClassPath doesn't invalidate entity", Entity.MyGUID.IsValid());
+    TestTrue(TEXT("Empty ClassPath doesn't invalidate entity"), Entity.MyGUID.IsValid());
 
     // Test invalid ClassPath is handled gracefully
     Entity.ClassPath = TEXT("/InvalidGame/MissingBlueprint");
-    TestTrue("Invalid ClassPath doesn't break entity", Entity.MyGUID.IsValid());
+    TestTrue(TEXT("Invalid ClassPath doesn't break entity"), Entity.MyGUID.IsValid());
 
     // Test null parent references
     Entity.ParentID = FGuid();
-    TestTrue("Null ParentID is valid FGuid", Entity.ParentID == FGuid());
+    TestTrue(TEXT("Null ParentID is valid FGuid"), Entity.ParentID == FGuid());
 
     return true;
 }
@@ -156,15 +156,15 @@ bool FSovereignSoftReferenceResilienceTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignItemDefaultsInitializationTest,
     "SaveSystem.Initialization.ItemDefaults",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignItemDefaultsInitializationTest::RunTest(const FString& Parameters)
 {
     FItemDefaults ItemDefaults;
 
-    TestTrue("SpeciesVesselData is initialized to null", ItemDefaults.SpeciesVesselData == nullptr);
-    TestTrue("SpeciesTag is initialized", true); // GameplayTag is always valid
+    TestTrue(TEXT("SpeciesVesselData is initialized to null"), ItemDefaults.SpeciesVesselData == nullptr);
+    TestTrue(TEXT("SpeciesTag is initialized"), true); // GameplayTag is always valid
 
     return true;
 }
@@ -175,7 +175,7 @@ bool FSovereignItemDefaultsInitializationTest::RunTest(const FString& Parameters
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignLineageDataTest,
     "SaveSystem.Data.LineageConsistency",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignLineageDataTest::RunTest(const FString& Parameters)
@@ -188,14 +188,14 @@ bool FSovereignLineageDataTest::RunTest(const FString& Parameters)
     Child.MotherID = ParentID;
     Child.FatherID = FGuid::NewGuid();
 
-    TestEqual("Child's ParentID matches Parent's GUID", Child.ParentID, ParentID);
-    TestNotEqual("Child's FatherID is different from MotherID", Child.MotherID, Child.FatherID);
+    TestEqual(TEXT("Child's ParentID matches Parent's GUID"), Child.ParentID, ParentID);
+    TestNotEqual(TEXT("Child's FatherID is different from MotherID"), Child.MotherID, Child.FatherID);
 
     Child.OffspringCount = 0;
-    TestEqual("Initial OffspringCount is 0", Child.OffspringCount, 0);
+    TestEqual(TEXT("Initial OffspringCount is 0"), Child.OffspringCount, 0);
 
     Child.OffspringCount++;
-    TestEqual("OffspringCount increments correctly", Child.OffspringCount, 1);
+    TestEqual(TEXT("OffspringCount increments correctly"), Child.OffspringCount, 1);
 
     return true;
 }
@@ -206,26 +206,26 @@ bool FSovereignLineageDataTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignGrowthStageTransitionTest,
     "SaveSystem.GameRules.GrowthStageValidation",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignGrowthStageTransitionTest::RunTest(const FString& Parameters)
 {
     FEntitySaveData Entity;
     Entity.SavedGrowthStage = ESovereignGrowthStage::Inception;
-    TestEqual("Starting stage is Inception", 
+    TestEqual(TEXT("Starting stage is Inception"),
         static_cast<uint8>(Entity.SavedGrowthStage), 
         static_cast<uint8>(ESovereignGrowthStage::Inception)
     );
 
     Entity.SavedGrowthStage = ESovereignGrowthStage::Seed;
-    TestEqual("Can progress to Seed",
+    TestEqual(TEXT("Can progress to Seed"),
         static_cast<uint8>(Entity.SavedGrowthStage),
         static_cast<uint8>(ESovereignGrowthStage::Seed)
     );
 
     Entity.SavedGrowthStage = ESovereignGrowthStage::Adult;
-    TestTrue("Can advance to Adult stage", 
+    TestTrue(TEXT("Can advance to Adult stage"),
         static_cast<uint8>(Entity.SavedGrowthStage) > static_cast<uint8>(ESovereignGrowthStage::Sprout)
     );
 
@@ -238,7 +238,7 @@ bool FSovereignGrowthStageTransitionTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignUpdateFrequencyTest,
     "SaveSystem.Configuration.UpdateFrequency",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignUpdateFrequencyTest::RunTest(const FString& Parameters)
@@ -248,11 +248,11 @@ bool FSovereignUpdateFrequencyTest::RunTest(const FString& Parameters)
     FastEntity.SavedFrequency = EUpdateFrequency::Realtime;
     SlowEntity.SavedFrequency = EUpdateFrequency::Glacier;
 
-    TestTrue("Fast update frequency is realtime",
+    TestTrue(TEXT("Fast update frequency is realtime"),
         static_cast<uint8>(FastEntity.SavedFrequency) <= static_cast<uint8>(EUpdateFrequency::Realtime)
     );
 
-    TestTrue("Slow update frequency is glacier",
+    TestTrue(TEXT("Slow update frequency is glacier"),
         static_cast<uint8>(SlowEntity.SavedFrequency) >= static_cast<uint8>(EUpdateFrequency::Slowest)
     );
 
@@ -265,7 +265,7 @@ bool FSovereignUpdateFrequencyTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignTransformIntegrityTest,
     "SaveSystem.Data.TransformIntegrity",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignTransformIntegrityTest::RunTest(const FString& Parameters)
@@ -274,7 +274,7 @@ bool FSovereignTransformIntegrityTest::RunTest(const FString& Parameters)
     FVector TestLocation(100.0f, 200.0f, 300.0f);
     Entity.WorldTransform.SetTranslation(TestLocation);
 
-    TestTrue("Transform location is valid", 
+    TestTrue(TEXT("Transform location is valid"),
         Entity.WorldTransform.GetTranslation().Equals(TestLocation, 0.01f)
     );
 
@@ -287,7 +287,7 @@ bool FSovereignTransformIntegrityTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignMatingHistoryTest,
     "SaveSystem.Lineage.MatingHistory",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignMatingHistoryTest::RunTest(const FString& Parameters)
@@ -301,13 +301,13 @@ bool FSovereignMatingHistoryTest::RunTest(const FString& Parameters)
     Entity.MatingHistory.Add(Mate2);
     Entity.MatingHistory.Add(Mate3);
 
-    TestEqual("MatingHistory contains 3 entries", Entity.MatingHistory.Num(), 3);
-    TestEqual("First mate matches", Entity.MatingHistory[0], Mate1);
-    TestEqual("Second mate matches", Entity.MatingHistory[1], Mate2);
-    TestEqual("Third mate matches", Entity.MatingHistory[2], Mate3);
+    TestEqual(TEXT("MatingHistory contains 3 entries"), Entity.MatingHistory.Num(), 3);
+    TestEqual(TEXT("First mate matches"), Entity.MatingHistory[0], Mate1);
+    TestEqual(TEXT("Second mate matches"), Entity.MatingHistory[1], Mate2);
+    TestEqual(TEXT("Third mate matches"), Entity.MatingHistory[2], Mate3);
 
     Entity.MatingHistory.Remove(Mate2);
-    TestEqual("MatingHistory contains 2 entries after removal", Entity.MatingHistory.Num(), 2);
+    TestEqual(TEXT("MatingHistory contains 2 entries after removal"), Entity.MatingHistory.Num(), 2);
 
     return true;
 }
@@ -318,7 +318,7 @@ bool FSovereignMatingHistoryTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignElementalAffinitiesTest,
     "SaveSystem.Elements.AffinitiesManagement",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignElementalAffinitiesTest::RunTest(const FString& Parameters)
@@ -329,9 +329,9 @@ bool FSovereignElementalAffinitiesTest::RunTest(const FString& Parameters)
     Entity.ElementalAffinities.Add(ESovereignElement::Water, 0.3f);
     Entity.ElementalAffinities.Add(ESovereignElement::Nature, 0.9f);
 
-    TestEqual("ElementalAffinities map has 3 entries", Entity.ElementalAffinities.Num(), 3);
-    TestEqual("Fire affinity is 0.8", Entity.ElementalAffinities[ESovereignElement::Fire], 0.8f);
-    TestTrue("Water affinity is less than Nature affinity",
+    TestEqual(TEXT("ElementalAffinities map has 3 entries"), Entity.ElementalAffinities.Num(), 3);
+    TestEqual(TEXT("Fire affinity is 0.8"), Entity.ElementalAffinities[ESovereignElement::Fire], 0.8f);
+    TestTrue(TEXT("Water affinity is less than Nature affinity"),
         Entity.ElementalAffinities[ESovereignElement::Water] < Entity.ElementalAffinities[ESovereignElement::Nature]
     );
 
@@ -344,7 +344,7 @@ bool FSovereignElementalAffinitiesTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignUnknownMetaTagsNullSafetyTest,
     "SaveSystem.NullSafety.UnknownMetaTags",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignUnknownMetaTagsNullSafetyTest::RunTest(const FString& Parameters)
@@ -352,15 +352,15 @@ bool FSovereignUnknownMetaTagsNullSafetyTest::RunTest(const FString& Parameters)
     FEntitySaveData Entity;
 
     // Test null pointer safety
-    TestTrue("UnknownMetaTags is initially null", !Entity.UnknownMetaTags.IsValid());
+    TestTrue(TEXT("UnknownMetaTags is initially null"), !Entity.UnknownMetaTags.IsValid());
 
     // Create valid JSON object
     Entity.UnknownMetaTags = MakeShared<FJsonObject>();
-    TestTrue("UnknownMetaTags is valid after creation", Entity.UnknownMetaTags.IsValid());
+    TestTrue(TEXT("UnknownMetaTags is valid after creation"), Entity.UnknownMetaTags.IsValid());
 
     // Add data safely
     Entity.UnknownMetaTags->SetStringField(TEXT("CustomTag"), TEXT("CustomValue"));
-    TestEqual("CustomTag was set correctly", 
+    TestEqual(TEXT("CustomTag was set correctly"),
         Entity.UnknownMetaTags->GetStringField(TEXT("CustomTag")), 
         FString(TEXT("CustomValue"))
     );
@@ -374,7 +374,7 @@ bool FSovereignUnknownMetaTagsNullSafetyTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignClassPathValidationTest,
     "SaveSystem.References.ClassPathValidation",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignClassPathValidationTest::RunTest(const FString& Parameters)
@@ -382,11 +382,11 @@ bool FSovereignClassPathValidationTest::RunTest(const FString& Parameters)
     FEntitySaveData Entity;
 
     Entity.ClassPath = TEXT("/Game/Blueprints/Entities/BP_SovereignWisp_C");
-    TestTrue("Valid ClassPath is not empty", !Entity.ClassPath.IsEmpty());
-    TestTrue("ClassPath contains /Game/", Entity.ClassPath.Contains(TEXT("/Game/")));
+    TestTrue(TEXT("Valid ClassPath is not empty"), !Entity.ClassPath.IsEmpty());
+    TestTrue(TEXT("ClassPath contains /Game/"), Entity.ClassPath.Contains(TEXT("/Game/")));
 
     Entity.ClassPath = TEXT("");
-    TestTrue("Empty ClassPath doesn't invalidate entity", Entity.MyGUID.IsValid());
+    TestTrue(TEXT("Empty ClassPath doesn't invalidate entity"), Entity.MyGUID.IsValid());
 
     return true;
 }
@@ -397,7 +397,7 @@ bool FSovereignClassPathValidationTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignBatchEntityCreationTest,
     "SaveSystem.Performance.BatchCreation",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignBatchEntityCreationTest::RunTest(const FString& Parameters)
@@ -415,8 +415,8 @@ bool FSovereignBatchEntityCreationTest::RunTest(const FString& Parameters)
     }
     double CreationTime = FPlatformTime::Seconds() - StartTime;
 
-    TestEqual("Batch creation generated correct number of entities", Entities.Num(), BatchSize);
-    TestTrue("Batch creation completed in reasonable time", CreationTime < 1.0);
+    TestEqual(TEXT("Batch creation generated correct number of entities"), Entities.Num(), BatchSize);
+    TestTrue(TEXT("Batch creation completed in reasonable time"), CreationTime < 1.0);
 
     int32 FemaleCount = 0;
     for (const FEntitySaveData& E : Entities)
@@ -424,7 +424,7 @@ bool FSovereignBatchEntityCreationTest::RunTest(const FString& Parameters)
         if (E.bIsFemale)
             FemaleCount++;
     }
-    TestTrue("Approximate 50% female entities", FemaleCount >= BatchSize / 2 - 10);
+    TestTrue(TEXT("Approximate 50% female entities"), FemaleCount >= BatchSize / 2 - 10);
 
     return true;
 }
@@ -435,7 +435,7 @@ bool FSovereignBatchEntityCreationTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FSovereignEdgeCasesTest,
     "SaveSystem.EdgeCases.BoundaryConditions",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 )
 
 bool FSovereignEdgeCasesTest::RunTest(const FString& Parameters)
@@ -444,19 +444,19 @@ bool FSovereignEdgeCasesTest::RunTest(const FString& Parameters)
 
     // Max offspring count
     Entity.OffspringCount = INT32_MAX;
-    TestEqual("Max offspring count is handled", Entity.OffspringCount, INT32_MAX);
+    TestEqual(TEXT("Max offspring count is handled"), Entity.OffspringCount, INT32_MAX);
 
     // Empty GUID
     Entity.MyGUID = FGuid();
-    TestTrue("Empty GUID is valid FGuid", Entity.MyGUID == FGuid());
+    TestTrue(TEXT("Empty GUID is valid FGuid"), Entity.MyGUID == FGuid());
 
     // Very long ClassPath
     Entity.ClassPath = FString(TEXT("/Game/")) + FString(500, 'A');
-    TestTrue("Long ClassPath is stored correctly", Entity.ClassPath.Len() > 500);
+    TestTrue(TEXT("Long ClassPath is stored correctly"), Entity.ClassPath.Len() > 500);
 
     // Zero scale transform
     Entity.WorldTransform.SetScale3D(FVector::ZeroVector);
-    TestTrue("Zero scale transform is valid", Entity.WorldTransform.IsValid());
+    TestTrue(TEXT("Zero scale transform is valid"), Entity.WorldTransform.IsValid());
 
     return true;
 }
