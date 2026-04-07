@@ -25,7 +25,7 @@ public class WispCPP7VR : ModuleRules
         });
 
         // Enable automation tests
-        if (Target.bBuildTests)
+        if (Target.Configuration != UnrealTargetConfiguration.Shipping)
         {
             PrivateDependencyModuleNames.AddRange(new string[] {
                 "FunctionalTesting",
