@@ -56,7 +56,7 @@ bool FSovereignSaveGameSerializationTest::RunTest(const FString& Parameters)
     if (TestTrue(TEXT("Entity data is valid"), !TestEntity.ClassPath.IsEmpty()))
     {
         TestEqual(TEXT("Entity class preserved"), TestEntity.ClassPath, TEXT("TestClass"));
-        TestEqual(TEXT("Position X preserved"), TestEntity.WorldTransform.GetTranslation().X, 100.0f);
+        TestEqual(TEXT("Position X preserved"), (float)TestEntity.WorldTransform.GetTranslation().X, 100.0f);
         return true;
     }
 

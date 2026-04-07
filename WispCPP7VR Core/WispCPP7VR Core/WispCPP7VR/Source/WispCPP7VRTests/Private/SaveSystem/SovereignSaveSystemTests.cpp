@@ -451,7 +451,7 @@ bool FSovereignEdgeCasesTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Empty GUID is valid FGuid"), Entity.MyGUID == FGuid());
 
     // Very long ClassPath
-    Entity.ClassPath = FString(TEXT("/Game/")) + FString(500, 'A');
+    Entity.ClassPath = FString(TEXT("/Game/")) + FString::ChrN(500, 'A');
     TestTrue(TEXT("Long ClassPath is stored correctly"), Entity.ClassPath.Len() > 500);
 
     // Zero scale transform
