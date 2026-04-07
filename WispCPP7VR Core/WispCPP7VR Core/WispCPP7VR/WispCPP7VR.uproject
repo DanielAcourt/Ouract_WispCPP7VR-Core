@@ -12,6 +12,14 @@
 				"CoreUObject",
 				"Engine"
 			]
+		},
+		{
+			"Name": "WispCPP7VRTests",
+			"Type": "DeveloperTool",
+			"LoadingPhase": "PreDefault",
+			"TargetAllowList": [
+				"Editor"
+			]
 		}
 	],
 	"Plugins": [

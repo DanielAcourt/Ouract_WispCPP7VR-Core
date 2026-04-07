@@ -112,6 +112,19 @@ struct FEntitySaveData
 {
     GENERATED_BODY()
 
+    FEntitySaveData()
+        : MyGUID(FGuid::NewGuid())
+        , ParentID(FGuid())
+        , MotherID(FGuid())
+        , FatherID(FGuid())
+        , bIsFemale(false)
+        , OffspringCount(0)
+        , SavedGrowthStage(ESovereignGrowthStage::Inception)
+        , WorldTransform(FTransform::Identity)
+        , ClassPath(TEXT(""))
+        , SavedFrequency(EUpdateFrequency::Standard)
+    {}
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FGuid MyGUID;
 
