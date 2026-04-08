@@ -25,6 +25,10 @@ struct FItemDefaults : public FTableRowBase
 {
     GENERATED_BODY()
 
+    FItemDefaults()
+        : SpeciesVesselData(nullptr)
+    {}
+
     // we need this gameplay to be made or matched in some way!
     //Can be called Gameplaytag and be more genic as its not specific to a species but anything in the engine we define
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Identity")
@@ -112,7 +116,20 @@ struct FEntitySaveData
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FEntitySaveData()
+        : MyGUID(FGuid::NewGuid())
+        , ParentID(FGuid())
+        , MotherID(FGuid())
+        , FatherID(FGuid())
+        , bIsFemale(false)
+        , OffspringCount(0)
+        , SavedGrowthStage(ESovereignGrowthStage::Inception)
+        , WorldTransform(FTransform::Identity)
+        , ClassPath(TEXT(""))
+        , SavedFrequency(EUpdateFrequency::Standard)
+    {}
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (IgnoreForMemberInitializationTest))
     FGuid MyGUID;
 
     /** The GUID of the entity (Wisp, Plant, or Tool) that created this object. */

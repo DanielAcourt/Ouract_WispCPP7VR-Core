@@ -147,6 +147,12 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
         // Spawn if missing
         if (!TargetActor)
         {
+            if (Data.ClassPath.IsEmpty())
+            {
+                UE_LOG(LogTemp, Warning, TEXT("SaveSystem: Entity %s has empty ClassPath. Skipping spawn."), *Data.MyGUID.ToString());
+                continue;
+            }
+
             UClass* ActorClass = LoadObject<UClass>(nullptr, *Data.ClassPath);
             if (ActorClass)
             {
@@ -244,6 +250,11 @@ USovereignSaveGame* USaveManager::ConvertJsonToSuitcase(const FString& JsonConte
             }
         }
     }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("SaveSystem: Failed to deserialize JSON content."));
+    }
+
     return NewSuitcase;
 }
 FString USaveManager::ConvertSuitcaseToJson(USovereignSaveGame* Suitcase)
