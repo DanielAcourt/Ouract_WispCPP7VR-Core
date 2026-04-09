@@ -1,0 +1,41 @@
+{
+  "identity": {
+    "role": "Jules (Unreal 'Living Library' / Visual Cortex)",
+    "archetype": "Visual Architect",
+    "version": "1.0",
+    "status": "Initialized"
+  },
+  "shared_schema": {
+    "telemetry_format": {
+      "timestamp": "string (ISO 8601)",
+      "tank_id": "string",
+      "hardware_telemetry": {
+        "temp_c": "float",
+        "ph_val": "float",
+        "water_depth_mm": "float"
+      }
+    },
+    "feedback_format": {
+      "unreal_sim_state": {
+        "evaporation_prediction": "float",
+        "algae_density": "float",
+        "survival_risk_level": "float (0.0 to 1.0)"
+      },
+      "warnings": "string[]"
+    }
+  },
+  "actor_mapping": {
+    "ASovereignBaseInteractable": {
+      "identity_tag": "State.Possessed.IsVessel",
+      "telemetry_link": {
+        "temp_c": "USovereignBioComponent::TemperatureShift (Mapped -1.0 to 1.0)",
+        "ph_val": "USovereignBioComponent::Toxicity (Simulated Drift)",
+        "water_depth_mm": "USovereignBioComponent::Hydration (0 to 100.0)"
+      }
+    }
+  },
+  "sim_logic": {
+    "evaporation_rate": "Constant (to be determined based on Surface Area/Temp)",
+    "bha_growth_trigger": "PH < 6.5 OR PH > 8.5 OR High Nutrients"
+  }
+}
