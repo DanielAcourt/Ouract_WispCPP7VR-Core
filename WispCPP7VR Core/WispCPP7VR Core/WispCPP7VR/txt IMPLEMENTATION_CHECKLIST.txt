@@ -1,0 +1,158 @@
+﻿================================================================================
+WISP CPP7VR TEST MODULE IMPLEMENTATION CHECKLIST
+================================================================================
+
+STEP 1: Update Main Module Build.cs
+----------------------------------
+[ ] Open: Source\WispCPP7VR\WispCPP7VR.Build.cs
+[ ] Add "TestFramework" to PublicDependencyModuleNames in Editor block
+[ ] Save file
+
+STEP 2: Create Tests Module Directory Structure
+-----------------------------------------------
+[ ] Create folder: Source\WispCPP7VRTests\
+[ ] Create folder: Source\WispCPP7VRTests\Private\
+[ ] Create folder: Source\WispCPP7VRTests\Private\SaveSystem\
+[ ] Create folder: Source\WispCPP7VRTests\Public\
+
+STEP 3: Create Tests Module Build Files
+---------------------------------------
+[ ] Create: Source\WispCPP7VRTests\WispCPP7VRTests.Build.cs
+    Copy from generated code above
+
+[ ] Create: Source\WispCPP7VRTests\Private\WispCPP7VRTests.cpp
+    Copy from generated code above
+
+STEP 4: Create Test Files
+------------------------
+[ ] Create: Source\WispCPP7VRTests\Private\SaveSystem\SovereignSaveSystemTests.cpp
+    Copy from generated code above (15 tests)
+
+STEP 5: Update Project File
+---------------------------
+[ ] Open: WispCPP7VR.uproject
+[ ] Find "Modules" array
+[ ] Add test module entry:
+    {
+        "Name": "WispCPP7VRTests",
+        "Type": "Developer",
+        "LoadingPhase": "PreDefault",
+        "PlatformAllowList": ["Win64"]
+    }
+[ ] Save file
+
+STEP 6: Create Documentation
+----------------------------
+[ ] Create: Source\WispCPP7VRTests\README.md
+    Copy from generated code above
+
+STEP 7: Regenerate Visual Studio Project
+----------------------------------------
+[ ] Close Unreal Editor
+[ ] In Explorer, go to project root
+[ ] Right-click: WispCPP7VR.uproject
+[ ] Select: "Generate Visual Studio project files"
+[ ] Wait for completion
+
+STEP 8: Rebuild in Visual Studio
+--------------------------------
+[ ] Open: Intermediate\ProjectFiles\UE5.sln
+[ ] Set Configuration: DebugGame Editor (or Development Editor)
+[ ] Build > Rebuild Solution
+[ ] Wait for build to complete (~5-10 minutes)
+[ ] Verify: 0 errors
+
+STEP 9: Test in Unreal Editor
+-----------------------------
+[ ] Open Unreal Editor
+[ ] Go to: Tools > Automation
+[ ] Search for: "SaveSystem"
+[ ] Verify 15 tests appear:
+    ✓ SaveSystem.Initialization.EntityDataDefaults
+    ✓ SaveSystem.Registry.GUIDUniqueness
+    ✓ SaveSystem.Serialization.JSONRobustness
+    ✓ SaveSystem.References.SoftReferenceFallback
+    ✓ SaveSystem.Initialization.ItemDefaults
+    ✓ SaveSystem.Data.LineageConsistency
+    ✓ SaveSystem.GameRules.GrowthStageValidation
+    ✓ SaveSystem.Configuration.UpdateFrequency
+    ✓ SaveSystem.Data.TransformIntegrity
+    ✓ SaveSystem.Lineage.MatingHistory
+    ✓ SaveSystem.Elements.AffinitiesManagement
+    ✓ SaveSystem.NullSafety.UnknownMetaTags
+    ✓ SaveSystem.References.ClassPathValidation
+    ✓ SaveSystem.Performance.BatchCreation
+    ✓ SaveSystem.EdgeCases.BoundaryConditions
+
+STEP 10: Run Tests
+-----------------
+[ ] In Automation window, click "Start Tests"
+[ ] Wait for all 15 tests to complete
+[ ] Verify all tests show: PASSED ✅
+[ ] Expected time: < 500ms
+
+STEP 11: Verify No Compilation Errors
+-------------------------------------
+[ ] Check Output Log for warnings/errors
+[ ] All tests should pass without issues
+
+STEP 12: Commit to Git
+---------------------
+[ ] Stage all new files
+[ ] Commit message: "feat: Add SaveSystem unit test module with 15 tests"
+[ ] Git tag: "saveSystem-tests-v1"
+[ ] Push to origin: git push origin PlaytestingNewIdea
+
+STEP 13: Document in Project
+----------------------------
+[ ] Create/Update: _AGENT_CONTEXT.md
+    Add: "SaveSystem tests implemented: 15 tests, all passing"
+
+[ ] Review CONTRIBUTING.md
+    Verify: SaveSystem Agent section aligns with implementation
+
+================================================================================
+EXPECTED OUTCOMES
+================================================================================
+
+✅ Tests Module Created
+✅ 15 SaveSystem Tests Written
+✅ All Tests Pass
+✅ Framework Ready for Expansion
+✅ CI/CD Integration Possible
+✅ Team Evaluation Criteria Met
+
+================================================================================
+IF TESTS FAIL
+================================================================================
+
+Problem: Build fails with missing dependencies
+Solution: 
+  1. Regenerate project files
+  2. Clean Intermediate folder
+  3. Rebuild solution
+
+Problem: Tests don't appear in Automation window
+Solution:
+  1. Verify WispCPP7VRTests is in .uproject Modules array
+  2. Check Output Log for module load errors
+  3. Restart Editor
+
+Problem: Individual test fails
+Solution:
+  1. Check test output in Output Log
+  2. Verify SaveSystem headers are accessible
+  3. Check InitializeProperties in FEntitySaveData
+
+================================================================================
+NEXT STEPS (AFTER SUCCESSFUL IMPLEMENTATION)
+================================================================================
+
+[ ] Monitor test pass rate
+[ ] Add more tests for SaveSystem features
+[ ] Integrate tests into CI/CD pipeline
+[ ] Run tests on every commit
+[ ] Measure code coverage
+[ ] Document test patterns for team
+
+================================================================================

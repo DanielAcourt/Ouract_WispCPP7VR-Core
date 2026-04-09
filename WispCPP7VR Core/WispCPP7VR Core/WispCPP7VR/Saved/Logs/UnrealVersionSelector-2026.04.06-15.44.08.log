@@ -1,0 +1,75 @@
+Log started at 04/06/2026 15:44:08 (2026-04-06T14:44:08Z)
+Resolved project argument C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/WispCPP7VR.uproject to C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\WispCPP7VR.uproject
+No config file at C:\ProgramData\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+No config file at C:\Users\Danie\AppData\Local\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+No config file at C:\Users\Danie\OneDrive\Documents\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+Configuration will be read from:
+  C:\Users\Danie\AppData\Roaming\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+Reading configuration file from: C:\Users\Danie\AppData\Roaming\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+Reading configuration file from: C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\UnrealBuildTool\BuildConfiguration.xml
+Reading configuration file from: C:\Users\Danie\AppData\Local\UnrealEngine\Intermediate\Build\UnrealBuildTool.Env.BuildConfiguration.xml
+Log file: C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\Logs\UnrealVersionSelector-2026.04.06-15.44.08.log
+
+Setting temp directory to 'C:\Users\Danie\AppData\Local\Temp\UnrealBuildTool\9de8e132'
+    Registering build platform: UnrealBuildTool.AndroidPlatformFactory
+    Registering build platform: UnrealBuildTool.IOSPlatformFactory
+    Registering build platform: UnrealBuildTool.LinuxPlatformFactory
+    Registering build platform: UnrealBuildTool.MacPlatformFactory
+    Registering build platform: UnrealBuildTool.TVOSPlatformFactory
+    Registering build platform: UnrealBuildTool.WindowsPlatformFactory
+Found Windows 10 SDK root at C:\Program Files (x86)\Windows Kits\10 (1)
+Found Windows 10 SDK root at C:\Program Files (x86)\Windows Kits\10 (2)
+Found Windows 10 SDK version 10.0.22621.0 at C:\Program Files (x86)\Windows Kits\10
+Found Universal CRT version 10.0.22621.0 at C:\Program Files (x86)\Windows Kits\10
+Found Windows 10 SDK version 10.0.26100.0 at C:\Program Files (x86)\Windows Kits\10
+Found Universal CRT version 10.0.26100.0 at C:\Program Files (x86)\Windows Kits\10
+Win64 Installed SDK(s): MinVersion_Sdk=10.0.19041.0, MaxVersion_Sdk=10.9.99999.0, CurrentVersion_Sdk=10.0.22621.0, Version_AutoSdk=10.0.22621.0, CurrentVersion_AutoSdk=
+        Registering build platform: Win64 - buildable: True
+    Registering build platform: UnrealBuildTool.VisionOSPlatformFactory
+Resolved project argument C:/Users/Danie/Unreal Projects/2027/repo/Ouract_WispCPP7VR-Core/WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/WispCPP7VR.uproject to C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\WispCPP7VR.uproject
+Reading configuration file from cache (C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Intermediate\Build\XmlConfigCache.bin): C:\Users\Danie\AppData\Roaming\Unreal Engine\UnrealBuildTool\BuildConfiguration.xml
+Reading configuration file from cache (C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Intermediate\Build\XmlConfigCache.bin): C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\UnrealBuildTool\BuildConfiguration.xml
+Reading configuration file from cache (C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Intermediate\Build\XmlConfigCache.bin): C:\Users\Danie\AppData\Local\UnrealEngine\Intermediate\Build\UnrealBuildTool.Env.BuildConfiguration.xml
+Registering project generator UnrealBuildTool.AndroidProjectGenerator for Android
+Skipping project file generator registration for Android due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.IOSProjectGenerator for IOS
+Skipping project file generator registration for IOS due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.LinuxProjectGenerator for Linux
+Skipping project file generator registration for Linux due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.LinuxProjectGenerator for LinuxArm64
+Skipping project file generator registration for LinuxArm64 due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.MacProjectGenerator for Mac
+Skipping project file generator registration for Mac due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.TVOSProjectGenerator for TVOS
+Skipping project file generator registration for TVOS due to no valid BuildPlatform.
+Registering project generator UnrealBuildTool.WindowsProjectGenerator for Win64
+Registering project generator UnrealBuildTool.VisionOSProjectGenerator for VisionOS
+Skipping project file generator registration for VisionOS due to no valid BuildPlatform.
+
+---   SDK INFO START   ---
+---   SDK INFO END   ---
+
+
+Generating VisualStudio project files:
+Discovering modules, targets and source code for project...
+Found VisualStudio2022 installation: C:\Program Files\Microsoft Visual Studio\2022\Community (Product=Microsoft.VisualStudio.Product.Community, Version=17.14.37111.16)
+Found Visual Studio toolchain: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130 (Family=14.38.33130, FamilyRank=1, Version=14.38.33145, HostArchitecture=x64, ReleaseChannel=Latest, Architecture=x64, Error=False, Redist=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.38.33130)
+Found Visual Studio toolchain: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207 (Family=14.44.35207, FamilyRank=0, Version=14.44.35225, HostArchitecture=x64, ReleaseChannel=Latest, Architecture=x64, Error=False, Redist=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.44.35112)
+Detected supported platforms: Win64
+Adding projects for all targets...
+Skipping C:\Program Files\Epic Games\UE_5.7\Engine\Intermediate\Build\BuildRules\UE5Rules.dll: File is installed
+Skipping C:\Program Files\Epic Games\UE_5.7\Engine\Intermediate\Build\BuildRules\UE5ProgramRules.dll: File is installed
+Compiling C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Intermediate\Build\BuildRules\WispCPP7VRModuleRules.dll: Assembly does not exist
+C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Source\WispCPP7VR\WispCPP7VR.Build.cs(28,20): error CS1061: 'ReadOnlyTargetRules' does not contain a definition for 'bBuildTests' and no accessible extension method 'bBuildTests' accepting a first argument of type 'ReadOnlyTargetRules' could be found (are you missing a using directive or an assembly reference?)
+Adding projects for all targets took 1.32s
+Expecting to find a type to be declared in a target rules named 'WispCPP7VRTarget'.  This type must derive from the 'TargetRules' type defined by UnrealBuildTool.
+CompilationResultException: Expecting to find a type to be declared in a target rules named 'WispCPP7VRTarget'.  This type must derive from the 'TargetRules' type defined by UnrealBuildTool.
+   at UnrealBuildBase.Parallel2.ForEach[TSource](IEnumerable`1 source, Action`1 body, Int32 helperCount, Boolean useTasks) in D:\build\++UE5\Sync\Engine\Source\Programs\Shared\EpicGames.Build\System\Parallel2.cs:line 119
+   at UnrealBuildTool.ProjectFileGenerator.AddProjectsForAllTargets(PlatformProjectGeneratorCollection PlatformProjectGenerators, List`1 AllGames, List`1 AllTargetFiles, String[] Arguments, List`1 EngineProjects, List`1 GameProjects, Dictionary`2 ProjectFileToUProjectFile, Dictionary`2 ProgramProjects, Dictionary`2 RulesAssemblies, ILogger Logger) in D:\build\++UE5\Sync\Engine\Source\Programs\UnrealBuildTool\ProjectFiles\ProjectFileGenerator.cs:line 3093
+   at UnrealBuildTool.ProjectFileGenerator.GenerateProjectFiles(PlatformProjectGeneratorCollection PlatformProjectGenerators, String[] Arguments, ILogger Logger) in D:\build\++UE5\Sync\Engine\Source\Programs\UnrealBuildTool\ProjectFiles\ProjectFileGenerator.cs:line 1160
+   at UnrealBuildTool.GenerateProjectFilesMode.ExecuteAsync(CommandLineArguments Arguments, ILogger Logger) in D:\build\++UE5\Sync\Engine\Source\Programs\UnrealBuildTool\Modes\GenerateProjectFilesMode.cs:line 270
+   at UnrealBuildTool.UnrealBuildTool.Main(String[] ArgumentsArray) in D:\build\++UE5\Sync\Engine\Source\Programs\UnrealBuildTool\UnrealBuildTool.cs:line 653
+WriteFileIfChanged() wrote 0 changed files of 4 requested writes.
+
+Result: Failed (RulesError)
+Total execution time: 1.70 seconds

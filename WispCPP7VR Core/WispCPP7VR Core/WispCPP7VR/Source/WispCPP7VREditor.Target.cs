@@ -10,6 +10,6 @@ public class WispCPP7VREditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V6;
 
-		ExtraModuleNames.AddRange( new string[] { "WispCPP7VR" } );
+		ExtraModuleNames.AddRange( new string[] { "WispCPP7VR", "WispCPP7VRTests" } );
 	}
 }
