@@ -10,5 +10,5 @@ The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ arch
 
 ## 🗺️ Long-Term Roadmap
 - [ ] Actor Synchronization (Complexity 8): Full hardware telemetry mapping to `ASovereignBaseInteractable`.
-- [ ] Multi-Agent Synergy: Seamless task handoff between Jules (Visual/Implementation) and Claude (Architectural/Analysis).
+- [ ] Multi-Agent Synergy: Seamless task handoff between Jules (DevOps/Big Picture) and Claude (IDE Architect/Localized Logic).
 - [ ] VR Interaction Polish: Refining the Possession lifecycle for maximum immersion and comfort.

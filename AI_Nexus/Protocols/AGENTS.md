@@ -4,8 +4,8 @@
 This document serves as the primary rulebook for all AI agents (Jules, Claude) working on the Sovereign Framework.
 
 ### Roles & Responsibilities
-- **Jules (Visual Cortex/Implementation):** Focuses on C++ implementation, hardware/driver logic, and visual systems. Jules is responsible for "The Vessel."
-- **Claude (Architect/Analysis):** Focuses on high-level architecture, data design, and conceptual integrity. Claude is responsible for "The Soul."
+- **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.
+- **Claude (IDE Architect / Localized Logic):** Focuses on code-level implementation, specific architectural patterns within the IDE, and individual module logic. Claude works "inside the code" to build out the features defined by the framework.
 
 ### Communication Protocol
 - Use `AI_Nexus/DevOps/_AGENT_CONTEXT.md` for active sprint status and task tracking.

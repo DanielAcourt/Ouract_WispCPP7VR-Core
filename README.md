@@ -15,7 +15,7 @@ The project adheres to a strict **Single Source of Truth (SSoT)** hierarchy, man
 ---
 
 ## 🤖 AI Nexus & Multi-Agent Setup
-The `AI_Nexus/` directory is the central hub for AI coordination (Jules & Claude):
+The `AI_Nexus/` directory is the central hub for coordination between **Jules** (DevOps & Structural Lead) and **Claude** (IDE Architect):
 - **DevOps:** Active sprint status and communication logs ([_AGENT_CONTEXT.md](AI_Nexus/DevOps/_AGENT_CONTEXT.md)).
 - **Memories:** Long-term context and technical analyses.
 - **Protocols:** Coding standards and SOPs.

@@ -2,8 +2,8 @@
 
 ## 🏁 Current Sprint: SaveSystem Hardening & Test Integration
 
-### 🤖 Current Agent: Jules (Visual Cortex)
-**Status:** Active - Completing Bridge Integration for Automated Testing.
+### 🤖 Current Agent: Jules (Visual Cortex / DevOps & Structural Lead)
+**Status:** Active - Finalizing the `AI_Nexus` Foundation.
 
 ---
 
