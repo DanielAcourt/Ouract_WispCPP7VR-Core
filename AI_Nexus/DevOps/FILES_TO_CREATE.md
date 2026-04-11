@@ -1,74 +1,99 @@
-﻿# Files to Create - Complete List
+# Files Created & Unified - Complete List
 
-**Total New Files:** 6  
-**Files to Modify:** 2  
-**Total Time:** ~4 hours
+**Total New Files:** 8
+**Files Modified:** 3
+**Current Status:** Documentation consolidated within the `AI_Nexus/` structure.
 
 ---
 
-## 📁 New Files to Create
+## 📁 AI_Nexus/ Directory Structure
 
-### 1. Documentation Files (add to repo root)
+### 1. AI_Nexus/Protocols/
 
 #### `CONTRIBUTING.md`
-**Location:** `/repo/CONTRIBUTING.md`  
-**Size:** ~500 lines  
-**Status:** Ready to copy-paste (see provided CONTRIBUTING.md)  
-**Contains:** Multi-agent workflow, error handling standards, testing requirements
+**Location:** `AI_Nexus/Protocols/CONTRIBUTING.md`
+**Status:** **Completed**
+**Contains:** Multi-agent workflow, error handling standards, testing requirements.
 
-#### `_AGENT_CONTEXT.md`
-**Location:** `/repo/_AGENT_CONTEXT.md`  
-**Size:** ~400 lines  
-**Status:** Ready to copy-paste  
-**Contains:** Current sprint status, SaveSystem focus, communication protocol
-
-#### `SaveSystem_Error_Audit.md`
-**Location:** `/repo/SaveSystem_Error_Audit.md`  
-**Size:** ~300 lines  
-**Status:** Ready to copy-paste  
-**Contains:** 8 issues documented, severity levels, implementation order
+#### `AGENTS.md` (Level 1)
+**Location:** `AI_Nexus/Protocols/AGENTS.md`
+**Status:** **Completed**
+**Contains:** Multi-agent coordination SOP, role definitions (Jules & Claude), architectural constraints.
 
 #### `SAVESYSTEM_SETUP_GUIDE.md`
-**Location:** `/repo/SAVESYSTEM_SETUP_GUIDE.md`  
-**Size:** ~400 lines  
-**Status:** Ready to copy-paste  
-**Contains:** Complete setup + fix walkthrough + verification checklist
+**Location:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
+**Status:** **Completed**
+**Contains:** Complete setup + fix walkthrough + verification checklist.
 
 #### `SAVESYSTEM_QUICK_FIX_REFERENCE.md`
-**Location:** `/repo/SAVESYSTEM_QUICK_FIX_REFERENCE.md`  
-**Size:** ~100 lines  
-**Status:** Ready to copy-paste  
-**Contains:** One-page reference for 3 critical fixes
-
-#### `IMPLEMENTATION_CHECKLIST.md`
-**Location:** `/repo/IMPLEMENTATION_CHECKLIST.md`  
-**Size:** ~200 lines  
-**Status:** Ready to copy-paste  
-**Contains:** Phased task breakdown with time estimates
-
-### 2. Reference Code File (add to repo root or Docs folder)
-
-#### `SaveSystem_Hardened_Fixes.cpp`
-**Location:** `/repo/SaveSystem_Hardened_Fixes.cpp` (or `/repo/Docs/`)  
-**Size:** ~500 lines  
-**Status:** Reference implementation (DO NOT include in compilation)  
-**Note:** This is a REFERENCE file showing how to fix issues. Don't add to .Build.cs
-
-### 3. Unit Test File (add to source)
-
-#### `SaveSystem_Tests.cpp`
-**Location:** `/Source/WispCPP7VR/Tests/SaveSystem_Tests.cpp`  
-**Size:** ~400 lines  
-**Status:** Ready to compile and run  
-**Create Folder:** If doesn't exist: `/Source/WispCPP7VR/Tests/`  
-**Compile:** Add "TestsFramework" to `WispCPP7VR.Build.cs`
+**Location:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`
+**Status:** **Completed**
+**Contains:** One-page reference for 3 critical hardened fixes.
 
 ---
 
-## ✏️ Files to Modify
+### 2. AI_Nexus/DevOps/
+
+#### `_AGENT_CONTEXT.md`
+**Location:** `AI_Nexus/DevOps/_AGENT_CONTEXT.md`
+**Status:** **Completed**
+**Contains:** Current sprint status, active priorities, task tracking.
+
+#### `SaveSystem_Error_Audit.md`
+**Location:** `AI_Nexus/DevOps/SaveSystem_Error_Audit.md`
+**Status:** **Completed**
+**Contains:** Identified vulnerabilities, severity levels, and implementation fixes.
+
+#### `IMPLEMENTATION_CHECKLIST.md`
+**Location:** `AI_Nexus/DevOps/IMPLEMENTATION_CHECKLIST.md`
+**Status:** **Completed**
+**Contains:** Phased task breakdown with time estimates.
+
+---
+
+### 3. AI_Nexus/Timeline/
+
+#### `MD.md` (Level 0)
+**Location:** `AI_Nexus/Timeline/MD.md`
+**Status:** **Completed**
+**Contains:** Project vision, historical context, and long-term roadmap.
+
+#### `Updates.md`
+**Location:** `AI_Nexus/Timeline/Updates.md`
+**Status:** **Completed**
+**Contains:** Log of major developmental updates.
+
+---
+
+### 4. AI_Nexus/Memories/
+
+#### `SaveSystem_Hardened_Fixes.cpp`
+**Location:** `AI_Nexus/Memories/SaveSystem_Hardened_Fixes.cpp`
+**Status:** **Completed** (REFERENCE ONLY)
+**Contains:** C++ guide demonstrating implementation of hardened fixes.
+
+#### `data_driven_spawning_analysis.md`
+**Location:** `AI_Nexus/Memories/data_driven_spawning_analysis.md`
+**Status:** **Completed**
+**Contains:** Analysis of spawning system evolution.
+
+---
+
+### 5. Source & Tests
+
+#### `SaveSystem_Tests.cpp`
+**Location:** `Source/WispCPP7VRTests/Private/SaveSystem/SovereignSaveSystemTests.cpp`
+**Status:** **Completed**
+**Contains:** Automation tests for verification of hardened fixes.
+
+---
+
+## ✏️ Files Modified
 
 ### 1. Project Build File
+**File:** `WispCPP7VR.Build.cs`
+**Change:** Enabled automation test modules (`FunctionalTesting`, `AutomationTest`) and added `TestFramework` dependency for non-shipping/editor builds. **Completed.**
 
-**File:** `WispCPP7VR.Build.cs`  
-**Location:** `/Source/WispCPP7VR/WispCPP7VR.Build.cs`  
-**Change:**
+### 2. Root README.md
+**File:** `README.md`
+**Change:** Updated to point all agents (Jules & Claude) to the `AI_Nexus/` directory as the definitive source of truth. **Completed.**
