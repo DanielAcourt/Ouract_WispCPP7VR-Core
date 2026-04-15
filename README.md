@@ -6,11 +6,20 @@ The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ arch
 ---
 
 ## 🏛️ Sovereign Intelligence Hierarchy (SSoT)
-The project adheres to a strict **Single Source of Truth (SSoT)** hierarchy to ensure alignment between high-level intent and low-level implementation.
+The project adheres to a strict **Single Source of Truth (SSoT)** hierarchy, managed within the `AI_Nexus/` directory to ensure alignment between high-level intent and low-level implementation.
 
-*   **Level 0 (MD.md):** The Timeline and Evolution. Tracks the project's historical context and long-term vision.
-*   **Level 1 (AGENTS.md):** The Rulebook. Standard operating procedures, coding conventions, and architectural constraints.
+*   **Level 0:** [Timeline & Evolution](AI_Nexus/Timeline/MD.md). Tracks the project's historical context and long-term vision.
+*   **Level 1:** [The Rulebook](AI_Nexus/Protocols/AGENTS.md). Standard operating procedures, multi-agent coordination protocols, and architectural constraints.
 *   **Level 2 (Identity):** The Internal Logic. `identity.json` and `USovereignSaveableEntityComponent` (The Soul) define the "Current Truth" for every actor in the world.
+
+---
+
+## 🤖 AI Nexus & Multi-Agent Setup
+The `AI_Nexus/` directory is the central hub for coordination between **Jules** (DevOps & Structural Lead) and **Claude** (IDE Architect):
+- **DevOps:** Active sprint status and communication logs ([_AGENT_CONTEXT.md](AI_Nexus/DevOps/_AGENT_CONTEXT.md)).
+- **Memories:** Long-term context and technical analyses.
+- **Protocols:** Coding standards and SOPs.
+- **Timeline:** Historical evolution of the framework.
 
 ---
 
@@ -73,5 +82,5 @@ The framework enforces a standardized input model to ensure a consistent user ex
 ---
 
 ## 📜 Architectural Standards & Guidelines
-*   **Sovereign_DevOps/:** The "Neutral Zone" for shared data (telemetry.json, sim_feedback.json) and documentation.
+*   **AI_Nexus/:** The "Neutral Zone" for AI coordination, shared data, and high-level documentation.
 *   **Polite Persistence:** Saveable components extract only their relevant keys from the "Suitcase" (`TMap<FString, FString>`), ensuring clean data management.
