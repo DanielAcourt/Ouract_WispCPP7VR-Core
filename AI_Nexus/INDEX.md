@@ -24,7 +24,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ### **Level 2: Identity (Internal Logic)**
 *   **Primary Source:** `AI_Nexus/Identity/identity.json`
-    *   Defines the "Current Truth" and internal logic schemas for all actors.
+    *   Defines the **Sovereign Entity Identity Schema**. This is the data contract for all saved actors, ensuring consistent serialization across the Soul/Vessel bridge.
 
 ---
 

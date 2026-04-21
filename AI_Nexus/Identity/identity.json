@@ -1,5 +1,39 @@
 {
-  "Note": "This is a placeholder for the Sovereign Intelligence Hierarchy Level 2 (Identity). It defines the Internal Logic and Current Truth for actors in the world.",
-  "Version": "1.0.0",
-  "LastUpdated": "2025-04-07"
+  "SchemaInfo": {
+    "Name": "Sovereign Entity Identity Schema",
+    "Version": "1.1.0",
+    "Level": 2,
+    "Description": "Defines the Single Source of Truth for entity state and identity persistence within the Sovereign Framework."
+  },
+  "EntityStructure": {
+    "GUID": "Unique identifier (FGuid string)",
+    "ParentID": "GUID of the owning/host entity (0 if root)",
+    "Class": "Unreal Engine Soft Class Path string",
+    "Transform": "Position|Rotation|Scale string (FVector|FRotator|FVector)",
+    "MetaTags": {
+      "NamespaceMapping": {
+        "SovereignQi.Qi.*": "Current/Consolidated Qi attributes",
+        "SovereignAttribute.*": "Physical and mental attributes",
+        "PPC.State.*": "Persistent Possession Controller state flags",
+        "Terminal.*": "Specific logic flags for interactables"
+      }
+    }
+  },
+  "CommonAttributeKeys": [
+    "SovereignAttribute.STR",
+    "SovereignAttribute.DEX",
+    "SovereignAttribute.CON",
+    "SovereignAttribute.INT",
+    "SovereignAttribute.WIS",
+    "SovereignAttribute.CHA",
+    "SovereignAttribute.LCK",
+    "SovereignAttribute.HP",
+    "SovereignAttribute.STM"
+  ],
+  "CommonQiKeys": [
+    "SovereignQi.Qi.Current",
+    "SovereignQi.Qi.Max",
+    "SovereignQi.Qi.Purity",
+    "SovereignQi.Qi.Total"
+  ]
 }
