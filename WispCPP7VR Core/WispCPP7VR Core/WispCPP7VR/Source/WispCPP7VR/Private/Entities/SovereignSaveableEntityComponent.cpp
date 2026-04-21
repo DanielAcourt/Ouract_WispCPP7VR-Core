@@ -50,7 +50,7 @@ void USovereignSaveableEntityComponent::InitializeSoul()
 		if (bUseManualBirthDate)
 		{
 			// Attempt to parse your specific date: March 23, 2017, 4:00 PM
-			if (FDateTime::Parse(ManualBirthDate, BirthTimestamp))
+			if (FDateTime::Parse(ManualBirthDateStr, BirthTimestamp))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Sovereign: Ancestral Soul manifested. Birth set to: %s"), *BirthTimestamp.ToString());
 			}
@@ -58,7 +58,7 @@ void USovereignSaveableEntityComponent::InitializeSoul()
 			{
 				// Fallback if the string is typed wrong
 				BirthTimestamp = FDateTime::Now();
-				UE_LOG(LogTemp, Error, TEXT("Sovereign: Failed to parse ManualBirthDate! Defaulting to Now."));
+				UE_LOG(LogTemp, Error, TEXT("Sovereign: Failed to parse ManualBirthDateStr! Defaulting to Now."));
 			}
 		}
 		else

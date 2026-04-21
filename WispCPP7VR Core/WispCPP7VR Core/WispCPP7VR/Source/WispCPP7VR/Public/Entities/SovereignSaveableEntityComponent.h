@@ -40,7 +40,7 @@ public:
 
     /** Custom Date. Format: "2017.03.23-16.00.00" */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity", meta = (EditCondition = "bUseManualBirthDate"))
-    FString ManualBirthDate = "2017.03.23-16.00.00";
+    FString ManualBirthDateStr = "2017.03.23-16.00.00";
 
     /*Add these constants to your logic for a balanced simulation:Sovereign Hour: 1 Real Minute Sovereign Day: 24 Real Minutes Sovereign Week: 2.8 Real Hours Sovereign Month: 11.2 Real Hours Sovereign Year: 5.6 Real Days */
 
