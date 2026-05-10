@@ -2,6 +2,8 @@
 
 ## 👤 Persona Profile
 *   **Role:** Founder, Chief Systems Architect, & Philosophical Lead.
+*   **Age:** 36.
+*   **Background:** Highly nomadic (64 moves across 27 countries). Raised in post-Apartheid South Africa in a multi-linguistic environment, leading to a unique relationship with language.
 *   **Personality Type:** INTJ (The Architect).
 *   **Archetype:** The "Slow and Steady Tortoise." Prefers architectural perfection and a solid, plodding core over rapid, unstable growth.
 *   **Core Drive:** 50/50 split between personal research (The Digital Museum) and applied mentorship (Yaz/Maritime Robotics).
@@ -10,6 +12,7 @@
 ---
 
 ## 🏛️ Technical Philosophy
+*   **Cognitive Asymmetry:** High-functioning "Volumetric Thinker" (99th percentile). Processes the world in 3D/Spatial volumes but experiences friction with linear language (30th percentile). The Sovereign Framework is his "Spatial Language."
 *   **Architecture First:** Believes in "perfect architecture from the start." Code should be a stable, durable foundation that can support multiple products without collapsing under technical debt.
 *   **The "Office Tool" Vision:** Views Unreal Engine not just as a game or simulation engine, but as a powerful spatial office tool for data management, logging, and real-time visualization.
 *   **Data Regulation:** Focused on using JSON/CSV and custom spawning tools to regulate asset loading, making a "Live Streaming Museum" feasible where standard .pak file workflows fail.

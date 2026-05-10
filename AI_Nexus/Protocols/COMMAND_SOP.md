@@ -3,7 +3,9 @@
 > "If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers." — *Sun Tzu*
 
 ## 📜 Purpose
-To eliminate **Assumption Drift** and ensure that delegation between the Technical Lead and AI Agents (Jules/Claude) is 100% deterministic. This protocol shifts the burden of clarity to the "General" (Lead) and the burden of execution to the "Officers" (Agents).
+To eliminate **Assumption Drift** and ensure that delegation between the Technical Lead and AI Agents (Jules/Claude) is 100% deterministic.
+
+**The Cognitive Bridge:** Because the Technical Lead thinks in **Volumes/Space (99th percentile)** but communicates in **Linear Language (30th percentile)**, this protocol acts as a translator. It ensures that the "Spatial Soul" of an idea is accurately converted into a "Linear Vessel" of instructions that an AI can execute without hallucination.
 
 ---
 
