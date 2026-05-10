@@ -11,6 +11,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Tracks the project's historical context, long-term vision, and roadmap.
 *   **Updates:** `AI_Nexus/Timeline/Updates.md`
     *   Changelog for major developmental milestones.
+*   **Mission Reports:** `AI_Nexus/Timeline/Mission_Reports/`
+    *   The "Black Box" historical record of all Lead/Agent review sessions.
 
 ### **Level 1: The Rulebook**
 *   **Primary Source:** `AI_Nexus/Protocols/AGENTS.md`
@@ -27,6 +29,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 ### **Level 2: Identity (Internal Logic)**
 *   **Primary Source:** `AI_Nexus/Identity/identity.json`
     *   Defines the **Sovereign Entity Identity Schema**. This is the data contract for all saved actors, ensuring consistent serialization across the Soul/Vessel bridge.
+*   **Agent Identity (Jules):** `AI_Nexus/Identity/Jules.md`
+    *   Persona, focus, and iteration history of the Structural Lead.
 
 ---
 
@@ -55,6 +59,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 ### **Active Sprint Status**
 *   **Current Context:** `AI_Nexus/DevOps/_AGENT_CONTEXT.md`
     *   Real-time task tracking, priorities, and blockers.
+*   **Backlog:** `AI_Nexus/DevOps/BACKLOG.md`
+    *   Fibonacci-scored roadmap of technical and research tasks.
 *   **Audit Logs:** `AI_Nexus/DevOps/SaveSystem_Error_Audit.md`
     *   Analysis of system vulnerabilities and implemented fixes.
 *   **Checklist:** `AI_Nexus/DevOps/IMPLEMENTATION_CHECKLIST.md`

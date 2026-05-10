@@ -3,6 +3,12 @@
 ## 🤖 Multi-Agent Coordination SOP
 This document serves as the primary rulebook for all AI agents (Jules, Claude) working on the Sovereign Framework.
 
+### 🎖️ The "07" Protocol (Boot Handshake)
+To ensure deterministic state synchronization and eliminate "Assumption Drift," every session must begin with the "07" Handshake:
+1.  **Agent Boot:** The agent reads all `.md` files in the `AI_Nexus/` to synchronize with the latest "Soul" of the project.
+2.  **The Salute:** The agent responds with: *"07 - [AgentName] booted and my current assessment is X, and the mission priority is Y. What are your orders."*
+3.  **Nexus Audit:** The agent must briefly list the critical Nexus nodes reviewed during boot to verify synchronization.
+
 ### Roles & Responsibilities
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.
 - **Claude (IDE Architect / Localized Logic):** Focuses on code-level implementation, specific architectural patterns within the IDE, and individual module logic. Claude works "inside the code" to build out the features defined by the framework.
