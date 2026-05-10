@@ -17,6 +17,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   SOPs, role definitions, architectural constraints, and coding standards.
 *   **Contribution Guide:** `AI_Nexus/Protocols/CONTRIBUTING.md`
     *   Workflow standards for multi-agent cooperation.
+*   **Command SOP:** `AI_Nexus/Protocols/COMMAND_SOP.md`
+    *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
 *   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
     *   Hardening standards and verification SOPs for the Soul/Vessel bridge.
 *   **Quick Reference:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`

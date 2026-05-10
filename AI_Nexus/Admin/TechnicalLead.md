@@ -5,6 +5,7 @@
 *   **Personality Type:** INTJ (The Architect).
 *   **Archetype:** The "Slow and Steady Tortoise." Prefers architectural perfection and a solid, plodding core over rapid, unstable growth.
 *   **Core Drive:** 50/50 split between personal research (The Digital Museum) and applied mentorship (Yaz/Maritime Robotics).
+*   **Leadership Style:** Sun Tzu-inspired Delegation. Operates on the principle that if commands are not clear, the general is to blame. Focuses on providing "clear and distinct" orders using the **Why, What, How** framework to eliminate agent assumption drift.
 
 ---
 
