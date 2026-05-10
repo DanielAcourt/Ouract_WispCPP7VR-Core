@@ -17,6 +17,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   SOPs, role definitions, architectural constraints, and coding standards.
 *   **Contribution Guide:** `AI_Nexus/Protocols/CONTRIBUTING.md`
     *   Workflow standards for multi-agent cooperation.
+*   **Command SOP:** `AI_Nexus/Protocols/COMMAND_SOP.md`
+    *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
 *   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
     *   Hardening standards and verification SOPs for the Soul/Vessel bridge.
 *   **Quick Reference:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`
@@ -35,6 +37,16 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Central hub for formal research, mathematics, and core definitions.
 *   **Glossary (SSoT):** `AI_Nexus/Research/Definitions/Glossary.md`
     *   Definitive terminology for the Sovereign ecosystem.
+*   **Metaphorical Principles:** `AI_Nexus/Research/Metaphors/Principles.md`
+    *   Translation of Lead's spatial metaphors into operational rules.
+
+---
+
+## 👔 Administration & Leadership
+*   **Lead Identity:** `AI_Nexus/Admin/TechnicalLead.md`
+    *   Defines the persona, philosophy, and strategic goals of the Technical Lead (Daniel Acourt).
+*   **Personnel Audit:** `AI_Nexus/Admin/Personnel_Audit.md`
+    *   Cognitive profiling, programmer percentile analysis, and personal SWOT for the Lead.
 
 ---
 

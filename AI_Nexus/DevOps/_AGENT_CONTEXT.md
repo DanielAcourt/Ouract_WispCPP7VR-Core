@@ -8,12 +8,12 @@
 ---
 
 ### 📡 Active Priorities
-1.  **Strategic Alignment & Documentation (Priority: HIGH)**
-    *   Hardening the Strategic Roadmap based on the "Ouract LTD Research and Innovation" document.
-    *   Synchronizing the AI_Nexus with the three-phase product strategy (Fish Tank -> Black Box -> Lidar).
-2.  **Bridge Restoration (Priority: CRITICAL)**
-    *   Reconnecting the `WispCPP7VRTests` module to the primary `uproject` structure.
-    *   Fixing the initialization "vessel" (FEntitySaveData) to prevent null-dereference mutations during Save/Load.
+1.  **System Training & Knowledge Ingestion (Priority: CRITICAL)**
+    *   Ingesting 12 years of Research and Math Models into `AI_Nexus/Research/`.
+    *   Stabilizing the "Cognitive Bridge" (Command SOP) to ensure agents understand the *interconnectedness* of the framework.
+2.  **Environment Stabilization (Priority: HIGH)**
+    *   Hardening the internal documentation (Nexus) before attempting further product implementation (Fish Tank/Robotics).
+    *   Reviewing the 3-year-old C++ core against the newly codified "Metaphorical Principles."
 3.  **Sovereign Rule Validation**
     *   Ensuring all save/load operations adhere to the identity-lineage-physicality hierarchy.
 
