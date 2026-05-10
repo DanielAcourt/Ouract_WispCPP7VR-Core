@@ -261,8 +261,8 @@ Set up the following configuration files:
 ## 📚 Documentation References
 
 - [Unreal Engine Documentation](https://docs.unrealengine.com/en-US/index.html)
-- [SaveSystem Design Document](Docs/SaveSystem_Design.md)
-- [API Reference](Docs/API_Reference.md)
+- [SaveSystem Design Document](../Docs/SaveSystem_Design.md)
+- [API Reference](../Docs/API_Reference.md)
 
 ---
 

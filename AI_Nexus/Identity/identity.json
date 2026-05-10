@@ -1,0 +1,35 @@
+{
+  "SchemaInfo": {
+    "Name": "Sovereign Entity Identity Schema",
+    "Version": "1.2.0",
+    "Level": 2,
+    "Description": "The Single Source of Truth for entity state persistence. This schema defines the structural contract for the USovereignSaveableEntityComponent (The Soul)."
+  },
+  "DataContract": {
+    "GUID": "Unique FGuid string (Primary Identity)",
+    "ParentID": "FGuid of the host/owner (Identity Lineage)",
+    "Class": "Soft Class Path to the Blueprint Vessel",
+    "Transform": "Position|Rotation|Scale (FVector|FRotator|FVector)",
+    "MetaTags": {
+      "Structure": "TMap<FString, FString>",
+      "Namespaces": {
+        "QiComponent.*": "Consolidated energy and vitality data (Legacy)",
+        "AttributeComponent.*": "Core physical and mental attributes (Legacy)",
+        "SovereignQi.Qi.*": "Modern energy/state attributes (Current)",
+        "SovereignAttribute.*": "Modern physical/mental attributes (Current)",
+        "PPC.State.*": "Persistent Possession Controller flags",
+        "Terminal.*": "Interactive terminal state flags"
+      }
+    }
+  },
+  "ArchetypeReference": {
+    "PlayerWisp": {
+      "Class": "/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C",
+      "EssentialTags": ["QiComponent.Qi.Current", "AttributeComponent.STR"]
+    },
+    "VesselCharacter": {
+      "Class": "/Game/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.BP_ThirdPersonCharacter_C",
+      "EssentialTags": ["SovereignQi.Qi.Current", "SovereignAttribute.HP"]
+    }
+  }
+}

@@ -1,12 +1,19 @@
 # Files Created & Unified - Complete List
 
-**Total New Files:** 8
-**Files Modified:** 3
+**Total New Files:** 16
+**Files Modified:** 5
 **Current Status:** Documentation consolidated within the `AI_Nexus/` structure.
 
 ---
 
 ## 📁 AI_Nexus/ Directory Structure
+
+### 0. Root
+
+#### `INDEX.md`
+**Location:** `AI_Nexus/INDEX.md`
+**Status:** **Completed**
+**Contains:** Master map for the SSoT levels and AI coordination.
 
 ### 1. AI_Nexus/Protocols/
 
@@ -79,10 +86,33 @@
 
 ---
 
-### 5. Source & Tests
+### 5. AI_Nexus/Identity/
+
+#### `identity.json` (Level 2)
+**Location:** `AI_Nexus/Identity/identity.json`
+**Status:** **Completed**
+**Contains:** Internal logic and SSoT schemas for entity identity.
+
+---
+
+### 6. AI_Nexus/Docs/
+
+#### `SaveSystem_Design.md`
+**Location:** `AI_Nexus/Docs/SaveSystem_Design.md`
+**Status:** **Completed** (Placeholder)
+**Contains:** Architectural overview of the Save System.
+
+#### `API_Reference.md`
+**Location:** `AI_Nexus/Docs/API_Reference.md`
+**Status:** **Completed** (Placeholder)
+**Contains:** Reference for Sovereign Framework interfaces and components.
+
+---
+
+### 7. Source & Tests
 
 #### `SaveSystem_Tests.cpp`
-**Location:** `Source/WispCPP7VRTests/Private/SaveSystem/SovereignSaveSystemTests.cpp`
+**Location:** `WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Source/WispCPP7VRTests/Private/SaveSystem/SovereignSaveSystemTests.cpp`
 **Status:** **Completed**
 **Contains:** Automation tests for verification of hardened fixes.
 
@@ -96,4 +126,8 @@
 
 ### 2. Root README.md
 **File:** `README.md`
-**Change:** Updated to point all agents (Jules & Claude) to the `AI_Nexus/` directory as the definitive source of truth. **Completed.**
+**Change:** Updated to point all agents (Jules & Claude) to the `AI_Nexus/` directory as the definitive source of truth. Included correct links for SSoT levels. **Completed.**
+
+### 3. Component C++ Files
+**Files:** `SovereignSaveableEntityComponent.h`, `SovereignSaveableEntityComponent.cpp`
+**Change:** Renamed `ManualBirthDate` to `ManualBirthDateStr` to resolve build errors. **Completed.**
