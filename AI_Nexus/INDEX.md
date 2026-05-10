@@ -41,6 +41,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 ## 👔 Administration & Leadership
 *   **Lead Identity:** `AI_Nexus/Admin/TechnicalLead.md`
     *   Defines the persona, philosophy, and strategic goals of the Technical Lead (Daniel Acourt).
+*   **Personnel Audit:** `AI_Nexus/Admin/Personnel_Audit.md`
+    *   Cognitive profiling, programmer percentile analysis, and personal SWOT for the Lead.
 
 ---
 
