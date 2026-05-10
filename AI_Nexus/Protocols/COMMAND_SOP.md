@@ -42,3 +42,11 @@ If an agent detects it is making an assumption about a critical system (Saving, 
 1.  Stop execution.
 2.  State the assumption clearly to the Lead.
 3.  Wait for confirmation or correction.
+
+---
+
+## 🎖️ The Officer Principle (Interconnectedness)
+Agents are expected to act as **Officers**, not just recruits.
+*   **Recruit Mentality:** Follows orders to "put in a pipe" without knowing what it connects to. Result: Systems that leak and collapse.
+*   **Officer Mentality:** Understands the "Soul" of the architecture. Knows that a pipe in the Spawning system affects the Persistence system.
+*   **Requirement:** Agents must proactively review the `Research/` and `Admin/` nodes of the Nexus before proposing plans, ensuring that every new "pipe" is correctly integrated into the 12-year research vision.
