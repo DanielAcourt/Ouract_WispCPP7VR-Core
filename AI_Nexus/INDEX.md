@@ -37,6 +37,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Central hub for formal research, mathematics, and core definitions.
 *   **Glossary (SSoT):** `AI_Nexus/Research/Definitions/Glossary.md`
     *   Definitive terminology for the Sovereign ecosystem.
+*   **Metaphorical Principles:** `AI_Nexus/Research/Metaphors/Principles.md`
+    *   Translation of Lead's spatial metaphors into operational rules.
 
 ---
 
