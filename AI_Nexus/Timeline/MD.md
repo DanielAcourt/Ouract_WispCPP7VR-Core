@@ -9,6 +9,8 @@ The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ arch
 - **DevOps Consolidation:** Establishment of the `AI_Nexus` for multi-agent coordination between Jules and Claude.
 
 ## 🗺️ Long-Term Roadmap
-- [ ] Actor Synchronization (Complexity 8): Full hardware telemetry mapping to `ASovereignBaseInteractable`.
-- [ ] Multi-Agent Synergy: Seamless task handoff between Jules (DevOps/Big Picture) and Claude (IDE Architect/Localized Logic).
-- [ ] VR Interaction Polish: Refining the Possession lifecycle for maximum immersion and comfort.
+- [ ] **Phase I: Actor Synchronization (Complexity 8)** - Full hardware telemetry mapping (JSON/Binary) to `ASovereignBaseInteractable` for the Fish Tank Alpha.
+- [ ] **Phase II: Data Survivability (Complexity 5)** - Implementation of the "Black Box" protocol for detached data logging and persistence.
+- [ ] **Phase III: Lidar Intelligence (Complexity 13)** - Real-time spatial data streaming and runtime mesh reconstruction for the Digital Museum.
+- [ ] **Multi-Agent Synergy:** Seamless task handoff between Jules (DevOps/Big Picture) and Claude (IDE Architect/Localized Logic).
+- [ ] **VR Interaction Polish:** Refining the Possession lifecycle for maximum immersion and comfort.

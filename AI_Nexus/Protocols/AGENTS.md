@@ -16,6 +16,7 @@ This document serves as the primary rulebook for all AI agents (Jules, Claude) w
 - **The Sovereign Rule:** All attachments during possession MUST use `FAttachmentTransformRules::SnapToTargetNotIncludingScale`.
 - **Single Source of Truth (SSoT):** `USovereignSaveableEntityComponent` is the primary brain for all persistent data.
 - **Interface-First Design:** Use `ISovereignEntityInterface` and `IInteractionInterface` to ensure class-agnostic compatibility.
+- **Cyber-Physical Parity:** All hardware-linked actors must implement a "Digital Twin" state where local simulation parity is maintained with physical sensor telemetry.
 
 ## 💻 Coding Conventions
 - **Memory Safety:** Initialize all non-UObject members in struct constructors (e.g., `FEntitySaveData`).

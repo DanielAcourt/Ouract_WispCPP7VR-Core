@@ -8,13 +8,14 @@
 ---
 
 ### 📡 Active Priorities
-1.  **Bridge Restoration (Priority: CRITICAL)**
+1.  **Strategic Alignment & Documentation (Priority: HIGH)**
+    *   Hardening the Strategic Roadmap based on the "Ouract LTD Research and Innovation" document.
+    *   Synchronizing the AI_Nexus with the three-phase product strategy (Fish Tank -> Black Box -> Lidar).
+2.  **Bridge Restoration (Priority: CRITICAL)**
     *   Reconnecting the `WispCPP7VRTests` module to the primary `uproject` structure.
     *   Fixing the initialization "vessel" (FEntitySaveData) to prevent null-dereference mutations during Save/Load.
-2.  **Sovereign Rule Validation**
+3.  **Sovereign Rule Validation**
     *   Ensuring all save/load operations adhere to the identity-lineage-physicality hierarchy.
-3.  **Telemetry Audit**
-    *   Verifying that JSON serialization captures the "UnknownMetaTags" (Mutations/Qi) with high fidelity.
 
 ---
 
