@@ -11,63 +11,62 @@
 ### 2.1 The Dimensional Choice $\{P, S, T, A\}$
 The system monitors four core dimensions to determine total mission health:
 *   **Psychological (P):** Internal human variables (cognitive load, stress, biometric data).
-*   **Social (S):** Inter-agent dynamics (trust, cohesion, communication latency between entities like Isla and Erisis).
-*   **Technical (T):** Hard constraints (hardware health, sensor drift, latency, battery voltage).
-*   **Administrative (A):** Soft constraints (policy compliance, budget variance, resource stability).
+*   **Social (S):** Inter-agent dynamics (trust, cohesion, communication latency).
+*   **Technical (T):** Hard constraints (hardware health, sensor drift, latency).
+*   **Administrative (A):** Soft constraints (policy compliance, budget variance).
 
 ### 2.2 Dimension Health ($D_i$)
-The Dimension Score $D_i \in [0, 1]$ represents the overall health of a single dimension. It uses a **Self-Normalizing Weighted Average** to ensure that the arrival of new or unknown data does not skew the results.
+The Dimension Score $D_i \in [0, 1]$ represents the overall health of a single dimension.
 
 $$D_i = \frac{1}{W_i} \sum_{j=1}^{K_i} (x_{ij} \cdot w_{ij})$$
 
-Where:
-*   $x_{ij}$ = Normalized input factor $[0, 1]$.
-*   $w_{ij}$ = Importance weight of factor $j$ within dimension $i$.
-*   $W_i$ = $\sum w_{ij}$ (The sum of all active weights in the dimension).
+**Hardening - The Void Safety Rule:**
+To prevent the $W_i = 0$ singularity (division by zero), the system enforces:
+*   If $W_i = 0$, $D_i = 0$ (Critical Failure: Lack of Data). A dimension with zero monitoring is considered untrusted.
 
-### 2.3 The Risk Index ($R_i$)
-Risk is defined as the direct inversion of health. This allows the system to operate on **Safety-First** logic.
+**Hardening - Anchor Tags (Overrides):**
+To prevent critical factor dilution, certain $x_{ij}$ can be designated as **Anchor Tags**.
+*   If $x_{anchor} = 0$, then $D_i = 0$ regardless of other factor weights. This ensures that a critical engine failure ($T$) or a total social breakdown ($S$) cannot be "averaged out."
 
-$$R_i = 1 - D_i$$
+### 2.3 Temporal Momentum ($V_i$)
+To account for the speed of failure, we introduce the **Risk Velocity**:
+$$V_i = \frac{\Delta D_i}{\Delta t}$$
+*   If $|V_i| > V_{threshold}$ (e.g., a rapid drop in trust), the system applies a **Momentum Penalty** to the $PSS$, triggering a warning before the health score even hits the threshold.
 
 ### 2.4 Provable Safety Status (PSS)
 The PSS is the final holistic metric that determines if the mission is "Safe."
 
-**Standard Aggregation:**
-$$PSS = \sum_{i \in \{P,S,T,A\}} \alpha_i D_i$$
-
-**The Bottleneck Law (Mission Critical Constraint):**
-To ensure a single point of failure correctly impacts the global status, we apply a Leontief (Minimum) Constraint:
-$$PSS = \min(D_i) \cdot \left( \sum \alpha_i D_i \right)$$
-*Result: If any $D_i = 0$, the PSS becomes 0, proving the system is unsafe.*
+**The Refined Bottleneck Law:**
+To prevent over-punishing minor fluctuations while maintaining safety, we use a **Gated-Min** approach:
+$$PSS = \sigma(\min(D_i)) \cdot \left( \sum \alpha_i D_i \right)$$
+Where $\sigma$ is a scaling function that remains $\approx 1.0$ for high $D_i$, but aggressively drops to $0$ as any $D_i$ approaches a critical instability threshold (e.g., $0.3$).
 
 ---
 
 ## 🏗️ 3. The Structural Integration (The Discovery Layer)
 
 ### 3.1 Handling Unknown Tags (Meta-Tagging)
-Since the system cannot know every hardware sensor or social nuance in advance, it uses a dynamic registry:
-*   **Tag Registration:** New data sources ($x_{i,novel}$) must provide a metadata header defining their domain $D$ and impact weight.
-*   **Residual Weight Allocation:** The system maintains a $w_{reserve}$ pool. Unknown tags siphoned weight from this pool until an RL agent or human classifies their true priority.
-*   **Weight Correction:** The $\frac{1}{W_i}$ divisor in the $D_i$ formula ensures that adding unknown tags never pushes the score out of the $[0, 1]$ range.
+*   **Tag Registration:** New data sources ($x_{i,novel}$) provide a metadata header.
+*   **Residual Weight Allocation:** System siphons from $w_{reserve}$ for unknown tags.
+*   **Weight Correction:** The $\frac{1}{W_i}$ divisor ensures the score stays within $[0, 1]$.
 
 ### 3.2 Classification and Threshold Mapping
-The continuous $PSS$ is mapped to discrete, actionable states:
-*   **Critical ($0 \le PSS < t_{crit}$):** Immediate Shutdown.
-*   **Warning ($t_{crit} \le PSS < t_{warn}$):** Human intervention required.
-*   **Caution ($t_{warn} \le PSS < t_{caut}$):** Degraded performance.
-*   **Nominal ($t_{caut} \le PSS \le 1$):** Standard Operations.
+*   **Critical ($0 \le PSS < t_{crit}$):** Abort.
+*   **Warning ($t_{crit} \le PSS < t_{warn}$):** Intervention.
+*   **Caution ($t_{warn} \le PSS < t_{caut}$):** Degraded.
+*   **Nominal ($t_{caut} \le PSS \le 1$):** Green.
 
-**Confidence-Adjusted Thresholds:** If the "Discovery Layer" detects high volumes of unknown tags, the thresholds $T$ are artificially raised, forcing the system into a "Caution" or "Warning" state until the data is verified.
+**Confidence-Adjusted Thresholds:** High volumes of unknown tags cause the system to raise thresholds $T$ (Safety-First logic).
 
 ---
 
 ## 🧪 4. Training Data & Scenarios
 
 ### 4.1 Definitive Terms
-*   **Provable Trust:** A status derived from traceable, weighted inputs that can be audited to show exactly why a safety threshold was triggered.
-*   **Asymmetric Failure:** When one dimension (e.g., Social) fails while others (e.g., Technical) are perfect.
+*   **Anchor Tag:** A high-priority input that can autonomously zero a dimension score.
+*   **Void Safety:** Fallback logic for dimensions with zero active data points.
+*   **Risk Velocity:** The rate at which health is deteriorating.
 
 ### 4.2 Test Scenarios
-*   **The Isla Stress Test:** If Isla's $x_{P,stress}$ spikes (Biometric Stress), $D_P$ drops, causing $R_P$ to rise. If $PSS$ falls below $t_{warn}$, the system autonomously reduces her workload.
-*   **The Erisis Comms Silence:** If communication latency between agents increases, $D_S$ drops. Even if the hardware ($T$) is perfect, the Bottleneck Law ensures the PSS reflects the social instability.
+*   **The Island Stress Test:** Isla's biometric stress spikes. $D_P$ drops. If $V_P$ (velocity) is too high, PSS enters **Warning** immediately, even if $D_P$ is still $0.7$.
+*   **The Engine Anchor:** A technical sensor for fuel pressure is marked as an **Anchor**. If it hits 0, $D_T$ becomes 0 instantly, aborting the mission via the Bottleneck Law.

@@ -17,13 +17,14 @@ To transition the Sovereign Framework from **State Observation** to **Risk Mitig
 
 ## 🛠️ The HOW (Technical Actions)
 - **Persona Pivot:** Successfully inhabited the **Researcher Vessel (INTP/Alchemist)** to perform the translation of spatial metaphors.
-- **Node Mapping:** Created `PSTA_Core.md` using the Knowledge Drop template.
+- **Node Mapping:** Created `PSTA_Core.md` and integrated mathematical hardening (Void Safety, Anchor Tags).
+- **Shadow Area Audit:** Conducted a deep-dive into the core equations to identify and resolve oversights like $W_i=0$ singularities and criticality dilution.
 - **Metadata Hardening:** Updated `_AGENT_CONTEXT.md` to reflect the completion of the ingestion sprint.
 
 ---
 
 ## 📡 Current Assessment
-The mathematical "Soul" of the project has been significantly expanded. With PSTA formalized, the "Officer" now has the necessary logic to implement a **Safety-Aware** engine that can prove its own stability across both "hard" (Technical) and "soft" (Social/Psychological) dimensions.
+The mathematical "Soul" of the project has been significantly expanded and hardened. With the inclusion of **Risk Velocity** and **Anchor Tags**, the PSTA framework is no longer just a snapshot observer—it is a proactive, deterministic safety engine.
 
 ## 🎖️ Officer's Note
 The "Alchemist" has finished the crystallization. The "Tactician" or "Structural Lead" can now utilize these principles to build the logic gates required for Phase I: Actor Synchronization. The Four Pillars are standing.

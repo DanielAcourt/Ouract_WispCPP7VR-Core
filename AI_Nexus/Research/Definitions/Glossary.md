@@ -62,3 +62,12 @@ A condition where a mission enters a critical risk state due to a failure in a "
 
 ### **Discovery Layer**
 A dynamic registry system that handles unknown meta-tags by siphoning weights from a reserve pool and self-normalizing the Dimension Health scores to prevent data skew.
+
+### **Anchor Tag**
+A critical input factor ($x_{ij}$) that possesses "Override Authority." If an Anchor Tag's value hits zero, the entire Dimension Health ($D_i$) is forced to zero, regardless of other weights.
+
+### **Void Safety**
+A deterministic fallback protocol for dimensions with zero active monitoring ($W_i = 0$). In the Sovereign Framework, a "Void" dimension is treated as a critical failure ($D_i = 0$) because untracked reality is untrusted reality.
+
+### **Risk Velocity ($V_i$)**
+The rate of change of Dimension Health over time. High Risk Velocity triggers safety warnings even if absolute health is still above nominal thresholds, allowing for proactive intervention.
