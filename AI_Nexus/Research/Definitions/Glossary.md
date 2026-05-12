@@ -40,3 +40,25 @@ A fundamental architectural constraint: All attachments during possession MUST u
 
 ### **Cyber-Physical Systems (CPS)**
 Systems where software logic directly governs or synchronizes with physical hardware (Robotics/Sensors).
+
+---
+
+## 📐 PSTA (Provable Trust Framework)
+
+### **PSTA Dimensions**
+The four pillars of mission safety: **Psychological** (Operator stress), **Social** (Team cohesion), **Technical** (Hardware health), and **Administrative** (Policy/Budget).
+
+### **Dimension Health ($D_i$)**
+A normalized score $[0, 1]$ representing the performance of a specific PSTA dimension, calculated via a self-normalizing weighted average.
+
+### **Provable Safety Status (PSS)**
+The ultimate mission health metric. It is a weighted aggregation of all Dimension Health scores, subject to the **Bottleneck Law** (if one dimension fails, the PSS drops to zero).
+
+### **Provable Trust**
+A state where every safety decision and status spike is traceable to a specific, weighted input factor ($x_{ij}$), providing a transparent audit trail for system behavior.
+
+### **Asymmetric Failure**
+A condition where a mission enters a critical risk state due to a failure in a "soft" dimension (Social/Psychological) even while the "hard" dimensions (Technical) remain perfect.
+
+### **Discovery Layer**
+A dynamic registry system that handles unknown meta-tags by siphoning weights from a reserve pool and self-normalizing the Dimension Health scores to prevent data skew.

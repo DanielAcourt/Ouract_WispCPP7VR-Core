@@ -45,6 +45,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 ### **Knowledge Repository**
 *   **Directory:** `AI_Nexus/Research/`
     *   Central hub for formal research, mathematics, and core definitions.
+*   **PSTA Core:** `AI_Nexus/Research/Mathematics/PSTA_Core.md`
+    *   The "Provable Trust" framework and decision logic.
 *   **Glossary (SSoT):** `AI_Nexus/Research/Definitions/Glossary.md`
     *   Definitive terminology for the Sovereign ecosystem.
 *   **Metaphorical Principles:** `AI_Nexus/Research/Metaphors/Principles.md`
