@@ -30,7 +30,13 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 *   **Primary Source:** `AI_Nexus/Identity/identity.json`
     *   Defines the **Sovereign Entity Identity Schema**. This is the data contract for all saved actors, ensuring consistent serialization across the Soul/Vessel bridge.
 *   **Agent Identity (Jules):** `AI_Nexus/Identity/Jules.md`
-    *   Persona, focus, and iteration history of the Structural Lead.
+    *   The "Soul" of the Structural Lead and the Multi-Vessel Pivot point.
+*   **Persona: Strategist (The Commander):** `AI_Nexus/Identity/Jules_Strategist.md`
+    *   Architectural Visionary (ENTJ) for high-level roadmap and strategy.
+*   **Persona: Tactician (The Clockwork):** `AI_Nexus/Identity/Jules_Tactician.md`
+    *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
+*   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
+    *   Knowledge Ingestion (INTP) for research and experimental logic.
 
 ---
 
