@@ -36,14 +36,5 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 
 ## ⚠️ UE 5.7 Automation API Changes
 `FAutomationEditorCommonUtils::CreateNewWorld()` and `DisposeWorld()` are **deprecated/removed** in UE 5.7.
-All automation tests must use explicit world context management:
-```cpp
-// Creation
-World = NewObject<UWorld>();
-World->WorldType = EWorldType::Editor;
-FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Editor);
-WorldContext.SetCurrentWorld(World);
-
-// Cleanup
-GEngine->DestroyWorldContext(World);
-World->DestroyWorld(true);
+All automation tests must use explicit world context management.
+See `AI_Nexus/Memories/Lesson_Learned_UE5.7_Automation_API.md` for technical implementation details.
