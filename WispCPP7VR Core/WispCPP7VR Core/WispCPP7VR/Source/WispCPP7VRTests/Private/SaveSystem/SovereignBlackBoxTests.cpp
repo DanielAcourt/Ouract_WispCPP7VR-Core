@@ -7,6 +7,7 @@
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
 #include "Entities/SovereignBaseInteractable.h"
 #include "SaveSystem/SovereignPSTAConfig.h"
+#include "SaveSystem/SovereignBlackBoxExporter.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
@@ -161,6 +162,27 @@ void FSovereignBlackBoxSpec::Define()
         }
 
         Interactable->Destroy();
+    });
+
+    It("Should export logs to CSV using Exporter", [this]()
+    {
+        // Arrange
+        BBComp->RecordEvent(TEXT("TestCSV"), TEXT("Data"));
+
+        // Act
+        FString CsvPath;
+        bool bSuccess = USovereignBlackBoxExporter::ExportEntityLogToCSV(BBComp->EntityID, CsvPath);
+
+        // Assert
+        TestTrue("CSV Export should be successful", bSuccess);
+        TestTrue("CSV file should exist", VerifyFileExists(CsvPath));
+
+        if (bSuccess)
+        {
+            FString Content;
+            FFileHelper::LoadFileToString(Content, *CsvPath);
+            TestTrue("CSV should contain the event data", Content.Contains(TEXT("TestCSV")));
+        }
     });
 
     It("Should create BlackBox file on first snapshot", [this]()
