@@ -66,6 +66,17 @@ The Sovereign Framework features advanced "Digital Twin" capabilities, allowing 
 
 ---
 
+## 📦 Black Box Protocol (Data Survivability)
+The **Black Box Protocol** (B-002) is a specialized persistence layer designed for "Mission-Critical Truth." It ensures that high-fidelity telemetry survives even if the simulation "Soul" is decoupled from its current "Vessel."
+
+*   **Delta-Based Logging:** Only records data when changes exceed a defined threshold (default: 0.2), minimizing storage bloat while capturing significant events.
+*   **Atomic Persistence:** Uses the `USovereignBlackBoxSubsystem` to perform atomic writes to standalone JSON files in `/Saved/BlackBox/`, protecting against data corruption.
+*   **Identity-Linked:** Logs are partitioned by `EntityID` (Guid), creating a permanent historical record for every sovereign entity.
+
+See the [Black Box Protocol Documentation](AI_Nexus/Docs/BlackBox_Protocol.md) for technical implementation and usage details.
+
+---
+
 ## 🎮 Input Conventions
 The framework enforces a standardized input model to ensure a consistent user experience:
 *   **[F] Key:** Possession lifecycle (Initiate Possession / Unpossess / Eject). Bound to `HandlePossessionLifecycle`.
