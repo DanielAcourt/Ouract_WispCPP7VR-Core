@@ -145,17 +145,17 @@ void FSovereignBlackBoxSpec::Define()
             bool bFoundPSS = false;
             for (const auto& LogVal : *Logs)
             {
-                TSharedPtr<FJsonObject> LogObj = LogVal->AsObject();
-                FString Key = LogObj->GetStringField(TEXT("Key"));
+                TSharedPtr<FJsonObject> JsonEntry = LogVal->AsObject();
+                FString Key = JsonEntry->GetStringField(TEXT("Key"));
                 if (Key == TEXT("PSTA.Di.2")) // Technical
                 {
                     bFoundDi = true;
-                    TestEqual("Technical Dimension Health should be 0.5", LogObj->GetNumberField(TEXT("Value")), 0.5);
+                    TestEqual("Technical Dimension Health should be 0.5", JsonEntry->GetNumberField(TEXT("Value")), 0.5);
                 }
                 if (Key == TEXT("PSTA.PSS"))
                 {
                     bFoundPSS = true;
-                    TestEqual("PSS should be 0.5", LogObj->GetNumberField(TEXT("Value")), 0.5);
+                    TestEqual("PSS should be 0.5", JsonEntry->GetNumberField(TEXT("Value")), 0.5);
                 }
             }
             TestTrue("Should have recorded Di", bFoundDi);

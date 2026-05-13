@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "SaveSystem/SovereignGameData.h"
+#include "SaveSystem/SovereignPSTAConfig.h"
 #include "SovereignBlackBoxComponent.generated.h"
 
 /**
@@ -31,11 +32,16 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
     void RecordEvent(const FString& EventKey, const FString& EventDescription);
 
-protected:
+public:
     /** PSTA Math Configuration. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|PSTA")
     class USovereignPSTAConfig* PSTAConfig;
 
+    /** How often this component records snapshots. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
+    EUpdateFrequency UpdateFrequency = EUpdateFrequency::Standard;
+
+protected:
     /** The sensitivity for delta-based logging. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
     float LoggingThreshold = 0.2f;

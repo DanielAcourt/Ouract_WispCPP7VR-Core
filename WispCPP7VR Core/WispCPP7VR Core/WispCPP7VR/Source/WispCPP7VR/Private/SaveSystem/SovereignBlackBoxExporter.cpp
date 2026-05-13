@@ -36,13 +36,13 @@ bool USovereignBlackBoxExporter::ExportEntityLogToCSV(const FGuid& EntityID, FSt
 
 	for (const TSharedPtr<FJsonValue>& LogValue : *Logs)
 	{
-		TSharedPtr<FJsonObject> LogObj = LogValue->AsObject();
-		if (!LogObj.IsValid()) continue;
+		TSharedPtr<FJsonObject> JsonEntry = LogValue->AsObject();
+		if (!JsonEntry.IsValid()) continue;
 
-		FString Timestamp = LogObj->GetStringField(TEXT("Timestamp"));
-		FString Key = LogObj->GetStringField(TEXT("Key"));
-		double Value = LogObj->GetNumberField(TEXT("Value"));
-		FString EventData = LogObj->HasField(TEXT("EventData")) ? LogObj->GetStringField(TEXT("EventData")) : TEXT("");
+		FString Timestamp = JsonEntry->GetStringField(TEXT("Timestamp"));
+		FString Key = JsonEntry->GetStringField(TEXT("Key"));
+		double Value = JsonEntry->GetNumberField(TEXT("Value"));
+		FString EventData = JsonEntry->HasField(TEXT("EventData")) ? JsonEntry->GetStringField(TEXT("EventData")) : TEXT("");
 
 		// Escape CSV special characters
 		Key = Key.Replace(TEXT("\""), TEXT("\"\""));
@@ -133,13 +133,13 @@ int32 USovereignBlackBoxExporter::ExportAllLogsToCSV(FString& OutCsvPath)
 
 			for (const TSharedPtr<FJsonValue>& LogValue : *Logs)
 			{
-				TSharedPtr<FJsonObject> LogObj = LogValue->AsObject();
-				if (!LogObj.IsValid()) continue;
+				TSharedPtr<FJsonObject> JsonEntry = LogValue->AsObject();
+				if (!JsonEntry.IsValid()) continue;
 
-				FString Timestamp = LogObj->GetStringField(TEXT("Timestamp"));
-				FString Key = LogObj->GetStringField(TEXT("Key"));
-				double Value = LogObj->GetNumberField(TEXT("Value"));
-				FString EventData = LogObj->HasField(TEXT("EventData")) ? LogObj->GetStringField(TEXT("EventData")) : TEXT("");
+				FString Timestamp = JsonEntry->GetStringField(TEXT("Timestamp"));
+				FString Key = JsonEntry->GetStringField(TEXT("Key"));
+				double Value = JsonEntry->GetNumberField(TEXT("Value"));
+				FString EventData = JsonEntry->HasField(TEXT("EventData")) ? JsonEntry->GetStringField(TEXT("EventData")) : TEXT("");
 
 				Key = Key.Replace(TEXT("\""), TEXT("\"\""));
 				EventData = EventData.Replace(TEXT("\""), TEXT("\"\""));
@@ -211,13 +211,13 @@ bool USovereignBlackBoxExporter::GenerateEntityStatistics(const FGuid& EntityID,
 
 	for (const TSharedPtr<FJsonValue>& LogValue : *Logs)
 	{
-		TSharedPtr<FJsonObject> LogObj = LogValue->AsObject();
-		if (!LogObj.IsValid()) continue;
+		TSharedPtr<FJsonObject> JsonEntry = LogValue->AsObject();
+		if (!JsonEntry.IsValid()) continue;
 
-		FString Key = LogObj->GetStringField(TEXT("Key"));
-		if (LogObj->HasField(TEXT("Value")))
+		FString Key = JsonEntry->GetStringField(TEXT("Key"));
+		if (JsonEntry->HasField(TEXT("Value")))
 		{
-			double Value = LogObj->GetNumberField(TEXT("Value"));
+			double Value = JsonEntry->GetNumberField(TEXT("Value"));
 			ValuesByKey.FindOrAdd(Key).Add(Value);
 		}
 	}
@@ -337,8 +337,8 @@ bool USovereignBlackBoxExporter::ValidateBlackBoxFile(const FString& FilePath, F
 
 	for (int32 i = 0; i < Logs->Num(); ++i)
 	{
-		TSharedPtr<FJsonObject> LogObj = (*Logs)[i]->AsObject();
-		if (!LogObj.IsValid())
+		TSharedPtr<FJsonObject> JsonEntry = (*Logs)[i]->AsObject();
+		if (!JsonEntry.IsValid())
 		{
 			OutValidationReport += FString::Printf(TEXT("  ✗ Entry %d: Invalid object\n"), i);
 			EntriesWithErrors++;
@@ -346,22 +346,22 @@ bool USovereignBlackBoxExporter::ValidateBlackBoxFile(const FString& FilePath, F
 		}
 
 		// Check required fields
-		if (!LogObj->HasField(TEXT("Timestamp")))
+		if (!JsonEntry->HasField(TEXT("Timestamp")))
 		{
 			OutValidationReport += FString::Printf(TEXT("  ✗ Entry %d: Missing Timestamp\n"), i);
 			EntriesWithErrors++;
 		}
 
-		if (!LogObj->HasField(TEXT("Key")))
+		if (!JsonEntry->HasField(TEXT("Key")))
 		{
 			OutValidationReport += FString::Printf(TEXT("  ✗ Entry %d: Missing Key\n"), i);
 			EntriesWithErrors++;
 		}
 
 		// Check timestamp ordering
-		if (LogObj->HasField(TEXT("Timestamp")))
+		if (JsonEntry->HasField(TEXT("Timestamp")))
 		{
-			FString TimestampStr = LogObj->GetStringField(TEXT("Timestamp"));
+			FString TimestampStr = JsonEntry->GetStringField(TEXT("Timestamp"));
 			FDateTime EntryTime;
 			if (FDateTime::Parse(TimestampStr, EntryTime))
 			{
@@ -415,17 +415,17 @@ bool USovereignBlackBoxExporter::ExportTimeSeriesSnapshot(const FGuid& EntityID,
 
 	for (const TSharedPtr<FJsonValue>& LogValue : *Logs)
 	{
-		TSharedPtr<FJsonObject> LogObj = LogValue->AsObject();
-		if (!LogObj.IsValid()) continue;
+		TSharedPtr<FJsonObject> JsonEntry = LogValue->AsObject();
+		if (!JsonEntry.IsValid()) continue;
 
-		FString TimestampStr = LogObj->GetStringField(TEXT("Timestamp"));
+		FString TimestampStr = JsonEntry->GetStringField(TEXT("Timestamp"));
 		FDateTime Timestamp;
 		if (!FDateTime::Parse(TimestampStr, Timestamp)) continue;
 
-		FString Key = LogObj->GetStringField(TEXT("Key"));
-		if (!LogObj->HasField(TEXT("Value"))) continue;
+		FString Key = JsonEntry->GetStringField(TEXT("Key"));
+		if (!JsonEntry->HasField(TEXT("Value"))) continue;
 
-		double Value = LogObj->GetNumberField(TEXT("Value"));
+		double Value = JsonEntry->GetNumberField(TEXT("Value"));
 
 		int64 WindowIndex = Timestamp.ToUnixTimestamp() / WindowSeconds;
 		WindowedData.FindOrAdd(WindowIndex).FindOrAdd(Key).Add(Value);
