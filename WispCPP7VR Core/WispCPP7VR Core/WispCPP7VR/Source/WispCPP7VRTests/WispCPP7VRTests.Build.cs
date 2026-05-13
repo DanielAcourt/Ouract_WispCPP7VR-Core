@@ -16,7 +16,8 @@ public class WispCPP7VRTests : ModuleRules
             "Json",
             "JsonUtilities",
             "GameplayTags",
-            "TestFramework"
+            "TestFramework",
+            "UnrealEd"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {

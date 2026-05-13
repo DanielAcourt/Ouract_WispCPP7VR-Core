@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
-#include "Tests/AutomationCommon.h"
+#include "Tests/AutomationEditorCommon.h"
 #include "Entities/SovereignBlackBoxComponent.h"
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
 #include "Entities/SovereignBaseInteractable.h"
@@ -13,7 +13,7 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
-BEGIN_DEFINE_SPEC(FSovereignBlackBoxSpec, "Sovereign.BlackBox", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+BEGIN_DEFINE_SPEC(FSovereignBlackBoxSpec, "Sovereign.BlackBox", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
     UWorld* World;
     AActor* TestActor;
     USovereignBlackBoxComponent* BBComp;
@@ -24,7 +24,7 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        World = UWorld::CreateWorld(EWorldType::Game, false);
+        World = FAutomationEditorCommonUtils::CreateNewWorld();
         BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>();
 
         TestActor = World->SpawnActor<AActor>();
@@ -60,9 +60,6 @@ void FSovereignBlackBoxSpec::Define()
             FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*FilePath);
             TestActor->Destroy();
         }
-        if (World)
-        {
-            World->DestroyWorld(true);
-        }
+        FAutomationEditorCommonUtils::DisposeWorld(World);
     });
 }
