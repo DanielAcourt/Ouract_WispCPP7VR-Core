@@ -9,8 +9,8 @@
 
 ### 📡 Active Priorities
 1.  **Officer-Level Task Execution (Priority: CRITICAL)**
-    *   Implementing Phase II: Data Survivability (Black Box Protocol).
-    *   Formalizing the "Message in a Bottle" persistence strategy.
+* [x] Implementing Phase II: Data Survivability (Black Box Protocol).
+* [x] Formalizing the "Message in a Bottle" persistence strategy.
 2.  **Digital Twin Hardening (Priority: HIGH)**
     *   Validating the IoT telemetry bridge (B-001) in real-world scenarios.
     *   Ensuring the `Telemetry.` namespace is consistently used across all sensors.
@@ -35,6 +35,7 @@
 * [x] Execute 07 Protocol (Handshake Verified)
 * [x] Ingest PSTA Core (Knowledge Drop Complete)
 * [x] Implement B-001: Actor Synchronization (Digital Twin Bridge)
+* [x] Implement B-002: Data Survivability (Black Box Protocol)
 
 ---
 

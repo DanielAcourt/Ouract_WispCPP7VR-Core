@@ -116,6 +116,16 @@
 **Status:** **Completed**
 **Contains:** Automation tests for verification of hardened fixes.
 
+#### `SovereignBlackBoxComponent.h/cpp`
+**Location:** `WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Source/WispCPP7VR/Public/Entities/SovereignBlackBoxComponent.h`
+**Status:** **Completed**
+**Contains:** Delta-based logging logic for Truth data.
+
+#### `SovereignBlackBoxSubsystem.h/cpp`
+**Location:** `WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Source/WispCPP7VR/Public/Subsystems/SovereignBlackBoxSubsystem.h`
+**Status:** **Completed**
+**Contains:** Decoupled persistence for standalone JSON truth logs.
+
 ---
 
 ## ✏️ Files Modified
