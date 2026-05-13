@@ -6,6 +6,7 @@
 #include "Entities/SovereignBlackBoxComponent.h"
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
 #include "Entities/SovereignBaseInteractable.h"
+#include "SaveSystem/SovereignPSTAConfig.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
@@ -96,6 +97,70 @@ void FSovereignBlackBoxSpec::Define()
 
         BBComp->RegisterComponent();
         BBComp->EntityID = FGuid::NewGuid();
+    });
+
+    It("Should record PSTA dimension health and PSS", [this]()
+    {
+        // Arrange
+        USovereignPSTAConfig* Config = NewObject<USovereignPSTAConfig>();
+        FPSTATagMapping Mapping;
+        Mapping.TagKey = TEXT("Telemetry.temp_c");
+        Mapping.Dimension = EPSTADimension::Technical;
+        Mapping.Weight = 1.0f;
+        Mapping.RangeMin = 0.0f;
+        Mapping.RangeMax = 100.0f;
+        Config->TagMappings.Add(Mapping);
+
+        Config->DimensionWeights.Add(EPSTADimension::Technical, 1.0f);
+        Config->DimensionWeights.Add(EPSTADimension::Psychological, 0.0f);
+        Config->DimensionWeights.Add(EPSTADimension::Social, 0.0f);
+        Config->DimensionWeights.Add(EPSTADimension::Administrative, 0.0f);
+
+        BBComp->PSTAConfig = Config;
+
+        // Use ASovereignBaseInteractable which implements ISovereignSaveInterface
+        ASovereignBaseInteractable* Interactable = World->SpawnActor<ASovereignBaseInteractable>();
+        TestTrue("Interactable actor should be spawned", Interactable != nullptr);
+
+        Interactable->TemperatureCelsius = 50.0f; // Should result in Di=0.5
+
+        // Replace BBComp's owner or move BBComp to Interactable
+        BBComp->Rename(nullptr, Interactable);
+
+        // Act
+        BBComp->RecordTruthSnapshot();
+
+        const FString FilePath = FPaths::ProjectSavedDir() / TEXT("BlackBox") / FString::Printf(TEXT("BB_%s.json"), *BBComp->EntityID.ToString());
+        const TSharedPtr<FJsonObject> JsonObject = LoadJsonFile(FilePath);
+
+        // Assert
+        TestTrue("JSON should exist", JsonObject.IsValid());
+
+        const TArray<TSharedPtr<FJsonValue>>* Logs;
+        if (JsonObject->TryGetArrayField(TEXT("Logs"), Logs))
+        {
+            bool bFoundDi = false;
+            bool bFoundPSS = false;
+            for (const auto& LogVal : *Logs)
+            {
+                TSharedPtr<FJsonObject> LogObj = LogVal->AsObject();
+                FString Key = LogObj->GetStringField(TEXT("Key"));
+                if (Key == TEXT("PSTA.Di.2")) // Technical
+                {
+                    bFoundDi = true;
+                    TestEqual("Technical Dimension Health should be 0.5", LogObj->GetNumberField(TEXT("Value")), 0.5);
+                }
+                if (Key == TEXT("PSTA.PSS"))
+                {
+                    bFoundPSS = true;
+                    TestEqual("PSS should be 0.5", LogObj->GetNumberField(TEXT("Value")), 0.5);
+                }
+            }
+            TestTrue("Should have recorded Di", bFoundDi);
+            TestTrue("Should have recorded PSS", bFoundPSS);
+        }
+
+        Interactable->Destroy();
     });
 
     It("Should create BlackBox file on first snapshot", [this]()

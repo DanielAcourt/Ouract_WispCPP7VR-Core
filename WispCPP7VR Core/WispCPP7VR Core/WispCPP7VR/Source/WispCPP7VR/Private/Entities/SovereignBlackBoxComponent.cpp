@@ -3,6 +3,7 @@
 #include "Entities/SovereignBlackBoxComponent.h"
 #include "Interaction/SovereignSaveInterface.h"
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
+#include "SaveSystem/SovereignPSTAConfig.h"
 #include "Engine/World.h"
 
 USovereignBlackBoxComponent::USovereignBlackBoxComponent()
@@ -46,45 +47,118 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         }
     }
 
-    // 2. Process deltas
+    // 2. Process deltas and calculate PSTA
     bool bHasChanges = false;
+    TMap<EPSTADimension, float> DimWeightedSums;
+    TMap<EPSTADimension, float> DimTotalWeights;
+    TMap<EPSTADimension, bool> DimAnchorZeroed;
+
+    // Initialize dimensions
+    TArray<EPSTADimension> Dimensions = { EPSTADimension::Psychological, EPSTADimension::Social, EPSTADimension::Technical, EPSTADimension::Administrative };
+    for (EPSTADimension Dim : Dimensions)
+    {
+        DimWeightedSums.Add(Dim, 0.0f);
+        DimTotalWeights.Add(Dim, 0.0f);
+        DimAnchorZeroed.Add(Dim, false);
+    }
+
     for (auto& Elem : RawData)
     {
-        // We only care about numeric telemetry for now (the "Truth")
         if (Elem.Value.IsNumeric())
         {
             float CurrentValue = FCString::Atof(*Elem.Value);
-            float* LastValuePtr = LastTruthValues.Find(Elem.Key);
 
-            bool bShouldLog = false;
-            if (!LastValuePtr)
+            // PSTA Processing
+            if (PSTAConfig)
             {
-                // First time seeing this key
-                bShouldLog = true;
+                for (const FPSTATagMapping& Mapping : PSTAConfig->TagMappings)
+                {
+                    if (Mapping.TagKey == Elem.Key)
+                    {
+                        float Normalized = PSTAConfig->NormalizeValue(Mapping, CurrentValue);
+                        DimWeightedSums[Mapping.Dimension] += Normalized * Mapping.Weight;
+                        DimTotalWeights[Mapping.Dimension] += Mapping.Weight;
+
+                        if (Mapping.bIsAnchorTag && FMath::IsNearlyZero(Normalized))
+                        {
+                            DimAnchorZeroed[Mapping.Dimension] = true;
+                        }
+                        break;
+                    }
+                }
             }
-            else if (FMath::Abs(CurrentValue - *LastValuePtr) >= LoggingThreshold)
-            {
-                // Delta exceeded
-                bShouldLog = true;
-            }
+
+            // Standard Delta Logging
+            float* LastValuePtr = LastTruthValues.Find(Elem.Key);
+            bool bShouldLog = !LastValuePtr || (FMath::Abs(CurrentValue - *LastValuePtr) >= LoggingThreshold);
 
             if (bShouldLog)
             {
                 PendingEntries.Add(FBlackBoxEntry(Elem.Key, CurrentValue));
                 LastTruthValues.Add(Elem.Key, CurrentValue);
                 bHasChanges = true;
-
-                UE_LOG(LogTemp, Log, TEXT("BlackBox [%s]: Change detected for %s: %f (Delta: %f)"),
-                    *EntityID.ToString(), *Elem.Key, CurrentValue, LastValuePtr ? FMath::Abs(CurrentValue - *LastValuePtr) : 0.0f);
             }
         }
     }
 
-    // 3. Flush if we have data
+    // 3. Calculate Final PSTA Scores
+    if (PSTAConfig)
+    {
+        float PSS = 0.0f;
+        float MinDi = 1.0f;
+
+        for (EPSTADimension Dim : Dimensions)
+        {
+            float Di = 0.0f;
+            if (DimAnchorZeroed[Dim])
+            {
+                Di = 0.0f;
+            }
+            else if (DimTotalWeights[Dim] > 0.0f)
+            {
+                Di = DimWeightedSums[Dim] / DimTotalWeights[Dim];
+            }
+            // else Di = 0.0f (Void Safety)
+
+            MinDi = FMath::Min(MinDi, Di);
+
+            // Record Di if changed
+            float* LastDi = LastDimensionHealth.Find(Dim);
+            if (!LastDi || FMath::Abs(Di - *LastDi) >= 0.01f)
+            {
+                FString Key = FString::Printf(TEXT("PSTA.Di.%d"), (uint8)Dim);
+                PendingEntries.Add(FBlackBoxEntry(Key, Di));
+                LastDimensionHealth.Add(Dim, Di);
+                bHasChanges = true;
+            }
+
+            float Alpha = PSTAConfig->DimensionWeights.Contains(Dim) ? PSTAConfig->DimensionWeights[Dim] : 0.0f;
+            PSS += Alpha * Di;
+        }
+
+        // Apply Bottleneck Law Scaling
+        float Scaling = (MinDi < PSTAConfig->CriticalInstabilityThreshold) ? (MinDi / PSTAConfig->CriticalInstabilityThreshold) : 1.0f;
+        PSS *= Scaling;
+
+        if (FMath::Abs(PSS - LastPSS) >= 0.01f)
+        {
+            PendingEntries.Add(FBlackBoxEntry(TEXT("PSTA.PSS"), PSS));
+            LastPSS = PSS;
+            bHasChanges = true;
+        }
+    }
+
+    // 4. Flush if we have data
     if (bHasChanges)
     {
         FlushToSubsystem();
     }
+}
+
+void USovereignBlackBoxComponent::RecordEvent(const FString& EventKey, const FString& EventDescription)
+{
+    PendingEntries.Add(FBlackBoxEntry(EventKey, 0.0f, EventDescription));
+    FlushToSubsystem();
 }
 
 void USovereignBlackBoxComponent::FlushToSubsystem()

@@ -73,6 +73,11 @@ void USovereignBlackBoxSubsystem::AppendEntriesToFile(const FGuid& EntityID, con
         EntryObj->SetStringField(TEXT("Key"), Entry.Key);
         EntryObj->SetNumberField(TEXT("Value"), Entry.Value);
 
+        if (!Entry.EventData.IsEmpty())
+        {
+            EntryObj->SetStringField(TEXT("EventData"), Entry.EventData);
+        }
+
         LogArray.Add(MakeShareable(new FJsonValueObject(EntryObj)));
     }
 

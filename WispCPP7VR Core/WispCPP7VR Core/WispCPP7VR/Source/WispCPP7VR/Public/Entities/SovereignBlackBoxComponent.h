@@ -27,10 +27,22 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
     void RecordTruthSnapshot();
 
+    /** Manually record a string-based event. */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
+    void RecordEvent(const FString& EventKey, const FString& EventDescription);
+
 protected:
+    /** PSTA Math Configuration. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|PSTA")
+    class USovereignPSTAConfig* PSTAConfig;
+
     /** The sensitivity for delta-based logging. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
     float LoggingThreshold = 0.2f;
+
+    /** Internal cache for PSTA health values to track deltas. */
+    TMap<EPSTADimension, float> LastDimensionHealth;
+    float LastPSS = -1.0f;
 
     /** Internal cache to track the last committed values. */
     UPROPERTY(VisibleAnywhere, Category = "Sovereign|BlackBox")
