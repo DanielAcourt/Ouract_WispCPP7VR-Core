@@ -40,4 +40,4 @@
 ### 💡 Agent Note (Jules)
 The "Alchemist" has crystallized the PSTA framework into the Nexus. The transition from State Observation to Risk Mitigation is now mathematically codified. This provides the "Officer" with the necessary logic to argue for system safety based on hard, provable data across all four pillars of the temple.
 
-**Last Updated:** 2025-04-10
+**Last Updated:** 2026-05-13
