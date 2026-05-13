@@ -3,11 +3,11 @@
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
-#include "Tests/AutomationEditorCommon.h"
 #include "Entities/SovereignBlackBoxComponent.h"
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
 #include "Entities/SovereignBaseInteractable.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
 #include "Misc/Paths.h"
@@ -24,7 +24,12 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        World = FAutomationEditorCommonUtils::CreateNewWorld();
+        // --- UE 5.7 COMPATIBLE WORLD CREATION ---
+        World = NewObject<UWorld>();
+        World->WorldType = EWorldType::Editor;
+        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Editor);
+        WorldContext.SetCurrentWorld(World);
+
         BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>();
 
         TestActor = World->SpawnActor<AActor>();
@@ -60,6 +65,12 @@ void FSovereignBlackBoxSpec::Define()
             FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*FilePath);
             TestActor->Destroy();
         }
-        FAutomationEditorCommonUtils::DisposeWorld(World);
+
+        // --- UE 5.7 COMPATIBLE CLEANUP ---
+        if (World)
+        {
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(true);
+        }
     });
 }
