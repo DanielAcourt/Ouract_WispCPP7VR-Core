@@ -71,11 +71,8 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
 
     // 2. Process deltas and calculate PSTA
     bool bHasChanges = false;
-    TMap<EPSTADimension, float> DimWeightedSums;
-    TMap<EPSTADimension, float> DimTotalWeights;
-    TMap<EPSTADimension, bool> DimAnchorZeroed;
 
-    // Initialize dimensions
+    // Initialize dimensions (using persistent members to avoid heap churn)
     TArray<EPSTADimension> Dimensions = { EPSTADimension::Psychological, EPSTADimension::Social, EPSTADimension::Technical, EPSTADimension::Administrative };
     for (EPSTADimension Dim : Dimensions)
     {
@@ -177,6 +174,28 @@ void USovereignBlackBoxComponent::RecordEvent(const FString& EventKey, const FSt
 {
     PendingEntries.Add(FBlackBoxEntry(EventKey, 0.0f, EventDescription));
     FlushToSubsystem();
+}
+
+void USovereignBlackBoxComponent::IngestBlackBoxEntry(const FBlackBoxEntry& Entry)
+{
+    AActor* Owner = GetOwner();
+    if (!Owner) return;
+
+    // 1. Update the Vessel (Actor) via Save Interface if it's numeric telemetry
+    if (!Entry.Key.IsEmpty())
+    {
+        if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
+        {
+            TMap<FString, FString> Data;
+            Data.Add(Entry.Key, FString::SanitizeFloat(Entry.Value));
+            SaveInterface->RestoreSaveData(Data);
+        }
+    }
+
+    // 2. Trigger a PSTA recalculation based on the new truth
+    // We don't want to record a NEW snapshot during ingestion (to avoid infinite loops)
+    // but we do want to update the internal PSTA health cache.
+    RecordTruthSnapshot();
 }
 
 void USovereignBlackBoxComponent::FlushToSubsystem()

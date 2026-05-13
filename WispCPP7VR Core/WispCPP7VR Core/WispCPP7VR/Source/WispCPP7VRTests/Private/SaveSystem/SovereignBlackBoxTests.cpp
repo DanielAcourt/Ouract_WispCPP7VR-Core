@@ -203,6 +203,25 @@ void FSovereignBlackBoxSpec::Define()
         TestTrue("Heartbeat should have triggered a snapshot", VerifyFileExists(FilePath));
     });
 
+    It("Should ingest external telemetry (Replay)", [this]()
+    {
+        // Arrange
+        ASovereignBaseInteractable* Interactable = World->SpawnActor<ASovereignBaseInteractable>();
+        BBComp->Rename(nullptr, Interactable);
+
+        FBlackBoxEntry Entry;
+        Entry.Key = TEXT("Telemetry.temp_c");
+        Entry.Value = 37.5f;
+
+        // Act
+        BBComp->IngestBlackBoxEntry(Entry);
+
+        // Assert
+        TestEqual("Interactable should have updated its temperature from ingested log", Interactable->TemperatureCelsius, 37.5f);
+
+        Interactable->Destroy();
+    });
+
     It("Should create BlackBox file on first snapshot", [this]()
     {
         // Arrange

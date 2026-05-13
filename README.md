@@ -70,6 +70,7 @@ The Sovereign Framework features advanced "Digital Twin" capabilities, allowing 
 The **Black Box Protocol** (B-002) is a specialized persistence layer designed for "Mission-Critical Truth." It ensures that high-fidelity telemetry survives even if the simulation "Soul" is decoupled from its current "Vessel."
 
 *   **Delta-Based Logging:** Only records data when changes exceed a defined threshold (default: 0.2), minimizing storage bloat while capturing significant events.
+*   **Truth Ingestion (The Replay):** Supports replaying external telemetry (e.g., from a Raspberry Pi) back into Unreal actors, enabling high-fidelity 3D reconstruction and historical visualization.
 *   **Atomic Persistence:** Uses the `USovereignBlackBoxSubsystem` to perform atomic writes to standalone JSON files in `/Saved/BlackBox/`, protecting against data corruption.
 *   **Identity-Linked:** Logs are partitioned by `EntityID` (Guid), creating a permanent historical record for every sovereign entity.
 

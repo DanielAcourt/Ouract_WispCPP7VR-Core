@@ -29,26 +29,27 @@ void USovereignBlackBoxHeartbeat::Tick(float DeltaTime)
     for (auto& Pair : PulseGroups)
     {
         EUpdateFrequency Freq = Pair.Key;
-        TArray<FBlackBoxHeartbeatEntry>& Entries = Pair.Value;
+        FBlackBoxHeartbeatGroup& Group = Pair.Value;
 
         float* IntervalPtr = Intervals.Find(Freq);
-        float Interval = IntervalPtr ? *IntervalPtr : 1.0f;
+        float Interval = (IntervalPtr && *IntervalPtr > 0.0f) ? *IntervalPtr : 1.0f;
 
         // Skip dormant or manual frequencies
-        if (Freq == EUpdateFrequency::Dormant || Interval <= 0.0f) continue;
+        if (Freq == EUpdateFrequency::Dormant || (IntervalPtr && *IntervalPtr < 0.0f)) continue;
 
-        for (FBlackBoxHeartbeatEntry& Entry : Entries)
+        Group.TimeSinceLastPulse += DeltaTime;
+
+        if (Group.TimeSinceLastPulse >= Interval)
         {
-            Entry.TimeSinceLastSnapshot += DeltaTime;
-
-            if (Entry.TimeSinceLastSnapshot >= Interval)
+            // Synchronized Pulse: All components in this band fire now
+            for (TWeakObjectPtr<USovereignBlackBoxComponent>& WeakComp : Group.Components)
             {
-                if (USovereignBlackBoxComponent* Comp = Entry.Component.Get())
+                if (USovereignBlackBoxComponent* Comp = WeakComp.Get())
                 {
                     Comp->RecordTruthSnapshot();
                 }
-                Entry.TimeSinceLastSnapshot = 0.0f;
             }
+            Group.TimeSinceLastPulse = 0.0f;
         }
     }
 }
@@ -65,7 +66,7 @@ void USovereignBlackBoxHeartbeat::RegisterComponent(USovereignBlackBoxComponent*
     // Ensure not already in any group
     UnregisterComponent(Component);
 
-    PulseGroups.FindOrAdd(Frequency).Add(FBlackBoxHeartbeatEntry(Component));
+    PulseGroups.FindOrAdd(Frequency).Components.Add(Component);
 }
 
 void USovereignBlackBoxHeartbeat::UnregisterComponent(USovereignBlackBoxComponent* Component)
@@ -74,8 +75,8 @@ void USovereignBlackBoxHeartbeat::UnregisterComponent(USovereignBlackBoxComponen
 
     for (auto& Pair : PulseGroups)
     {
-        Pair.Value.RemoveAll([Component](const FBlackBoxHeartbeatEntry& Entry) {
-            return Entry.Component.Get() == Component;
+        Pair.Value.Components.RemoveAll([Component](const TWeakObjectPtr<USovereignBlackBoxComponent>& Entry) {
+            return Entry.Get() == Component;
         });
     }
 }
@@ -84,14 +85,14 @@ void USovereignBlackBoxHeartbeat::ForceHeartbeat()
 {
     for (auto& Pair : PulseGroups)
     {
-        for (FBlackBoxHeartbeatEntry& Entry : Pair.Value)
+        for (TWeakObjectPtr<USovereignBlackBoxComponent>& WeakComp : Pair.Value.Components)
         {
-            if (USovereignBlackBoxComponent* Comp = Entry.Component.Get())
+            if (USovereignBlackBoxComponent* Comp = WeakComp.Get())
             {
                 Comp->RecordTruthSnapshot();
-                Entry.TimeSinceLastSnapshot = 0.0f;
             }
         }
+        Pair.Value.TimeSinceLastPulse = 0.0f;
     }
 }
 
@@ -111,8 +112,8 @@ void USovereignBlackBoxHeartbeat::CleanupDeadComponents()
 {
     for (auto& Pair : PulseGroups)
     {
-        Pair.Value.RemoveAll([](const FBlackBoxHeartbeatEntry& Entry) {
-            return !Entry.Component.IsValid();
+        Pair.Value.Components.RemoveAll([](const TWeakObjectPtr<USovereignBlackBoxComponent>& Entry) {
+            return !Entry.IsValid();
         });
     }
 }

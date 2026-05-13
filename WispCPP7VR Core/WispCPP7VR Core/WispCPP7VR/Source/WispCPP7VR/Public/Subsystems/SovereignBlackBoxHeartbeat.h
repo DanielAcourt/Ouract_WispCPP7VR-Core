@@ -10,25 +10,22 @@
 class USovereignBlackBoxComponent;
 
 /**
- * @struct FBlackBoxHeartbeatEntry
- * @brief Internal entry for tracking a component's pulse.
+ * @struct FBlackBoxHeartbeatGroup
+ * @brief Tracks the pulse of a specific frequency band.
  */
-struct FBlackBoxHeartbeatEntry
+struct FBlackBoxHeartbeatGroup
 {
-    TWeakObjectPtr<USovereignBlackBoxComponent> Component;
-    float TimeSinceLastSnapshot = 0.0f;
-
-    FBlackBoxHeartbeatEntry() : Component(nullptr) {}
-    FBlackBoxHeartbeatEntry(USovereignBlackBoxComponent* InComp) : Component(InComp) {}
+    float TimeSinceLastPulse = 0.0f;
+    TArray<TWeakObjectPtr<USovereignBlackBoxComponent>> Components;
 };
 
 /**
  * @class USovereignBlackBoxHeartbeat
  * @brief Centralized "Sovereign Pulse" for Black Box telemetry.
- * Inherits from UTickableWorldSubsystem to provide high-performance scheduled snapshots.
+ * Provides synchronized logging intervals across all entities.
  */
 UCLASS()
-class WISPCPP7VR_API USovereignBlackBoxHeartbeat : public UTickableWorldSubsystem
+class WISPCPP7VR_API USovereignBlackBoxHeartbeat : public UWorldSubsystem, public FTickableGameObject
 {
     GENERATED_BODY()
 
@@ -39,6 +36,8 @@ public:
     // FTickableGameObject Interface
     virtual void Tick(float DeltaTime) override;
     virtual TStatId GetStatId() const override;
+    virtual bool IsTickable() const override { return !IsTemplate(); }
+    virtual ETickableTickType GetTickableTickType() const override { return ETickableTickType::Always; }
 
     /** Registers a component for the heartbeat. */
     UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
@@ -53,8 +52,8 @@ public:
     void ForceHeartbeat();
 
 private:
-    /** Components grouped by their pulse frequency for O(N) tick performance. */
-    TMap<EUpdateFrequency, TArray<FBlackBoxHeartbeatEntry>> PulseGroups;
+    /** Components grouped by their pulse frequency. */
+    TMap<EUpdateFrequency, FBlackBoxHeartbeatGroup> PulseGroups;
 
     /** Pre-defined intervals for each frequency. */
     TMap<EUpdateFrequency, float> Intervals;

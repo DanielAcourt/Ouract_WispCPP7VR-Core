@@ -1,9 +1,9 @@
 # Black Box Protocol (B-002) Technical Documentation
 
 ## 📜 Overview
-The **Black Box Protocol** is a high-reliability data persistence system within the Sovereign Framework. Its purpose is to capture and survive "Critical Truth" (telemetry and state changes) independently of the primary game save system.
+The **Black Box Protocol** is a high-reliability data bridge within the Sovereign Framework. Its purpose is twofold: to capture "Critical Truth" (telemetry) for external storage, and to **Ingest/Replay** that truth to reconstruct 3D actors in Unreal Engine.
 
-This protocol is essential for "Message in a Bottle" scenarios, where data must be ingested by external low-power systems (like a Raspberry Pi) for historical analysis or digital museum preservation.
+This protocol is the primary technical link for **"Message in a Bottle"** (where the Pi serves as the Source of Truth) and the **"Digital Museum"** (where Unreal acts as the Replay/Reconstruction engine).
 
 ---
 

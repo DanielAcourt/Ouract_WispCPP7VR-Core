@@ -32,7 +32,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
     void RecordEvent(const FString& EventKey, const FString& EventDescription);
 
-public:
+    /**
+     * TRUTH INGESTION: Replays an external Black Box entry into the local actor state.
+     * Used by the "Digital Museum" to render/verify models from external telemetry.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
+    void IngestBlackBoxEntry(const FBlackBoxEntry& Entry);
+
     /** PSTA Math Configuration. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|PSTA")
     class USovereignPSTAConfig* PSTAConfig;
@@ -49,6 +55,11 @@ protected:
     /** Internal cache for PSTA health values to track deltas. */
     TMap<EPSTADimension, float> LastDimensionHealth;
     float LastPSS = -1.0f;
+
+    // Persistent maps to avoid heap churn in RecordTruthSnapshot
+    TMap<EPSTADimension, float> DimWeightedSums;
+    TMap<EPSTADimension, float> DimTotalWeights;
+    TMap<EPSTADimension, bool> DimAnchorZeroed;
 
     /** Internal cache to track the last committed values. */
     UPROPERTY(VisibleAnywhere, Category = "Sovereign|BlackBox")
