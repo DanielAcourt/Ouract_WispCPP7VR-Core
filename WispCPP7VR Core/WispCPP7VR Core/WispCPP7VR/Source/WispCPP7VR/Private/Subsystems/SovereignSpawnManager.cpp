@@ -11,7 +11,7 @@
 void USovereignSpawnManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	UE_LOG(LogTemp, Log, TEXT("Sovereign Spawn Manager Online: PSTAS Logic Engaged"));
+	UE_LOG(LogTemp, Log, TEXT("Sovereign Spawn Manager Online: PSTA Logic Engaged"));
 }
 
 void USovereignSpawnManager::Deinitialize()
