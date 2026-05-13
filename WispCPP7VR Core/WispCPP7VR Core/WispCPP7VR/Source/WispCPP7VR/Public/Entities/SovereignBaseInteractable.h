@@ -46,6 +46,7 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Interaction")
     bool bIsInteractable = true;
 
+public:
     /** --- IoT Telemetry (Digital Twin) --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
     float TemperatureCelsius = 0.0f;
