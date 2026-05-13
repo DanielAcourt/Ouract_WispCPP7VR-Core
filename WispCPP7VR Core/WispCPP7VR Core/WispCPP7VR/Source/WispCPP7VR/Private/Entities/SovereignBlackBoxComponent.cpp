@@ -3,6 +3,7 @@
 #include "Entities/SovereignBlackBoxComponent.h"
 #include "Interaction/SovereignSaveInterface.h"
 #include "Subsystems/SovereignBlackBoxSubsystem.h"
+#include "Subsystems/SovereignBlackBoxHeartbeat.h"
 #include "SaveSystem/SovereignPSTAConfig.h"
 #include "Engine/World.h"
 
@@ -14,6 +15,27 @@ USovereignBlackBoxComponent::USovereignBlackBoxComponent()
 void USovereignBlackBoxComponent::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (UWorld* World = GetWorld())
+    {
+        if (USovereignBlackBoxHeartbeat* Heartbeat = World->GetSubsystem<USovereignBlackBoxHeartbeat>())
+        {
+            Heartbeat->RegisterComponent(this, UpdateFrequency);
+        }
+    }
+}
+
+void USovereignBlackBoxComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (UWorld* World = GetWorld())
+    {
+        if (USovereignBlackBoxHeartbeat* Heartbeat = World->GetSubsystem<USovereignBlackBoxHeartbeat>())
+        {
+            Heartbeat->UnregisterComponent(this);
+        }
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void USovereignBlackBoxComponent::RecordTruthSnapshot()
@@ -68,22 +90,18 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         {
             float CurrentValue = FCString::Atof(*Elem.Value);
 
-            // PSTA Processing
+            // PSTA Processing (Optimized O(1) Lookup)
             if (PSTAConfig)
             {
-                for (const FPSTATagMapping& Mapping : PSTAConfig->TagMappings)
+                if (const FPSTATagMapping* Mapping = PSTAConfig->GetMappingForTag(Elem.Key))
                 {
-                    if (Mapping.TagKey == Elem.Key)
-                    {
-                        float Normalized = PSTAConfig->NormalizeValue(Mapping, CurrentValue);
-                        DimWeightedSums[Mapping.Dimension] += Normalized * Mapping.Weight;
-                        DimTotalWeights[Mapping.Dimension] += Mapping.Weight;
+                    float Normalized = PSTAConfig->NormalizeValue(*Mapping, CurrentValue);
+                    DimWeightedSums[Mapping->Dimension] += Normalized * Mapping->Weight;
+                    DimTotalWeights[Mapping->Dimension] += Mapping->Weight;
 
-                        if (Mapping.bIsAnchorTag && FMath::IsNearlyZero(Normalized))
-                        {
-                            DimAnchorZeroed[Mapping.Dimension] = true;
-                        }
-                        break;
+                    if (Mapping->bIsAnchorTag && FMath::IsNearlyZero(Normalized))
+                    {
+                        DimAnchorZeroed[Mapping->Dimension] = true;
                     }
                 }
             }

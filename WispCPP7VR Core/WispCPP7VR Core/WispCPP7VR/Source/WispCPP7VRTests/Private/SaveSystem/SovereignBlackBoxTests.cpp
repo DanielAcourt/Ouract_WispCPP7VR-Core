@@ -8,6 +8,7 @@
 #include "Entities/SovereignBaseInteractable.h"
 #include "SaveSystem/SovereignPSTAConfig.h"
 #include "SaveSystem/SovereignBlackBoxExporter.h"
+#include "Subsystems/SovereignBlackBoxHeartbeat.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
@@ -183,6 +184,23 @@ void FSovereignBlackBoxSpec::Define()
             FFileHelper::LoadFileToString(Content, *CsvPath);
             TestTrue("CSV should contain the event data", Content.Contains(TEXT("TestCSV")));
         }
+    });
+
+    It("Should pulse snapshots via Heartbeat", [this]()
+    {
+        // Arrange
+        USovereignBlackBoxHeartbeat* Heartbeat = World->GetSubsystem<USovereignBlackBoxHeartbeat>();
+        BBComp->UpdateFrequency = EUpdateFrequency::Realtime; // 100ms
+        Heartbeat->RegisterComponent(BBComp, EUpdateFrequency::Realtime);
+
+        const FString FilePath = GetBlackBoxFilePath();
+        CleanupBlackBoxFile(FilePath);
+
+        // Act - Simulate 200ms passing
+        Heartbeat->Tick(0.2f);
+
+        // Assert
+        TestTrue("Heartbeat should have triggered a snapshot", VerifyFileExists(FilePath));
     });
 
     It("Should create BlackBox file on first snapshot", [this]()

@@ -22,3 +22,30 @@ float USovereignPSTAConfig::NormalizeValue(const FPSTATagMapping& Mapping, float
     float Normalized = (RawValue - Mapping.RangeMin) / Range;
     return FMath::Clamp(Normalized, 0.0f, 1.0f);
 }
+
+const FPSTATagMapping* USovereignPSTAConfig::GetMappingForTag(const FString& TagKey) const
+{
+    // Lazy build if empty (or if called in-game)
+    if (CachedMappings.Num() == 0 && TagMappings.Num() > 0)
+    {
+        const_cast<USovereignPSTAConfig*>(this)->RebuildCache();
+    }
+    return CachedMappings.Find(TagKey);
+}
+
+#if WITH_EDITOR
+void USovereignPSTAConfig::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+    Super::PostEditChangeProperty(PropertyChangedEvent);
+    RebuildCache();
+}
+#endif
+
+void USovereignPSTAConfig::RebuildCache()
+{
+    CachedMappings.Empty();
+    for (const FPSTATagMapping& Mapping : TagMappings)
+    {
+        CachedMappings.Add(Mapping.TagKey, Mapping);
+    }
+}

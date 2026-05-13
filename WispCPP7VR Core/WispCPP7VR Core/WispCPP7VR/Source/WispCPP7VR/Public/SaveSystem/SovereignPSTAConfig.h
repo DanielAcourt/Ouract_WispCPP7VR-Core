@@ -85,4 +85,17 @@ public:
 
     /** Normalizes a raw value based on the mapping's range. */
     float NormalizeValue(const FPSTATagMapping& Mapping, float RawValue) const;
+
+    /** Returns the mapping for a specific tag, or nullptr if not found. (O(1) lookup) */
+    const FPSTATagMapping* GetMappingForTag(const FString& TagKey) const;
+
+#if WITH_EDITOR
+    virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
+private:
+    /** Cached lookup map for performance. */
+    TMap<FString, FPSTATagMapping> CachedMappings;
+
+    void RebuildCache();
 };
