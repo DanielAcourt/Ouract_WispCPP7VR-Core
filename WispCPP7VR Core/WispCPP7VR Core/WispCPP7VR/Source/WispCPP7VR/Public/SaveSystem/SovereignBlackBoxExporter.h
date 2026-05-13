@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "SaveSystem/SovereignGameData.h"
+#include "SovereignBlackBoxExporter.generated.h"
 
 /**
  * @class USovereignBlackBoxExporter
@@ -12,8 +14,11 @@
  * Provides forensic and analytical tools for examining entity telemetry data.
  * Converts JSON Black Box logs to CSV for external tool compatibility.
  */
-class WISPCPP7VR_API USovereignBlackBoxExporter
+UCLASS()
+class WISPCPP7VR_API USovereignBlackBoxExporter : public UBlueprintFunctionLibrary
 {
+	GENERATED_BODY()
+
 public:
 	/**
 	 * Exports a single entity's Black Box log to CSV format.
@@ -22,6 +27,7 @@ public:
 	 * @param OutCsvPath        Output path for the CSV file
 	 * @return                  True if export successful, false otherwise
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Forensics")
 	static bool ExportEntityLogToCSV(const FGuid& EntityID, FString& OutCsvPath);
 
 	/**
@@ -31,6 +37,7 @@ public:
 	 * @param OutCsvPath        Output path for the CSV file
 	 * @return                  Number of logs exported (0 if failed)
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Forensics")
 	static int32 ExportAllLogsToCSV(FString& OutCsvPath);
 
 	/**
@@ -41,6 +48,7 @@ public:
 	 * @param OutStatsPath      Output path for the stats JSON file
 	 * @return                  True if generation successful
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Forensics")
 	static bool GenerateEntityStatistics(const FGuid& EntityID, FString& OutStatsPath);
 
 	/**
@@ -51,6 +59,7 @@ public:
 	 * @param OutValidationReport Output text report of validation results
 	 * @return                  True if file is valid, false if corrupted
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Forensics")
 	static bool ValidateBlackBoxFile(const FString& FilePath, FString& OutValidationReport);
 
 	/**
@@ -62,6 +71,7 @@ public:
 	 * @param OutJsonPath       Output path for the JSON file
 	 * @return                  True if export successful
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Forensics")
 	static bool ExportTimeSeriesSnapshot(const FGuid& EntityID, int32 WindowSeconds, FString& OutJsonPath);
 
 private:

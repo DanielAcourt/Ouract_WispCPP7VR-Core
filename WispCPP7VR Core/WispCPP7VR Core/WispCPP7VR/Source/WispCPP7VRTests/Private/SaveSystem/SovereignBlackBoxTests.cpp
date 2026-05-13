@@ -80,19 +80,23 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        // Create a transient world for testing
-        World = NewObject<UWorld>();
-        World->WorldType = EWorldType::Editor;
-        
-        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Editor);
-        WorldContext.SetCurrentWorld(World);
+        // Use the existing editor world context instead of creating a transient one
+        // This avoids the 'Assertion failed: CurrentLevel' crash in UE 5.7
+        World = nullptr;
+        if (GEngine && GEngine->GetWorldContexts().Num() > 0)
+        {
+            World = GEngine->GetWorldContexts()[0].World();
+        }
 
-        TestTrue("World should be created successfully", World != nullptr);
+        TestTrue("Test World should be valid", World != nullptr);
+        if (!World) return;
 
         BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>();
         TestTrue("BlackBox subsystem should be valid", BBSubsystem != nullptr);
 
-        TestActor = World->SpawnActor<AActor>();
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        TestActor = World->SpawnActor<AActor>(SpawnParams);
         TestTrue("Test actor should be spawned", TestActor != nullptr);
 
         BBComp = NewObject<USovereignBlackBoxComponent>(TestActor);
@@ -314,11 +318,7 @@ void FSovereignBlackBoxSpec::Define()
             TestActor->Destroy();
         }
 
-        if (World)
-        {
-            GEngine->DestroyWorldContext(World);
-            World->DestroyWorld(true);
-        }
+        // Don't destroy the World as we are using the global one
     });
 }
 

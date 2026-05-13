@@ -82,3 +82,30 @@ The `USovereignBlackBoxSubsystem` provides a **Decoupled Recording Layer**. By p
 *   Performance hits from synchronous I/O (the subsystem can be optimized for async operations in the future without changing the Actor logic).
 
 This alignment follows the **Officer Principle**: understanding that the "Vessel" (Actor) generates the data, but the "Logistics" (Subsystem) ensures its survival.
+
+---
+
+## 🔍 Forensic Suite (Analysis & Export)
+The framework includes a specialized utility library, `USovereignBlackBoxExporter`, accessible via C++ or Blueprint.
+
+### Key Capabilities:
+1.  **CSV Export:** Use `ExportEntityLogToCSV` (Single) or `ExportAllLogsToCSV` (Batch) to convert JSON logs into spreadsheet-ready formats. Files are saved in `/Saved/BlackBox/Exports/`.
+2.  **Statistical Analysis:** `GenerateEntityStatistics` creates a JSON summary for an entity, calculating **Min, Max, Average, and Standard Deviation** for every telemetry key.
+3.  **Integrity Validation:** `ValidateBlackBoxFile` generates a forensic report checking for missing fields, malformed JSON, or out-of-order timestamps.
+4.  **Time-Series Snapshots:** `ExportTimeSeriesSnapshot` groups data into configurable time windows (e.g., 60s buckets) and calculates averages, ideal for graphing historical trends.
+
+### Usage (Blueprint):
+*   Search for **"Black Box Forensics"** nodes in the Blueprint editor.
+*   Pass the **Entity GUID** to the desired node.
+*   The node returns the **Output Path** to the generated file.
+
+---
+
+## 🎞️ Truth Replay (Digital Museum)
+Unreal acts as a **High-Fidelity Replayer** for external data sources.
+
+### Replay Workflow:
+1.  **Load:** Use the `USovereignBlackBoxReplaySubsystem` to load a Pi-source JSON file via `LoadReplayLog`.
+2.  **Start:** Call `StartReplay(EntityID, PlaybackSpeed)`.
+3.  **Orchestration:** The subsystem drives the simulation clock and pushes telemetry to the target Actor via `IngestBlackBoxEntry`.
+4.  **Verification:** The PSTA framework automatically validates the replayed data against the `USovereignPSTAConfig` to provide an "Integrity Rating" for the 3D reconstruction.
