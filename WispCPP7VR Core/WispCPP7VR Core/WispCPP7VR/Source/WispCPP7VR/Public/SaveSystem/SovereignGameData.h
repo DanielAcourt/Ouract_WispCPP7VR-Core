@@ -182,3 +182,34 @@ struct FEntitySaveData
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Elements")
     TMap<ESovereignElement, float> ElementalAffinities;
 };
+
+/**
+ * @struct FBlackBoxEntry
+ * @brief A single timestamped "Truth Event" for a specific telemetry key.
+ */
+USTRUCT(BlueprintType)
+struct FBlackBoxEntry
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|BlackBox")
+    FDateTime Timestamp;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|BlackBox")
+    FString Key;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|BlackBox")
+    float Value;
+
+    FBlackBoxEntry()
+        : Timestamp(FDateTime::Now())
+        , Key(TEXT(""))
+        , Value(0.0f)
+    {}
+
+    FBlackBoxEntry(const FString& InKey, float InValue)
+        : Timestamp(FDateTime::Now())
+        , Key(InKey)
+        , Value(InValue)
+    {}
+};

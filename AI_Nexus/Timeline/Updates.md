@@ -42,3 +42,13 @@ This document summarizes the major architectural refactors and improvements impl
 -   The `USovereignSpawnManager` now performs an **Identity-Class Bridge Check**. After a class is loaded, it compares the `IdentitySignature` on the data asset with the `IdentitySignature` in the Class Default Object (CDO) of the loaded class.
 -   **Fallback:** If the signatures do not match, or if the class pointer is null, the system does not crash. Instead, it spawns a default fallback actor and assigns it a `Transient.Unknown` tag, ensuring the simulation continues and the invalid state is tracked.
 -   **Result:** This "Logic Gate" provides a critical layer of security, ensuring that the physical representation (the actor class) always matches its logical identity (the species data).
+
+## 5. Digital Twin Telemetry Bridge (B-001)
+
+**Conclusion:** The framework needed a standardized way to consume real-world IoT telemetry (e.g., from a Raspberry Pi) and map it to actor properties for the Fish Tank Alpha simulation.
+
+**Upgrade:**
+-   **Standardized Namespace:** Established the `Telemetry.` namespace for all IoT-linked save data keys (e.g., `Telemetry.temp_c`, `Telemetry.ph_val`).
+-   **Physical Persistence Layer:** Modified `ASovereignBaseInteractable` to implement `ISovereignSaveInterface`. This allows the actor to manage its own physical properties during the save/load pipeline.
+-   **The Soul-Vessel Bridge:** Updated `USovereignSaveableEntityComponent` (The Soul) to include a "Physical Pass" that delegates state capture and restoration to the owner actor.
+-   **Result:** The framework can now ingest live JSON telemetry from external hardware and automatically synchronize the simulation's physical state.

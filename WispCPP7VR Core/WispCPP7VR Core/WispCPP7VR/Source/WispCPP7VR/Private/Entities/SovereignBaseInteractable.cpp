@@ -159,3 +159,36 @@ USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Im
 {
     return BaseMesh;
 }
+
+/* =========================
+   ISovereignSaveInterface
+   ========================= */
+
+TMap<FString, FString> ASovereignBaseInteractable::GetSaveData()
+{
+    TMap<FString, FString> Data;
+    // Map internal properties to the "Telemetry." namespace for the Digital Twin
+    Data.Add(TEXT("Telemetry.temp_c"), FString::SanitizeFloat(TemperatureCelsius));
+    Data.Add(TEXT("Telemetry.ph_val"), FString::SanitizeFloat(PhValue));
+    Data.Add(TEXT("Telemetry.water_depth_mm"), FString::SanitizeFloat(WaterDepthMM));
+    return Data;
+}
+
+void ASovereignBaseInteractable::RestoreSaveData(const TMap<FString, FString>& Data)
+{
+    // Scrape the "suitcase" for telemetry keys and update the physical vessel
+    if (const FString* Val = Data.Find(TEXT("Telemetry.temp_c")))
+    {
+        TemperatureCelsius = FCString::Atof(**Val);
+    }
+
+    if (const FString* Val = Data.Find(TEXT("Telemetry.ph_val")))
+    {
+        PhValue = FCString::Atof(**Val);
+    }
+
+    if (const FString* Val = Data.Find(TEXT("Telemetry.water_depth_mm")))
+    {
+        WaterDepthMM = FCString::Atof(**Val);
+    }
+}

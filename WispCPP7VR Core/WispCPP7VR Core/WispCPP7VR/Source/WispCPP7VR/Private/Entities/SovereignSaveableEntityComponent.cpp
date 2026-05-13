@@ -315,7 +315,20 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 	}
 
 	// --- PASS B (DNA) ---
-	// Scrape Component Data (e.g., "QiComponent.CurrentQi", "AttributeComponent.Strength")
+
+	// Part 1: Scrape Owner Actor (The Vessel) if it implements the save interface
+	// This is where Telemetry/Physical state lives.
+	if (ISovereignSaveInterface* ActorInterface = Cast<ISovereignSaveInterface>(Owner))
+	{
+		TMap<FString, FString> ActorData = ActorInterface->GetSaveData();
+		for (const auto& Elem : ActorData)
+		{
+			// Actor data usually uses its own namespaces (like Telemetry.), so we don't prefix with actor name
+			JsonObject->SetStringField(Elem.Key, Elem.Value);
+		}
+	}
+
+	// Part 2: Scrape Component Data (e.g., "QiComponent.CurrentQi", "AttributeComponent.Strength")
 	TArray<UActorComponent*> InterfaceComps;
 	Owner->GetComponents(InterfaceComps);
 
@@ -367,7 +380,14 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 	// and handles standard Actor Tags.
 	ApplyMetaTags(AllData);
 
-	// 3. APPLY COMPONENT DATA (The DNA Pass)
+	// 3. APPLY VESSEL DATA (The Physical Pass)
+	// Restore state to the Actor itself (e.g., Telemetry)
+	if (ISovereignSaveInterface* ActorInterface = Cast<ISovereignSaveInterface>(Owner))
+	{
+		ActorInterface->RestoreSaveData(AllData);
+	}
+
+	// 4. APPLY COMPONENT DATA (The DNA Pass)
 	// Find all components that implement the Save Interface (Qi, Attributes, etc.)
 	TArray<UActorComponent*> InterfaceComps;
 	Owner->GetComponents(InterfaceComps);

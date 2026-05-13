@@ -6,8 +6,8 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 
 | ID | Task | Complexity | Status | Node |
 |:---|:---|:---:|:---:|:---|
-| B-001 | Actor Synchronization (Fish Tank Telemetry) | 8 | Todo | DevOps |
-| B-002 | Data Survivability (Black Box Protocol) | 5 | Todo | Research |
+| B-001 | Actor Synchronization (Fish Tank Telemetry) | 8 | Done | DevOps |
+| B-002 | Data Survivability (Black Box Protocol) | 5 | Done | Research |
 | B-003 | Lidar Intelligence (Matrix Museum Summoning) | 13 | Todo | Research |
 | B-004 | "Corpse Possession" State Persistence | 3 | Todo | DevOps |
 | B-005 | Qi/Maturity Evolution Milestones | 5 | Todo | DevOps |
@@ -22,7 +22,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Complexity 13+:** "General" work. Massive research goals, deep spatial math, or framework-shifting paradigms.
 
 ## 📝 Next Priority
-**B-001: Actor Synchronization (Complexity 8)**
-- Why: To prove the Digital Twin capability using Fish Tank Alpha telemetry.
-- What: Mapping IoT keys (`temp_c`, `ph_val`) to `ASovereignBaseInteractable` properties.
-- How: Using the `USovereignSaveableEntityComponent` to ingest real-time JSON telemetry.
+**B-002: Data Survivability (Complexity 5)**
+- Why: To implement the "Black Box" protocol for detached data logging and persistence.
+- What: Formalizing the implementation of decoupled persistence and Critical Truth selection.
+- How: TBD based on Phase II research.

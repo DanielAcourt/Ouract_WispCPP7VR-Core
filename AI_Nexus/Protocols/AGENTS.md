@@ -33,3 +33,8 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 ## 🧪 Testing Standards
 - All new features should be accompanied by automation tests in the `WispCPP7VRTests` module.
 - Gate testing dependencies using `Target.Configuration != UnrealTargetConfiguration.Shipping`.
+
+## ⚠️ UE 5.7 Automation API Changes
+`FAutomationEditorCommonUtils::CreateNewWorld()` and `DisposeWorld()` are **deprecated/removed** in UE 5.7.
+All automation tests must use explicit world context management.
+See `AI_Nexus/Memories/Lesson_Learned_UE5.7_Automation_API.md` for technical implementation details.

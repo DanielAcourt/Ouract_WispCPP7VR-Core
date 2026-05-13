@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignBaseEntity.h"
 #include "Interaction/SovereignInterfaceMain.h"
+#include "Interaction/SovereignSaveInterface.h"
 #include "SovereignBaseInteractable.generated.h"
 
 class USovereignSaveableEntityComponent;
@@ -20,11 +21,18 @@ UCLASS(Abstract)
 class WISPCPP7VR_API ASovereignBaseInteractable
     : public ASovereignBaseEntity
     , public IInteractionInterface
+    , public ISovereignSaveInterface
 {
     GENERATED_BODY()
 
 public:
     ASovereignBaseInteractable();
+
+    /* =========================
+       ISovereignSaveInterface
+       ========================= */
+    virtual TMap<FString, FString> GetSaveData() override;
+    virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
 
 
 protected:
@@ -37,6 +45,17 @@ protected:
     /** Master interaction gate */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Interaction")
     bool bIsInteractable = true;
+
+public:
+    /** --- IoT Telemetry (Digital Twin) --- */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
+    float TemperatureCelsius = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
+    float PhValue = 7.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
+    float WaterDepthMM = 0.0f;
 
     // there is not controller?
 
