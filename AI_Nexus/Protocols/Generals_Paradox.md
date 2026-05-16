@@ -29,15 +29,27 @@ To solve the paradox of the "Lead's Burden." This document acts as the definitiv
 
 ---
 
-## 🧪 3. Verification & Compliance
+## 🧪 3. Formatting & Repository Standards
 
-### 3.1 UE 5.7 World Context
+### 3.1 EditorConfig Compliance
+*   **Intent:** Maintain Unreal Engine standards (Tabs, CRLF, 120-char limit) via root `.editorconfig`.
+*   **Status:** **STABILIZED**. Agents are authorized to reformat non-conforming code.
+
+### 3.2 Global Contributing Visibility
+*   **Intent:** Ensure all agents and humans see the `CONTRIBUTING.md` at the root.
+*   **Status:** **STABILIZED**.
+
+---
+
+## 🧪 4. Verification & Compliance
+
+### 4.1 UE 5.7 World Context
 *   **Intent:** Use explicit world context management in automation tests to avoid `GEngine` null-pointer crashes.
 *   **Status:** **STABILIZED**. Agents are authorized to update all legacy tests to the 5.7 pattern.
 
 ---
 
-## 🔄 4. Proposing New Stabilizations
+## 🔄 5. Proposing New Stabilizations
 To add to this document, the agent must:
 1.  Identify a recurring pattern that causes "The General's Burden."
 2.  Propose the "Stabilized Intent" to the Lead.
