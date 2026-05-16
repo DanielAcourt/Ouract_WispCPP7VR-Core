@@ -33,7 +33,14 @@ To account for the speed of failure, we introduce the **Risk Velocity**:
 $$V_i = \frac{\Delta D_i}{\Delta t}$$
 *   If $|V_i| > V_{threshold}$ (e.g., a rapid drop in trust), the system applies a **Momentum Penalty** to the $PSS$, triggering a warning before the health score even hits the threshold.
 
-### 2.4 Provable Safety Status (PSS)
+### 2.4 Human-in-the-Loop: The Acknowledgment Handshake
+To prevent "Lion Air 610" scenarios where the AI overrides human judgment based on a single sensor lie, we introduce the **Acknowledgment Factor** ($\beta$).
+
+When an Alarm is triggered, the Captain can acknowledge it. This has two mathematical effects:
+1.  **Sensor Weight Reduction:** The specific tag $x_{ij}$ that triggered the alarm has its weight $w_{ij}$ reduced by a factor $\delta$ (e.g., $w_{ij, new} = w_{ij} \cdot 0.1$). This prevents a confirmed faulty sensor from continuously dragging down the PSS.
+2.  **Autonomous Inhibition:** A boolean state `bIsAcknowledged` prevents the AI from executing "Corrective Interventions" (e.g., steering) unless the total PSS collapses below a secondary **Survival Threshold** ($t_{survival}$).
+
+### 2.5 Provable Safety Status (PSS)
 The PSS is the final holistic metric that determines if the mission is "Safe."
 
 **The Refined Bottleneck Law:**
@@ -45,17 +52,22 @@ Where $\sigma$ is a scaling function that remains $\approx 1.0$ for high $D_i$, 
 
 ## 🏗️ 3. The Structural Integration (The Discovery Layer)
 
-### 3.1 Handling Unknown Tags (Meta-Tagging)
+### 3.1 The N-bit Matrix (Consensus Verification)
+To harden the system against sensor failure, critical thresholds can require an **Agreement Count** ($N$).
+*   An alarm is only elevated to **Active** if $N$ distinct sensors or tags within a dimension confirm the breach.
+*   If $Agreement < N$, the state is logged as **Suspicious** but does not trigger autonomous intervention.
+
+### 3.2 Handling Unknown Tags (Meta-Tagging)
 *   **Tag Registration:** New data sources ($x_{i,novel}$) provide a metadata header.
 *   **Residual Weight Allocation:** System siphons from $w_{reserve}$ for unknown tags.
 *   **Weight Correction:** The $\frac{1}{W_i}$ divisor ensures the score stays within $[0, 1]$.
 
-### 3.2 Automated Discovery Layer (Vision Integration)
+### 3.3 Automated Discovery Layer (Vision Integration)
 To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spatial sensors (Computer Vision/Lidar):
 *   **Semantic Transcription:** Objects identified via Image Recognition (e.g., a "High-Voltage Hazard") are automatically registered as $x_{ij}$ factors in the **Administrative (A)** or **Technical (T)** dimensions.
 *   **Autonomous Priority Mapping:** Known visual archetypes carry pre-defined impact weights, allowing the system to scale its risk assessment without manual human input.
 
-### 3.3 Classification and Threshold Mapping
+### 3.4 Classification and Threshold Mapping
 *   **Critical ($0 \le PSS < t_{crit}$):** Abort.
 *   **Warning ($t_{crit} \le PSS < t_{warn}$):** Intervention.
 *   **Caution ($t_{warn} \le PSS < t_{caut}$):** Degraded.

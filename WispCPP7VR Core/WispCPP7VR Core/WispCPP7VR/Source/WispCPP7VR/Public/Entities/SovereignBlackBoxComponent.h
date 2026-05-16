@@ -33,6 +33,17 @@ public:
     void RecordEvent(const FString& EventKey, const FString& EventDescription);
 
     /**
+     * Human-in-the-loop: Acknowledge an active alarm.
+     * Reduces the weight of triggering sensors and prevents autonomous steering.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox|Alarms")
+    void AcknowledgeAlarm(const FString& AlarmID);
+
+    /** Returns true if an alarm is active but not yet acknowledged. */
+    UFUNCTION(BlueprintPure, Category = "Sovereign|BlackBox|Alarms")
+    bool IsAlarmActiveAndUnacknowledged(const FString& AlarmID) const;
+
+    /**
      * TRUTH INGESTION: Replays an external Black Box entry into the local actor state.
      * Used by the "Digital Museum" to render/verify models from external telemetry.
      */
@@ -42,6 +53,10 @@ public:
     /** PSTA Math Configuration. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|PSTA")
     class USovereignPSTAConfig* PSTAConfig;
+
+    /** Alarm and Threshold Configuration. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|Alarms")
+    class USovereignAlarmConfig* AlarmConfig;
 
     /** How often this component records snapshots. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
@@ -64,6 +79,18 @@ protected:
     /** Internal cache to track the last committed values. */
     UPROPERTY(VisibleAnywhere, Category = "Sovereign|BlackBox")
     TMap<FString, float> LastTruthValues;
+
+    /** Set of currently active Alarms. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|BlackBox|Alarms")
+    TSet<FString> ActiveAlarms;
+
+    /** Set of Alarms that have been acknowledged by a human. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|BlackBox|Alarms")
+    TSet<FString> AcknowledgedAlarms;
+
+    /** Timestamp of when an alarm was first triggered. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|BlackBox|Alarms")
+    TMap<FString, FDateTime> AlarmTriggerTimestamps;
 
     /** History of events since the last flush. */
     TArray<FBlackBoxEntry> PendingEntries;
