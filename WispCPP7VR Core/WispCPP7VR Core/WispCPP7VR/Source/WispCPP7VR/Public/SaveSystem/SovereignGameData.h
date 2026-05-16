@@ -201,15 +201,21 @@ struct FBlackBoxEntry
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|BlackBox")
     float Value;
 
+    /** Optional string-based event data for non-numeric logs. */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|BlackBox")
+    FString EventData;
+
     FBlackBoxEntry()
         : Timestamp(FDateTime::Now())
         , Key(TEXT(""))
         , Value(0.0f)
+        , EventData(TEXT(""))
     {}
 
-    FBlackBoxEntry(const FString& InKey, float InValue)
+    FBlackBoxEntry(const FString& InKey, float InValue, const FString& InEventData = TEXT(""))
         : Timestamp(FDateTime::Now())
         , Key(InKey)
         , Value(InValue)
+        , EventData(InEventData)
     {}
 };

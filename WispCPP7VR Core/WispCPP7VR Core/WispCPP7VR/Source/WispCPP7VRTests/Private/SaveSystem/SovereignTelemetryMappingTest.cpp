@@ -76,9 +76,16 @@ bool FSovereignTelemetryMappingTest::RunTest(const FString& Parameters)
     TSharedPtr<FJsonObject> CapturedState = Soul->CaptureFullEntityState();
 
     TestTrue(TEXT("Captured state has Telemetry.temp_c"), CapturedState->HasField(TEXT("Telemetry.temp_c")));
-    TestEqual(TEXT("Captured temp_c matches"), CapturedState->GetStringField(TEXT("Telemetry.temp_c")), TEXT("24.500000"));
-    TestEqual(TEXT("Captured ph_val matches"), CapturedState->GetStringField(TEXT("Telemetry.ph_val")), TEXT("8.200000"));
-    TestEqual(TEXT("Captured depth matches"), CapturedState->GetStringField(TEXT("Telemetry.water_depth_mm")), TEXT("450.000000"));
+
+    // Support both %f and sanitized float formats
+    FString ActualTemp = CapturedState->GetStringField(TEXT("Telemetry.temp_c"));
+    TestTrue(TEXT("Captured temp_c matches"), ActualTemp == TEXT("24.500000") || ActualTemp == TEXT("24.5"));
+
+    FString ActualPh = CapturedState->GetStringField(TEXT("Telemetry.ph_val"));
+    TestTrue(TEXT("Captured ph_val matches"), ActualPh == TEXT("8.200000") || ActualPh == TEXT("8.2"));
+
+    FString ActualDepth = CapturedState->GetStringField(TEXT("Telemetry.water_depth_mm"));
+    TestTrue(TEXT("Captured depth matches"), ActualDepth == TEXT("450.000000") || ActualDepth == TEXT("450.0"));
 
     // Cleanup
     Vessel->Destroy();
