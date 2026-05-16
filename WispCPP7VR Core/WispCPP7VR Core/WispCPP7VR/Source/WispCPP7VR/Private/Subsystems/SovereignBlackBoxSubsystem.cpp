@@ -92,6 +92,26 @@ void USovereignBlackBoxSubsystem::AppendEntriesToFile(const FGuid& EntityID, con
     FString TempFilePath = FilePath + TEXT(".tmp");
     if (FFileHelper::SaveStringToFile(JsonString, *TempFilePath))
     {
-        PlatformFile.MoveFile(*FilePath, *TempFilePath);
+        // On some platforms, MoveFile fails if the destination already exists.
+        // We delete the existing file first to ensure the atomic swap.
+        if (PlatformFile.FileExists(*FilePath))
+        {
+            if (!PlatformFile.DeleteFile(*FilePath))
+            {
+                UE_LOG(LogTemp, Error, TEXT("BlackBoxSubsystem: Failed to delete existing file %s (Access Denied?)"), *FilePath);
+            }
+        }
+
+        if (!PlatformFile.MoveFile(*FilePath, *TempFilePath))
+        {
+            UE_LOG(LogTemp, Error, TEXT("BlackBoxSubsystem: Failed to move temp file %s to %s"), *TempFilePath, *FilePath);
+
+            // Cleanup temp file if move failed
+            PlatformFile.DeleteFile(*TempFilePath);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("BlackBoxSubsystem: Failed to save string to temp file %s"), *TempFilePath);
     }
 }

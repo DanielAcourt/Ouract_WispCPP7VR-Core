@@ -39,6 +39,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|BlackBox")
     void IngestBlackBoxEntry(const FBlackBoxEntry& Entry);
 
+    /** Returns the current Provable Safety Status (PSS). */
+    UFUNCTION(BlueprintPure, Category = "Sovereign|BlackBox|PSTA")
+    float GetPSS() const { return LastPSS; }
+
     /** PSTA Math Configuration. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox|PSTA")
     class USovereignPSTAConfig* PSTAConfig;
@@ -46,6 +50,10 @@ public:
     /** How often this component records snapshots. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
     EUpdateFrequency UpdateFrequency = EUpdateFrequency::Standard;
+
+    /** If false, snapshots will be processed in-memory but not written to disk. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|BlackBox")
+    bool bEnableFilePersistence = true;
 
 protected:
     /** The sensitivity for delta-based logging. */

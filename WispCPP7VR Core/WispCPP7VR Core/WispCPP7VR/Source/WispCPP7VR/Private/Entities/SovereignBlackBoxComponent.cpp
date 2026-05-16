@@ -202,12 +202,17 @@ void USovereignBlackBoxComponent::FlushToSubsystem()
 {
     if (PendingEntries.Num() == 0) return;
 
-    if (UWorld* World = GetWorld())
+    if (bEnableFilePersistence)
     {
-        if (USovereignBlackBoxSubsystem* BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>())
+        if (UWorld* World = GetWorld())
         {
-            BBSubsystem->RecordEntries(EntityID, PendingEntries);
-            PendingEntries.Empty();
+            if (USovereignBlackBoxSubsystem* BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>())
+            {
+                BBSubsystem->RecordEntries(EntityID, PendingEntries);
+            }
         }
     }
+
+    // Always clear entries after flushing (or discarding) to prevent memory growth
+    PendingEntries.Empty();
 }

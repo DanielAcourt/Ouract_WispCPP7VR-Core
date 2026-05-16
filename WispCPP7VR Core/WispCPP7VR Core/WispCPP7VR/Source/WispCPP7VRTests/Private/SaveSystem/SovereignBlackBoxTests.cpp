@@ -9,6 +9,7 @@
 #include "SaveSystem/SovereignBlackBoxExporter.h"
 #include "Subsystems/SovereignBlackBoxHeartbeat.h"
 #include "Subsystems/SovereignBlackBoxReplaySubsystem.h"
+#include "Entities/SovereignSaveTerminal.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
@@ -17,12 +18,13 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Interaction/SovereignSaveInterface.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 BEGIN_DEFINE_SPEC(FSovereignBlackBoxSpec, "Sovereign.BlackBox", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
     UWorld* World;
-    AActor* TestActor;
+    ASovereignSaveTerminal* TestActor;
     USovereignBlackBoxComponent* BBComp;
     USovereignBlackBoxSubsystem* BBSubsystem;
 
@@ -96,7 +98,6 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        // Use the existing editor world context instead of creating a transient one
         World = nullptr;
         if (GEngine && GEngine->GetWorldContexts().Num() > 0)
         {
@@ -112,10 +113,10 @@ void FSovereignBlackBoxSpec::Define()
         BBSubsystem = World->GetSubsystem<USovereignBlackBoxSubsystem>();
         TestTrue("BlackBox subsystem should be valid", BBSubsystem != nullptr);
 
-        // Create a simple test actor (not abstract)
+        // Create a concrete Vessel actor (SovereignSaveTerminal implements ISovereignSaveInterface)
         FActorSpawnParameters SpawnParams;
         SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-        TestActor = World->SpawnActor<AActor>(SpawnParams);
+        TestActor = World->SpawnActor<ASovereignSaveTerminal>(SpawnParams);
         TestTrue("Test actor should be spawned", TestActor != nullptr);
 
         if (!TestActor)
@@ -253,11 +254,62 @@ void FSovereignBlackBoxSpec::Define()
     // PSTA TESTS
     // ============================================================
 
+    It("Should apply PSTA Bottleneck Law when health is critical", [this]()
+    {
+        // Arrange
+        TestTrue("Setup should be valid", BBComp != nullptr);
+        if (!BBComp) return;
+
+        if (!TestActor) return;
+
+        USovereignPSTAConfig* Config = NewObject<USovereignPSTAConfig>();
+        if (!Config) return;
+
+        // Threshold = 0.3. Let's trigger it.
+        Config->CriticalInstabilityThreshold = 0.3f;
+
+        // Setup Mapping: Tech dimension. 100C = 1.0 (Healthy), 0C = 0.0 (Dead).
+        FPSTATagMapping Mapping;
+        Mapping.TagKey = TEXT("Telemetry.temp_c");
+        Mapping.Dimension = EPSTADimension::Technical;
+        Mapping.Weight = 1.0f;
+        Mapping.RangeMin = 0.0f;
+        Mapping.RangeMax = 100.0f;
+        Config->TagMappings.Add(Mapping);
+
+        // Alpha = 1.0 for Tech
+        Config->DimensionWeights.Add(EPSTADimension::Technical, 1.0f);
+
+        BBComp->PSTAConfig = Config;
+
+        // 1. Nominal State (Temp = 80C, Health = 0.8)
+        TestActor->TemperatureCelsius = 80.0f;
+        BBComp->RecordTruthSnapshot();
+        float NominalPSS = BBComp->GetPSS();
+        TestTrue("Nominal PSS should be approx 0.8", FMath::IsNearlyEqual(NominalPSS, 0.8f, 0.01f));
+
+        // 2. Critical State (Temp = 10C, Health = 0.1)
+        // 0.1 is below 0.3 threshold.
+        // Formula: PSS = (Sum Alpha*Di) * (MinDi / Threshold)
+        // PSS = (1.0 * 0.1) * (0.1 / 0.3) = 0.1 * 0.333 = 0.0333
+        TestActor->TemperatureCelsius = 10.0f;
+        BBComp->RecordTruthSnapshot();
+        float CriticalPSS = BBComp->GetPSS();
+
+        TestTrue("Critical PSS should be scaled down by Bottleneck Law", CriticalPSS < 0.1f);
+        TestTrue("Critical PSS should be approx 0.033", FMath::IsNearlyEqual(CriticalPSS, 0.033f, 0.01f));
+    });
+
     It("Should record PSTA dimension health correctly", [this]()
     {
         // Arrange
         TestTrue("Setup should be valid", BBComp != nullptr);
         if (!BBComp) return;
+
+        if (!TestActor) return;
+
+        // Provide telemetry via the Vessel's properties
+        TestActor->TemperatureCelsius = 25.0f;
 
         USovereignPSTAConfig* Config = NewObject<USovereignPSTAConfig>();
         if (!Config) return;
@@ -350,8 +402,10 @@ void FSovereignBlackBoxSpec::Define()
         TestTrue("Setup should be valid", BBComp != nullptr);
         if (!BBComp) return;
 
+        if (!TestActor) return;
+
         FBlackBoxEntry Entry;
-        Entry.Key = TEXT("ExternalTelemetry.test_value");
+        Entry.Key = TEXT("Telemetry.temp_c");
         Entry.Value = 42.5f;
 
         // Act
@@ -376,7 +430,7 @@ void FSovereignBlackBoxSpec::Define()
                     if (LogEntry && LogEntry->HasField(TEXT("Key")))
                     {
                         FString Key = LogEntry->GetStringField(TEXT("Key"));
-                        if (Key == TEXT("ExternalTelemetry.test_value"))
+                        if (Key == TEXT("Telemetry.temp_c"))
                         {
                             bFoundIngested = true;
                             if (LogEntry->HasField(TEXT("Value")))
@@ -390,6 +444,9 @@ void FSovereignBlackBoxSpec::Define()
                 }
                 TestTrue("Should have recorded ingested telemetry", bFoundIngested);
             }
+
+            // Verify the actor also received the data
+            TestEqual("Actor should have received ingested telemetry", TestActor->TemperatureCelsius, 42.5f);
         }
     });
 
@@ -471,7 +528,6 @@ void FSovereignBlackBoxSpec::Define()
 
         BBComp = nullptr;
         BBSubsystem = nullptr;
-        // Don't destroy the World as we are using the global editor world
     });
 }
 
