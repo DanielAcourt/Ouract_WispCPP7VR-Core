@@ -37,6 +37,8 @@
 *   **Spatial Language Dominance:** Establishing the framework as the primary "Linear-to-Volumetric" translator for complex data.
 
 ### **Threats**
+*   **Cognitive Bandwidth Exhaustion (CRITICAL):** The Lead is reporting burnout and significant cognitive load. This is the primary systemic threat to the 12-year vision.
+*   **Financial Pressure:** High-level research without immediate commercial return is creating a "Tight/Broke" scenario, increasing the necessity for the MVS pivot.
 *   **Vision-Execution Drift (Managed Risk):** The "Ghost" now has a body, but maintaining synchronization across increasing complexity remains a risk.
 *   **Legal/Licensing Bottlenecks:** External dependencies for the Museum's 3D assets and licensing agreements.
 
