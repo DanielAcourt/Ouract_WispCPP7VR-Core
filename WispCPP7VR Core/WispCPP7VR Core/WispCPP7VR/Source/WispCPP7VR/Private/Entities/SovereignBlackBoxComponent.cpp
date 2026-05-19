@@ -43,39 +43,40 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
     AActor* Owner = GetOwner();
     if (!Owner) return;
 
-    // 1. Gather all data from the Vessel (Actor) and its Components
+    // 1. DATA GATHERING: Pull truth data from the Vessel (Actor) and all compatible Components.
     TMap<FString, FString> RawData;
 
-    // A. Actor Data
+    // A. Actor-Level State: Capture primary physical properties (Location, Health, etc.)
     if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
     {
         RawData.Append(SaveInterface->GetSaveData());
     }
 
-    // B. Component Data
+    // B. Component-Level State: Iterate over all components to capture specialized logic (Sensors, Inventory, etc.)
     TArray<UActorComponent*> Comps;
     Owner->GetComponents(Comps);
     for (UActorComponent* Comp : Comps)
     {
-        if (Comp == this) continue;
+        if (Comp == this) continue; // Don't log the observer itself
         if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
         {
             TMap<FString, FString> CompData = SaveInterface->GetSaveData();
             FString Prefix = Comp->GetName() + TEXT(".");
             for (auto& Elem : CompData)
             {
+                // Namespace scoping ensures no key collisions between components
                 RawData.Add(Prefix + Elem.Key, Elem.Value);
             }
         }
     }
 
-    // 2. Process deltas and calculate PSTA
+    // 2. DELTA & PSTA PROCESSING: Evaluate the data for changes and mission health impacts.
     bool bHasChanges = false;
 
-    // Initialize dimensions (using persistent members to avoid heap churn)
-    // Hardening: Use fixed-size array to avoid heap allocation in the hot loop
+    // "HOT PATH" OPTIMIZATION: Use static fixed-size array to avoid heap allocations during iteration.
     static const EPSTADimension Dimensions[] = { EPSTADimension::Psychological, EPSTADimension::Social, EPSTADimension::Technical, EPSTADimension::Administrative };
 
+    // Reset dimension accumulators using persistent TMap members to minimize memory churn.
     for (EPSTADimension Dim : Dimensions)
     {
         DimWeightedSums.FindOrAdd(Dim) = 0.0f;
@@ -89,7 +90,7 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         {
             float CurrentValue = FCString::Atof(*Elem.Value);
 
-            // PSTA Processing (Optimized O(1) Lookup)
+            // PSTA INTEGRITY CHECK: Map the telemetry tag to a dimension and normalize it.
             if (PSTAConfig)
             {
                 if (const FPSTATagMapping* Mapping = PSTAConfig->GetMappingForTag(Elem.Key))
@@ -98,6 +99,7 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
                     DimWeightedSums[Mapping->Dimension] += Normalized * Mapping->Weight;
                     DimTotalWeights[Mapping->Dimension] += Mapping->Weight;
 
+                    // ANCHOR TAG LOGIC: If a critical sensor (Anchor) hits 0, the entire dimension health collapses.
                     if (Mapping->bIsAnchorTag && FMath::IsNearlyZero(Normalized))
                     {
                         DimAnchorZeroed[Mapping->Dimension] = true;
@@ -105,7 +107,7 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
                 }
             }
 
-            // Standard Delta Logging
+            // DELTA FILTERING: Only log to disk if the value has changed significantly (LoggingThreshold).
             float* LastValuePtr = LastTruthValues.Find(Elem.Key);
             bool bShouldLog = !LastValuePtr || (FMath::Abs(CurrentValue - *LastValuePtr) >= LoggingThreshold);
 
@@ -118,7 +120,7 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         }
     }
 
-    // 3. Calculate Final PSTA Scores
+    // 3. CALCULATE HOLISTIC SAFETY (PSS): Implement the PSTA Bottleneck Law.
     if (PSTAConfig)
     {
         float PSS = 0.0f;
@@ -129,17 +131,19 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
             float Di = 0.0f;
             if (DimAnchorZeroed[Dim])
             {
+                // Collapse dimension due to Anchor Tag failure
                 Di = 0.0f;
             }
             else if (DimTotalWeights[Dim] > 0.0f)
             {
+                // Nominal normalized weighted average
                 Di = DimWeightedSums[Dim] / DimTotalWeights[Dim];
             }
-            // else Di = 0.0f (Void Safety)
+            // else Di = 0.0f (VOID SAFETY: Untracked dimensions are considered untrusted)
 
             MinDi = FMath::Min(MinDi, Di);
 
-            // Record Di if changed
+            // Record Dimension Health (Di) only if a change is detected
             float* LastDi = LastDimensionHealth.Find(Dim);
             if (!LastDi || FMath::Abs(Di - *LastDi) >= 0.01f)
             {
@@ -149,11 +153,12 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
                 bHasChanges = true;
             }
 
+            // Accumulate weighted sum for the final Provable Safety Status (PSS)
             float Alpha = PSTAConfig->DimensionWeights.Contains(Dim) ? PSTAConfig->DimensionWeights[Dim] : 0.0f;
             PSS += Alpha * Di;
         }
 
-        // Apply Bottleneck Law Scaling
+        // BOTTLENECK LAW: Apply aggressive scaling if any single dimension collapses.
         float Scaling = (MinDi < PSTAConfig->CriticalInstabilityThreshold) ? (MinDi / PSTAConfig->CriticalInstabilityThreshold) : 1.0f;
         PSS *= Scaling;
 

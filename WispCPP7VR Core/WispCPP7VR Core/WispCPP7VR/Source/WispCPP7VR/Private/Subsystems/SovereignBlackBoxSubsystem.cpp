@@ -81,18 +81,21 @@ void USovereignBlackBoxSubsystem::AppendEntriesToFile(const FGuid& EntityID, con
         LogArray.Add(MakeShareable(new FJsonValueObject(EntryObj)));
     }
 
-    // 3. Save back (Atomic Write via Temp File)
+    // 3. PERSISTENCE: Save the truth back to disk using an Atomic Write pattern.
     TSharedPtr<FJsonObject> FinalRoot = MakeShareable(new FJsonObject());
     FinalRoot->SetArrayField(TEXT("Logs"), LogArray);
 
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
     FJsonSerializer::Serialize(FinalRoot.ToSharedRef(), Writer);
 
-    // Write to a temporary file first, then move it to the target location for atomicity
+    // ATOMIC WRITE: We write to a temporary file first. If the write is interrupted (crash/power loss),
+    // the original log file remains intact, preventing total data corruption.
     FString TempFilePath = FilePath + TEXT(".tmp");
     if (FFileHelper::SaveStringToFile(JsonString, *TempFilePath))
     {
-        // Hardening: Explicitly delete the destination file before moving to prevent "Access Denied" (Result 5) on Windows
+        // WINDOWS HARDENING: Explicitly delete the destination file before moving.
+        // On some platforms (Windows/UE), MoveFile can fail if the destination already exists or has an open handle.
+        // Explicit deletion mitigates "Access Denied" (Result 5) errors.
         if (PlatformFile.FileExists(*FilePath))
         {
             PlatformFile.DeleteFile(*FilePath);
