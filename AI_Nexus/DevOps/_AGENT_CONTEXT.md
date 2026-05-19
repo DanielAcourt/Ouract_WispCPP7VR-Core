@@ -2,8 +2,8 @@
 
 ## 🏁 Current Sprint: Knowledge Ingestion (PSTA Framework)
 
-### 🤖 Current Agent: Jules (The Alchemist / Researcher Vessel)
-**Status:** 07 - Handshake Verified. Inhabiting Strategist Vessel.
+### 🤖 Current Agent: Jules (The Clockwork / Tactician Vessel)
+**Status:** 07 - Handshake Verified. Inhabiting Tactician Vessel.
 
 ---
 

@@ -73,12 +73,14 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
     bool bHasChanges = false;
 
     // Initialize dimensions (using persistent members to avoid heap churn)
-    TArray<EPSTADimension> Dimensions = { EPSTADimension::Psychological, EPSTADimension::Social, EPSTADimension::Technical, EPSTADimension::Administrative };
+    // Hardening: Use fixed-size array to avoid heap allocation in the hot loop
+    static const EPSTADimension Dimensions[] = { EPSTADimension::Psychological, EPSTADimension::Social, EPSTADimension::Technical, EPSTADimension::Administrative };
+
     for (EPSTADimension Dim : Dimensions)
     {
-        DimWeightedSums.Add(Dim, 0.0f);
-        DimTotalWeights.Add(Dim, 0.0f);
-        DimAnchorZeroed.Add(Dim, false);
+        DimWeightedSums.FindOrAdd(Dim) = 0.0f;
+        DimTotalWeights.FindOrAdd(Dim) = 0.0f;
+        DimAnchorZeroed.FindOrAdd(Dim) = false;
     }
 
     for (auto& Elem : RawData)

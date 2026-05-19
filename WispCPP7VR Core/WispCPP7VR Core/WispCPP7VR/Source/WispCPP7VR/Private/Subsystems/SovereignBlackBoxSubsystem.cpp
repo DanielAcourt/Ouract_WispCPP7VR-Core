@@ -92,6 +92,15 @@ void USovereignBlackBoxSubsystem::AppendEntriesToFile(const FGuid& EntityID, con
     FString TempFilePath = FilePath + TEXT(".tmp");
     if (FFileHelper::SaveStringToFile(JsonString, *TempFilePath))
     {
-        PlatformFile.MoveFile(*FilePath, *TempFilePath);
+        // Hardening: Explicitly delete the destination file before moving to prevent "Access Denied" (Result 5) on Windows
+        if (PlatformFile.FileExists(*FilePath))
+        {
+            PlatformFile.DeleteFile(*FilePath);
+        }
+
+        if (!PlatformFile.MoveFile(*FilePath, *TempFilePath))
+        {
+            UE_LOG(LogTemp, Error, TEXT("BlackBoxSubsystem: Failed to move temp file %s to %s"), *TempFilePath, *FilePath);
+        }
     }
 }

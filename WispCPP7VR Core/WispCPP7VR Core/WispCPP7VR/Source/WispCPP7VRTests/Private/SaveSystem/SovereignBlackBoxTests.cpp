@@ -96,12 +96,12 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        // Use the existing editor world context instead of creating a transient one
-        World = nullptr;
-        if (GEngine && GEngine->GetWorldContexts().Num() > 0)
-        {
-            World = GEngine->GetWorldContexts()[0].World();
-        }
+        // Hardening: UE 5.7 Automation API compliance
+        // We create a dedicated editor world for the test to avoid interference with the global editor state
+        World = NewObject<UWorld>();
+        World->WorldType = EWorldType::Editor;
+        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Editor);
+        WorldContext.SetCurrentWorld(World);
 
         TestTrue("Test World should be valid", World != nullptr);
         if (!World) 
@@ -471,7 +471,14 @@ void FSovereignBlackBoxSpec::Define()
 
         BBComp = nullptr;
         BBSubsystem = nullptr;
-        // Don't destroy the World as we are using the global editor world
+
+        // Hardening: UE 5.7 World Cleanup
+        if (World)
+        {
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(true);
+            World = nullptr;
+        }
     });
 }
 

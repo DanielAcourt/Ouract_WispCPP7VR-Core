@@ -7,7 +7,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | ID | Task | Complexity | Status | Node |
 |:---|:---|:---:|:---:|:---|
 | B-001 | Actor Synchronization (Fish Tank Telemetry) | 8 | Done | DevOps |
-| B-002 | Data Survivability (Black Box Protocol) | 5 | Done | Research |
+| B-002 | Data Survivability (Black Box Protocol) | 5 | In Progress (Hardening) | Research |
 | B-003 | Lidar Intelligence (Matrix Museum Summoning) | 13 | Todo | Research |
 | B-004 | "Corpse Possession" State Persistence | 3 | Todo | DevOps |
 | B-005 | Qi/Maturity Evolution Milestones | 5 | Todo | DevOps |
@@ -22,7 +22,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Complexity 13+:** "General" work. Massive research goals, deep spatial math, or framework-shifting paradigms.
 
 ## 📝 Next Priority
-**B-002: Data Survivability (Complexity 5)**
-- Why: To implement the "Black Box" protocol for detached data logging and persistence.
-- What: Formalizing the implementation of decoupled persistence and Critical Truth selection.
-- How: TBD based on Phase II research.
+**B-002: Data Survivability Hardening (Complexity 5)**
+- Why: To ensure the "Black Box" protocol is resilient against file system failures and UE 5.7 API shifts.
+- What: Implementing atomic write hardening, PSTA hot-loop optimization, and modern automation world management.
+- How: Resolved via Jules (Tactician) B-002 Audit & Hardening sprint.

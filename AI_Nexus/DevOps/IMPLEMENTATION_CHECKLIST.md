@@ -17,7 +17,13 @@
 - [x] Final code review of `SovereignSaveManager.cpp`
 - [x] Submit hardened branch
 
-## Phase 4: Expansion (FUTURE SPRINT)
+## Phase 4: B-002 Hardening (IN PROGRESS)
+- [x] Audit Black Box Atomic Write pattern
+- [x] Optimize PSTA hot-loop performance
+- [x] Update Automation Tests for UE 5.7 context management
+- [ ] Verify PSTA Anchor Tag edge cases (Void Safety)
+
+## Phase 5: Expansion (FUTURE SPRINT)
 - [ ] Add Performance Baseline tests (1000+ entities)
 - [ ] Implement "Corpse Possession" state persistence
 - [ ] Integrate with Qi/Maturity evolution milestones
