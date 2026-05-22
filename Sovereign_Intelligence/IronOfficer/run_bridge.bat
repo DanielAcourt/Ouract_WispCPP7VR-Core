@@ -11,9 +11,9 @@ cd /d "%BASE_DIR%"
 :: Check for python, fallback to py (Python Launcher)
 set "PY_CMD=python"
 python --version >nul 2>&1
-if %errorlevel% neq 0 (
+if %errorlevel% NEQ 0 (
     py --version >nul 2>&1
-    if %errorlevel% eq 0 (
+    if %errorlevel% EQU 0 (
         set "PY_CMD=py"
     ) else (
         echo [ERROR] Python not found in your PATH.
