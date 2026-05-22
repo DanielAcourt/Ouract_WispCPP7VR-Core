@@ -19,6 +19,10 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 - All major architectural shifts must be documented in `AI_Nexus/Protocols/`.
 - Timeline updates and version history belong in `AI_Nexus/Timeline/MD.md`.
 
+### ⚠️ Infrastructure Constraints (Agent Workarounds)
+- **Large-Scale Changes:** During global refactors (e.g., adding copyright headers or licenses across the entire codebase), agents may encounter limitations when pushing to DevOps.
+- **Workaround:** If a `git push` failure occurs due to change volume, the agent should prioritize creating a local `.zip` of the source changes and notify the Lead to facilitate a manual merge.
+
 ## 🏗️ Architectural Constraints
 - **The Sovereign Rule:** All attachments during possession MUST use `FAttachmentTransformRules::SnapToTargetNotIncludingScale`.
 - **Single Source of Truth (SSoT):** `USovereignSaveableEntityComponent` is the primary brain for all persistent data.
