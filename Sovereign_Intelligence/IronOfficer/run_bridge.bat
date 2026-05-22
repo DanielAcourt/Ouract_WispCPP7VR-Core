@@ -1,6 +1,6 @@
 @echo off
 :: Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
-:: Sovereign Framework: Iron Officer One-Click Launcher (Resilient)
+:: Sovereign Framework: Iron Officer One-Click Launcher (Self-Healing)
 
 echo [07] Initializing Iron Officer Bridge...
 echo [07] Hardware Target: GTX 5090
@@ -43,14 +43,28 @@ echo ---------------------------------------------------------
 echo SOLUTION:
 echo 1. Re-install Python from https://www.python.org/
 echo 2. Check "Add Python to PATH" during installation.
-echo 3. Search for "App execution aliases" in Windows and
-echo    DISABLE the Python aliases to stop the Microsoft Store prompt.
 echo ---------------------------------------------------------
 pause
 exit /b
 
 :FOUND
 echo [07] Using Command: %PY_CMD%
+
+:: 4. Check for and Install Dependencies
+echo [07] Checking dependencies...
+%PY_CMD% -c "import requests, fastapi, uvicorn" >nul 2>&1
+if %errorlevel% NEQ 0 (
+    echo [07] Missing dependencies detected. Installing now...
+    %PY_CMD% -m pip install -r requirements.txt
+    if %errorlevel% NEQ 0 (
+        echo [ERROR] Failed to install dependencies. Please check your internet connection.
+        pause
+        exit /b
+    )
+    echo [07] Dependencies installed successfully.
+)
+
+:: 5. Start the Bridge
 echo [07] Starting FastAPI Service...
 %PY_CMD% bridge.py
 
