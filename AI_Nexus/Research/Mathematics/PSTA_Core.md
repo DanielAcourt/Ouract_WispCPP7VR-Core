@@ -2,7 +2,7 @@
 
 ## 🔬 1. The Philosophical "Why"
 *   **Vision:** To transition the Sovereign Framework from simple **State Observation** to **Risk Mitigation**. The goal is to establish **Provable Trust**—a mathematical guarantee that the system is operating within safe, verifiable bounds across multiple dimensions of reality.
-*   **Metaphor:** The **Four Pillars of the Temple**. If any one pillar (Psychological, Social, Technical, or Administrative) crumbles, the entire roof (the Mission) collapses, regardless of how strong the other three pillars remain.
+*   **Metaphor:** The **Four Pillars of Mission Integrity**. If any one pillar (Psychological, Social, Technical, or Administrative) collapses, the structural integrity of the entire mission is compromised, regardless of the health of the remaining pillars.
 
 ---
 
@@ -70,10 +70,13 @@ The system calculates the **Uncertainty Weight** ($U_W$) to manage systemic vigi
 *   **Degraded Logic:** A sensor cluster ($x_{ij}$) is considered "Degraded" if its Topology Mask $\mathbf{b}_{ij}$ has lost bits (e.g., [1, 0] instead of [1, 1]).
 *   **Weighted Discovery Ratio:** This ensures that losing a high-weight navigation sensor (Lidar) shifts the safety posture more aggressively than losing a low-weight decorative sensor.
 
-### 3.2 Technical (T) Hardening via Dynamic DNA
-The **Technical (T)** pillar relies on the **Sovereign Save System** to ingest truths that the simulation engine does not natively recognize.
-*   **The "Sandwich" Proof:** By successfully persisting unknown tags (e.g., `Sandwhich: True`), the system demonstrates its ability to act as a **Deterministic Data Bridge**.
-*   **Namespace Scoping:** Data from `AttributeComponent` (Metabolics), `QiComponent` (Energy), and `Telemetry` (Physical IoT) is namespace-scoped in the JSON. This allows the PSTA system to target specific hardware or biological subsystems for risk assessment without architectural re-compiles.
+### 3.2 Technical (T) Hardening: Physical Truth vs. Simulated State
+The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware sensors) and **Simulated State** (Gamified variables).
+
+*   **Physical Truth (The Black Box):** High-fidelity logs derived from real-world sensors (Lidar, IoT Telemetry). This is the only source of truth for PSTA integrity verification.
+*   **Simulated State (The Save File):** Gamified elements such as **Qi (Energy)** or **Growth Stages**. These are fantasy-based results of user interaction and time; they are persisted for simulation continuity but are not treated as "Mission Truth."
+*   **The "Sandwich" Proof:** By successfully persisting unknown tags (e.g., `Sandwhich: True`), the system demonstrates its ability to act as a **Deterministic Data Bridge** for both real-world sensors and simulated metadata.
+*   **Namespace Scoping:** Data is scoped (e.g., `Telemetry.*` for Truth vs. `Qi.*` for Simulation). This ensures the PSTA system only assesses risk based on physical telemetry while maintaining the gamified simulation.
 
 ### 3.3 Automated Discovery Layer (Vision Integration)
 To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spatial sensors (Computer Vision/Lidar):

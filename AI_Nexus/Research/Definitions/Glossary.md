@@ -20,7 +20,7 @@ The player-controlled entity capable of possessing and unpossessing different Ve
 ## ⚡ Energy & State
 
 ### **Qi (Elemental Energy)**
-The primary resource consumed during possession and utilized for evolution. Tracked via the `SovereignQi.Qi.*` meta-tag namespace.
+A **Simulated/Gamified State** variable used for evolution and possession mechanics. It represents a fantasy result of user interaction and time, distinct from real-world telemetry truth. Tracked via the `SovereignQi.Qi.*` namespace.
 
 ### **Maturity / Growth Stage**
 A measure of a Soul's evolution. Progression is triggered by elemental input, eventually leading to a physical/visual "Evolve" event.
@@ -46,7 +46,7 @@ Systems where software logic directly governs or synchronizes with physical hard
 ## 📐 PSTA (Provable Trust Framework)
 
 ### **PSTA Dimensions**
-The four pillars of mission safety: **Psychological** (Operator stress), **Social** (Team cohesion), **Technical** (Hardware health), and **Administrative** (Policy/Budget).
+The **Four Pillars of Mission Integrity**: **Psychological** (Operator stress), **Social** (Team cohesion), **Technical** (Hardware health), and **Administrative** (Policy/Budget).
 
 ### **Dimension Health ($D_i$)**
 A normalized score $[0, 1]$ representing the performance of a specific PSTA dimension, calculated via a self-normalizing weighted average.
