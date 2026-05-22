@@ -13,6 +13,16 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | B-005 | Qi/Maturity Evolution Milestones | 5 | Todo | DevOps |
 | B-006 | VR Interaction Polish (Possession Lifecycle) | 5 | Todo | Protocols |
 | B-007 | Performance Baseline (1000+ Entities) | 8 | Todo | DevOps |
+| R-000 | PSTA Core: Unified Safety & VSS | 8 | Done | Research |
+| R-001 | PSTA Math: Exponential Trust Hysteresis | 5 | Todo | Research |
+| R-002 | PSTA Math: Disagreement & Conflict Penalties | 8 | Todo | Research |
+| R-003 | PSTA Math: Residual Transparency Logging | 3 | Todo | Research |
+| R-004 | PSTA Math: Multi-Node Consensus (N > 2) | 8 | Todo | Research |
+| R-005 | PSTA Math: Weighted Epistemic Uncertainty | 5 | Todo | Research |
+| R-006 | PSTA Math: Strategic vs Tactical Drift | 5 | Done | Research |
+| R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research |
+| R-008 | PSTA Math: Kernel-Level Severance Params | 5 | Todo | Research |
+| L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin |
 
 ---
 
@@ -22,7 +32,17 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Complexity 13+:** "General" work. Massive research goals, deep spatial math, or framework-shifting paradigms.
 
 ## 📝 Next Priority
-**B-002: Data Survivability Hardening (Complexity 5)**
-- Why: To ensure the "Black Box" protocol is resilient against file system failures and UE 5.7 API shifts.
-- What: Implementing atomic write hardening, PSTA hot-loop optimization, and modern automation world management.
-- How: Resolved via Jules (Tactician) B-002 Audit & Hardening sprint.
+**R-002: Disagreement & Conflict Penalties (Complexity 8)**
+- **Why:** To prevent "The Titanic Trap" by mathematically penalizing mission integrity when Human (Admin) and Machine (Technical) perspectives diverge.
+- **What:** Formalize the penalty function $\Psi(A, T)$ that reduces VSS based on the delta between human control intent and sensor-derived safety truth.
+- **How:** To be defined in the next "Alchemist" research session for PDF inclusion.
+
+**R-004: Multi-Node Consensus (Complexity 8)**
+- **Why:** To scale the $N$-Bit topology from simple stereo ($N=2$) to robust modular redundancy ($N \ge 3$).
+- **What:** Develop the $L^1$ consensus mean and majority-vote logic for clusters where one or more sensors disagree with the swarm.
+- **How:** Research into "Byzantine Fault Tolerance" models adapted for the Sovereign PSTA framework.
+
+**L-001: Legal & Heritage Compliance (Complexity 13)**
+- **Why:** To ensure the framework's "Autonomous Severance" and "Digital Heritage" ingestion models align with international safety standards and preservation protocols.
+- **What:** Analyze the legal implications of deterministic safety kernels in autonomous systems and the technical compliance requirements for IIIF-compliant heritage preservation.
+- **How:** Forensic audit of autonomous system liability and IIIF manifest integration strategies.
