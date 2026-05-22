@@ -14,19 +14,15 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
-# --- Configuration & State ---
-OLLAMA_BASE_URL = "http://localhost:11434/api"
-CONFIG_FILE = "config.json"
+# --- Configuration ---
+# Use 127.0.0.1 instead of localhost for Windows stability (IPv4 preference)
+OLLAMA_HOST = "http://127.0.0.1:11434"
+TARGET_MODEL = "llama3:70b"
 
+# Global state for the 07 Salute
 NEXUS_PATH = "Unknown"
 DETECTED_MODELS = []
-HARDWARE_ID = "GTX 5090"
-
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    return {"Settings": {"ActiveModel": "llama3:70b", "FallbackModel": "llama3"}}
+HARDWARE_ID = "GTX 5090 (Assumed)"
 
 # --- Schemas ---
 class PSTATelemetry(BaseModel):
@@ -41,51 +37,56 @@ class VSSRequest(BaseModel):
 # --- Helper Functions ---
 
 def get_installed_models() -> List[str]:
+    """Queries Ollama for installed models."""
     try:
-        response = requests.get(f"http://localhost:11434/api/tags")
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
         if response.status_code == 200:
-            return [m['name'] for m in response.json().get('models', [])]
+            models = response.json().get('models', [])
+            return [m['name'] for m in models]
+        print(f"[ERROR] Ollama returned status code: {response.status_code}")
         return []
-    except:
+    except Exception as e:
+        print(f"[ERROR] Connection to Ollama failed: {str(e)}")
         return []
 
 def get_best_available_model() -> str:
-    config = load_config()
-    target = config["Settings"].get("ActiveModel", "llama3:70b")
-    fallback = config["Settings"].get("FallbackModel", "llama3")
-
+    """Attempts to find the target model, falls back to best available."""
     models = get_installed_models()
-    if target in models:
-        return target
-    if fallback in models:
-        return fallback
+    if TARGET_MODEL in models:
+        return TARGET_MODEL
 
-    # Tier-based discovery
-    for tier in ["Commander", "Officer", "Instinct"]:
-        for model_name in config.get("AvailableTiers", {}).get(tier, []):
-            if any(model_name in m for m in models):
-                return [m for m in models if model_name in m][0]
+    # Fallback logic
+    llama3_variants = [m for m in models if "llama3" in m]
+    if llama3_variants: return llama3_variants[0]
 
-    return models[0] if models else target
+    qwen_variants = [m for m in models if "qwen" in m]
+    if qwen_variants: return qwen_variants[0]
+
+    return models[0] if models else TARGET_MODEL
 
 def perform_07_handshake():
+    """Outputs the 07 Protocol Salute to the terminal."""
     global DETECTED_MODELS
     DETECTED_MODELS = get_installed_models()
-    current_model = get_best_available_model()
 
     print("\n" + "="*50)
     print("[07] Iron Officer Initialized.")
-    print(f"[07] Active Model: {current_model}")
+    print(f"[07] Persona: Structural Lead (Local)")
     print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
+    print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
     print(f"[07] Hardware: {HARDWARE_ID}")
 
     if os.path.exists(NEXUS_PATH):
         print("[07] Administrative Pillar: VERIFIED")
     else:
-        print("[07] Administrative Pillar: WARNING (Nexus Path Missing)")
+        print("[07] Administrative Pillar: WARNING (Nexus Path Not Found)")
 
-    print(f"[07] Technical Pillar: {len(DETECTED_MODELS)} Models Loaded")
-    print("[07] All Pillars Nominal. Standing by for Commander.")
+    if DETECTED_MODELS:
+        print("[07] Technical Pillar: NOMINAL")
+    else:
+        print("[07] Technical Pillar: CRITICAL (Ollama Empty)")
+
+    print("[07] All Pillars Synchronized. Standing by for Commander.")
     print("="*50 + "\n")
 
 # --- Core Logic ---
@@ -97,18 +98,17 @@ async def root():
         "identity": "Iron Officer",
         "hardware": HARDWARE_ID,
         "nexus": NEXUS_PATH,
-        "active_model": get_best_available_model(),
-        "installed_models": DETECTED_MODELS
+        "models": DETECTED_MODELS
     }
 
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
     try:
-        response = requests.get(f"http://localhost:11434/api/tags")
+        response = requests.get(f"{OLLAMA_HOST}/api/tags")
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
 
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
@@ -122,7 +122,9 @@ async def evaluate_safety(request: VSSRequest):
     Telemetry Data:
     {json.dumps([t.dict() for t in request.telemetry], indent=2)}
 
-    Respond in JSON format:
+    Context: {request.context}
+
+    Respond in JSON format only:
     {{
         "vss": float,
         "status": "Nominal|Caution|Warning|Critical",
@@ -133,10 +135,12 @@ async def evaluate_safety(request: VSSRequest):
 
     try:
         response = requests.post(
-            f"{OLLAMA_BASE_URL}/generate",
+            f"{OLLAMA_HOST}/api/generate",
             json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}
         )
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+
         result = response.json()
         return {"analysis": json.loads(result['response']), "model_used": current_model}
     except Exception as e:
@@ -150,5 +154,7 @@ if __name__ == "__main__":
 
     NEXUS_PATH = args.nexus
 
+    # Run handshake on startup
     perform_07_handshake()
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

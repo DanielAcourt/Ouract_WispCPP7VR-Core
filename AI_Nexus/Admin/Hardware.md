@@ -17,6 +17,9 @@ All hardware listed herein is owned and operated by the **Technical Lead (Admin)
 ### 📡 Ollama Inventory (Verified Modules)
 These modules are confirmed installed on the 5090 and accessible via the Iron Officer bridge.
 
+**Installation Root:** `C:\Users\Danie\AppData\Local\Programs\Ollama`
+**Model Storage:** `%USERPROFILE%\.ollama\models`
+
 | NAME | ID | SIZE | ROLE |
 |:---|:---|:---|:---|
 | `llama3:70b` | 786f3184aec0 | 39 GB | Strategic Reasoning & Planning |
