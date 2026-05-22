@@ -1,3 +1,4 @@
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # Command & Delegation Protocol (The Sun Tzu SOP)
 
 > "If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers." — *Sun Tzu*
@@ -42,6 +43,22 @@ To prevent **Information Decay**, agents must ensure that high-level documentati
 1.  **Backlog Parity:** The `BACKLOG.md` status must match the `_AGENT_CONTEXT.md` sprint status.
 2.  **Memory Persistence:** Critical technical lessons learned (e.g., UE 5.7 API shifts) must be recorded in `AI_Nexus/Memories/` and referenced in `AI_Nexus/Protocols/AGENTS.md`.
 3.  **Status Integrity:** Never mark a task as "Done" in the Backlog if there are pending hardening or verification steps.
+
+---
+
+## ⚖️ Copyright Integrity (Active Duty)
+To maintain legal standing and digital heritage, all core source files and Nexus documentation must carry a standardized header.
+
+### 1. The "0.36 Standard" Header
+Every C++, Math module, and Markdown file must begin with this exact single-line format:
+`// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.[x]. Licensed under GPLv3 (See LICENSE). Last Updated: YYYY-MM-DD`
+*   **Version Components:** `36` (Lead's age), `4` (Son's age), `[x]` (Agent incremental version).
+*   **Target Scope:** `.cpp`, `.h`, `.md` (AI Nexus & Docs).
+*   **Exclusions:** `.ini`, `.uproject`, `.json`.
+
+### 2. Enforcement Rule
+*   **Mandatory Check:** Every time an AI Agent or human opens/reads a file within the scope, they MUST verify the presence and accuracy of this header.
+*   **Immediate Correction:** If the header is missing, outdated, or incorrect, it must be updated immediately as part of the current task.
 
 ---
 

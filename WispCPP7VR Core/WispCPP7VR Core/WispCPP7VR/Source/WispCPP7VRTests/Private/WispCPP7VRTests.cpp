@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. All Rights Reserved. Confidential & Proprietary.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
