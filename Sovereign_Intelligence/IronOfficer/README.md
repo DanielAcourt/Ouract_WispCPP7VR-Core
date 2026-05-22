@@ -5,28 +5,26 @@ This is the Python-based bridge for the **Iron Officer** (AD-001). It connects t
 
 ## 🚀 "One-Click" Setup (Recommended)
 
-To avoid issues with Windows path spaces and manual commands, use the provided batch files:
-
 1.  **Start the Bridge:** Double-click **`run_bridge.bat`**.
-    -   *This starts the FastAPI service at `http://localhost:8000`. Keep this window open.*
 2.  **Verify the Connection:** Double-click **`verify_connection.bat`**.
-    -   *This runs a test suite against the local Ollama instance and verifies the 5090 integration.*
 
 ---
 
-## 🛠️ Manual Setup Instructions
+## 🛠️ Troubleshooting
 
-### 1. Install Ollama (The Brain)
-1.  **Download:** [ollama.com/download](https://ollama.com/download).
-2.  **Pull the Model:** Open CMD and run `ollama pull llama3:70b`.
+### "Python was not found" Error
+If Windows tells you Python is not found or tries to open the Microsoft Store:
+1.  **Check Path:** Ensure you checked "Add Python to PATH" when you installed Python.
+2.  **App Execution Aliases:**
+    -   Search for **"App execution aliases"** in your Windows Start menu.
+    -   Find the entries for **"python.exe"** and **"python3.exe"** and **DISABLE** them. This prevents Windows from redirecting you to the Store.
+3.  **Use 'py' Launcher:** Our batch files now automatically try the `py` launcher if `python` is missing.
 
-### 2. Manual Bridge Execution
-If you prefer the terminal, ensure you use quotes for your path:
-```powershell
-cd "C:\Path\To\Your\WispRepository\Sovereign_Intelligence\IronOfficer"
-pip install -r requirements.txt
-python bridge.py
-```
+### Windows Path Spaces
+Always use the provided batch files. If running manually, wrap your path in double quotes:
+`cd "C:\Users\Danie\Unreal Projects\..."`
+
+---
 
 ## 📡 API Endpoints
 -   `GET /`: Health check.
