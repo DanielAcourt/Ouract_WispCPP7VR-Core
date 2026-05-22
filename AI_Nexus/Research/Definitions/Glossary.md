@@ -55,7 +55,10 @@ A normalized score $[0, 1]$ representing the performance of a specific PSTA dime
 (Legacy) A weighted aggregation of Dimension Health scores subject to the Bottleneck Law. Replaced by the **Vessel Safety Status (VSS)** in the Unified Safety Formula.
 
 ### **Vessel Safety Status (VSS)**
-The ultimate mission health metric. It utilizes the **Unified Safety Formula** (a product of dimension-failure step functions multiplied by a weighted sum) to ensure absolute integrity. If any dimension fails its $\tau_{fail}$ threshold, VSS collapses to zero.
+The ultimate mission health metric. It utilizes the **Unified Safety Formula** to ensure absolute integrity. If any dimension fails its $\tau_{fail}$ threshold, or if the **Conflict Penalty** between Administrative and Technical pillars becomes too high, the VSS collapses to zero.
+
+### **Coherence Coefficient ($\Phi$)**
+A mathematical measure of agreement within an $N$-bit sensor cluster. In a healthy state, $\Phi=1.0$. A breach of the $\Delta_{fault}$ threshold snaps $\Phi$ to $0.0$, triggering degraded single-channel operation and Exponential Trust Recovery.
 
 ### **Provable Trust**
 A state where every safety decision and status spike is traceable to a specific, weighted input factor ($x_{ij}$), providing a transparent audit trail for system behavior.
@@ -64,7 +67,10 @@ A state where every safety decision and status spike is traceable to a specific,
 A condition where a mission enters a critical risk state due to a failure in a "soft" dimension (Social/Psychological) even while the "hard" dimensions (Technical) remain perfect.
 
 ### **Discovery Layer**
-A dynamic registry system that handles unknown meta-tags by siphoning weights from a reserve pool and self-normalizing the Dimension Health scores to prevent data skew.
+A dynamic registry system that handles unknown meta-tags and degraded $N$-bit sensor clusters. It self-normalizes Dimension Health scores and adjusts the system's Caution threshold based on total Uncertainty Weight ($U_W$).
+
+### **$N$-Bit Topology**
+A sensor redundancy architecture where factors are grouped into clusters (e.g., $N=2$ for stereo). A **Topology Mask** ($\mathbf{b}_{ij}$) tracks the operational state of each sensor, allowing the system to isolate hardware malfunctions from true environmental data.
 
 ### **Anchor Tag**
 A critical input factor ($x_{ij}$) that possesses "Override Authority." If an Anchor Tag's value hits zero, the entire Dimension Health ($D_i$) is forced to zero, regardless of other weights.
