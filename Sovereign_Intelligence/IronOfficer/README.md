@@ -12,16 +12,17 @@ This is the Python-based bridge for the **Iron Officer** (AD-001). It connects t
 
 ## 🛠️ Troubleshooting
 
-### "Python was not found" Error
-If Windows tells you Python is not found or tries to open the Microsoft Store:
-1.  **Check Path:** Ensure you checked "Add Python to PATH" when you installed Python.
-2.  **App Execution Aliases:**
-    -   Search for **"App execution aliases"** in your Windows Start menu.
-    -   Find the entries for **"python.exe"** and **"python3.exe"** and **DISABLE** them. This prevents Windows from redirecting you to the Store.
-3.  **Use 'py' Launcher:** Our batch files now automatically try the `py` launcher if `python` is missing.
+### Autodiscovery
+Our batch files automatically search for Python in `%LocalAppData%\Programs\Python` and `%ProgramFiles%\Python`. If the bridge still fails to start, proceed with the manual fixes below.
+
+### "Python was not found" / Microsoft Store Prompt
+If Windows tries to open the Microsoft Store:
+1.  **Search:** Type "App execution aliases" in your Windows Start menu.
+2.  **Disable:** Find the entries for `python.exe` and `python3.exe` and switch them **OFF**.
+3.  **Path Fix:** Re-install Python from [python.org](https://www.python.org/) and ensure "Add Python to PATH" is checked.
 
 ### Windows Path Spaces
-Always use the provided batch files. If running manually, wrap your path in double quotes:
+The provided batch files handle spaces (like `Unreal Projects`) automatically. If running manually, wrap your path in double quotes:
 `cd "C:\Users\Danie\Unreal Projects\..."`
 
 ---
