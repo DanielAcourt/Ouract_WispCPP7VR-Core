@@ -24,11 +24,13 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 - **Single Source of Truth (SSoT):** `USovereignSaveableEntityComponent` is the primary brain for all persistent data.
 - **Interface-First Design:** Use `ISovereignEntityInterface` and `IInteractionInterface` to ensure class-agnostic compatibility.
 - **Cyber-Physical Parity:** All hardware-linked actors must implement a "Digital Twin" state where local simulation parity is maintained with physical sensor telemetry.
+- **The Atomic Rule:** All high-reliability persistence (Black Box, Saves) must use an **Atomic Write Pattern** (.tmp file -> delete original -> move) to prevent corruption and platform-specific "Access Denied" errors.
 
 ## 💻 Coding Conventions
 - **Memory Safety:** Initialize all non-UObject members in struct constructors (e.g., `FEntitySaveData`).
 - **Defensive Programming:** Always validate `ClassPath` strings before spawning actors.
-- **Performance:** Prefer looping `FTimerHandle` over `Tick()` for recurring logic (Qi drain, Heartbeat).
+- **Performance:** Prefer looping `FTimerHandle` over `Tick()` for recurring logic.
+- **Hot-Loop Optimization:** In performance-critical sections (Telemetry, Heartbeat), avoid heap allocations. Use persistent class members or static arrays to minimize GC pressure.
 
 ## 🧪 Testing Standards
 - All new features should be accompanied by automation tests in the `WispCPP7VRTests` module.
