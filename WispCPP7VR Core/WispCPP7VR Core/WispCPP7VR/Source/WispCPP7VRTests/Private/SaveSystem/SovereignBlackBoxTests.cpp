@@ -96,12 +96,12 @@ void FSovereignBlackBoxSpec::Define()
 {
     BeforeEach([this]()
     {
-        // Use the existing editor world context instead of creating a transient one
-        World = nullptr;
-        if (GEngine && GEngine->GetWorldContexts().Num() > 0)
-        {
-            World = GEngine->GetWorldContexts()[0].World();
-        }
+        // Hardening: UE 5.7 Automation API compliance
+        // We create a dedicated editor world for the test to avoid interference with the global editor state
+        World = NewObject<UWorld>();
+        World->WorldType = EWorldType::Editor;
+        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Editor);
+        WorldContext.SetCurrentWorld(World);
 
         TestTrue("Test World should be valid", World != nullptr);
         if (!World) 
@@ -146,6 +146,9 @@ void FSovereignBlackBoxSpec::Define()
 
         const FString FilePath = GetBlackBoxFilePath();
         CleanupBlackBoxFile(FilePath);
+
+        // Simulate an actor with temperature data
+        TestActor->Tags.Add(TEXT("Telemetry.temp_c:50"));
 
         // Act
         BBComp->RecordTruthSnapshot();
@@ -294,22 +297,106 @@ void FSovereignBlackBoxSpec::Define()
             const TArray<TSharedPtr<FJsonValue>>* Logs = nullptr;
             if (JsonObject->TryGetArrayField(TEXT("Logs"), Logs) && Logs)
             {
-                bool bFoundDimension = false;
+                bool bFoundDi = false;
+                float DiValue = -1.0f;
                 for (const auto& LogVal : *Logs)
                 {
                     const TSharedPtr<FJsonObject> LogEntry = LogVal->AsObject();
-                    if (LogEntry && LogEntry->HasField(TEXT("Key")))
+                    if (LogEntry && LogEntry->GetStringField(TEXT("Key")).Equals(TEXT("PSTA.Di.2"))) // Technical = 2
                     {
-                        FString Key = LogEntry->GetStringField(TEXT("Key"));
-                        // PSTA Di dimension keys should exist
-                        if (Key.Contains(TEXT("PSTA.Di")))
-                        {
-                            bFoundDimension = true;
-                            break;
-                        }
+                        bFoundDi = true;
+                        DiValue = LogEntry->GetNumberField(TEXT("Value"));
+                        break;
                     }
                 }
-                TestTrue("Should have recorded PSTA dimension health", bFoundDimension);
+                TestTrue("Should have recorded PSTA.Di.2", bFoundDi);
+                TestEqual("Technical health should be 0.5 (50/100)", DiValue, 0.5f);
+            }
+        }
+    });
+
+    It("Should enforce PSTA Anchor Tag failure and Void Safety", [this]()
+    {
+        // Arrange
+        TestTrue("Setup should be valid", BBComp != nullptr);
+        if (!BBComp) return;
+
+        USovereignPSTAConfig* Config = NewObject<USovereignPSTAConfig>();
+        if (!Config) return;
+
+        // 1. ANCHOR TAG SETUP: Technical dimension has one normal sensor and one Anchor sensor.
+        FPSTATagMapping NormalMapping;
+        NormalMapping.TagKey = TEXT("Telemetry.NormalSensor");
+        NormalMapping.Dimension = EPSTADimension::Technical;
+        NormalMapping.Weight = 1.0f;
+        NormalMapping.RangeMin = 0.0f;
+        NormalMapping.RangeMax = 100.0f;
+        Config->TagMappings.Add(NormalMapping);
+
+        FPSTATagMapping AnchorMapping;
+        AnchorMapping.TagKey = TEXT("Telemetry.CriticalAnchor");
+        AnchorMapping.Dimension = EPSTADimension::Technical;
+        AnchorMapping.Weight = 1.0f;
+        AnchorMapping.RangeMin = 0.0f;
+        AnchorMapping.RangeMax = 100.0f;
+        AnchorMapping.bIsAnchorTag = true;
+        Config->TagMappings.Add(AnchorMapping);
+
+        BBComp->PSTAConfig = Config;
+
+        // Simulate normal sensor at 100% (Healthy) but Anchor at 0% (CRITICAL FAILURE)
+        TestActor->Tags.Empty();
+        TestActor->Tags.Add(TEXT("Telemetry.NormalSensor:100"));
+        TestActor->Tags.Add(TEXT("Telemetry.CriticalAnchor:0"));
+
+        const FString FilePath = GetBlackBoxFilePath();
+        CleanupBlackBoxFile(FilePath);
+
+        // Act
+        BBComp->RecordTruthSnapshot();
+
+        // Assert Anchor Failure
+        const TSharedPtr<FJsonObject> JsonObject = LoadJsonFile(FilePath);
+        TestTrue("JSON should be valid", JsonObject.IsValid());
+
+        if (JsonObject.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Logs = nullptr;
+            if (JsonObject->TryGetArrayField(TEXT("Logs"), Logs) && Logs)
+            {
+                for (const auto& LogVal : *Logs)
+                {
+                    const TSharedPtr<FJsonObject> LogEntry = LogVal->AsObject();
+                    if (LogEntry && LogEntry->GetStringField(TEXT("Key")).Equals(TEXT("PSTA.Di.2")))
+                    {
+                        float DiValue = LogEntry->GetNumberField(TEXT("Value"));
+                        TestEqual("Technical health MUST be 0.0 due to Anchor failure, despite normal sensor", DiValue, 0.0f);
+                    }
+                }
+            }
+        }
+
+        // 2. VOID SAFETY SETUP: Social dimension has NO mappings.
+        // We trigger another snapshot.
+        CleanupBlackBoxFile(FilePath);
+        BBComp->RecordTruthSnapshot();
+
+        const TSharedPtr<FJsonObject> JsonObjectVoid = LoadJsonFile(FilePath);
+        if (JsonObjectVoid.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Logs = nullptr;
+            if (JsonObjectVoid->TryGetArrayField(TEXT("Logs"), Logs) && Logs)
+            {
+                for (const auto& LogVal : *Logs)
+                {
+                    const TSharedPtr<FJsonObject> LogEntry = LogVal->AsObject();
+                    // Social = 1
+                    if (LogEntry && LogEntry->GetStringField(TEXT("Key")).Equals(TEXT("PSTA.Di.1")))
+                    {
+                        float DiValue = LogEntry->GetNumberField(TEXT("Value"));
+                        TestEqual("Social health MUST be 0.0 (Void Safety), as it has no sensors", DiValue, 0.0f);
+                    }
+                }
             }
         }
     });
@@ -471,7 +558,14 @@ void FSovereignBlackBoxSpec::Define()
 
         BBComp = nullptr;
         BBSubsystem = nullptr;
-        // Don't destroy the World as we are using the global editor world
+
+        // Hardening: UE 5.7 World Cleanup
+        if (World)
+        {
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(true);
+            World = nullptr;
+        }
     });
 }
 

@@ -37,6 +37,14 @@ To prevent agents from running on assumptions, every major task command should i
 
 ---
 
+## 🛰️ Deterministic Documentation (Nexus Sync)
+To prevent **Information Decay**, agents must ensure that high-level documentation and low-level task tracking are perfectly synchronized at the end of every session:
+1.  **Backlog Parity:** The `BACKLOG.md` status must match the `_AGENT_CONTEXT.md` sprint status.
+2.  **Memory Persistence:** Critical technical lessons learned (e.g., UE 5.7 API shifts) must be recorded in `AI_Nexus/Memories/` and referenced in `AI_Nexus/Protocols/AGENTS.md`.
+3.  **Status Integrity:** Never mark a task as "Done" in the Backlog if there are pending hardening or verification steps.
+
+---
+
 ## 🛡️ Assumption Kill-Switch
 If an agent detects it is making an assumption about a critical system (Saving, Spawning, Identity), it MUST:
 1.  Stop execution.
