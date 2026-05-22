@@ -32,7 +32,7 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research | Identify when multiple sensors fail for the same underlying reason. | Pattern recognition logic for detecting correlated cluster failures. |
 | R-008 | PSTA Math: Kernel-Level Severance Params | 5 | Todo | Research | Determine the physical bounds for autonomous AI severance. | Calculated thresholds for the Symmetrical Guard based on hardware limits. |
 | L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin | Ensure the framework meets international safety and heritage standards. | Whitepaper/Audit document proving the Sovereign Framework's compliance. |
-| AD-001 | "Iron Officer" (GTX 5090 Self-Hosted) | 13 | Todo | Admin/DevOps | Establish a high-performance local AI node to handle long-term tasks. | Local LLM environment (5090 powered) with file-system access and Nexus integration. |
+| AD-001 | "Iron Officer" (GTX 5090 Self-Hosted) | 13 | In Progress | Admin/DevOps | Establish a high-performance local AI node to handle long-term tasks. | Local LLM environment (5090 powered) with file-system access and Nexus integration. |
 
 ---
 

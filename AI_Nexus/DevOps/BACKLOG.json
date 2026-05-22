@@ -228,7 +228,7 @@
     "ID": "AD-001",
     "Task": "Iron Officer (GTX 5090 Self-Hosted)",
     "Complexity": "13",
-    "Status": "Todo",
+    "Status": "In Progress",
     "Node": "Admin/DevOps",
     "Why": "Establish a high-performance local AI node to handle long-term tasks.",
     "What": "Local LLM environment (5090 powered) with file-system access and Nexus integration."

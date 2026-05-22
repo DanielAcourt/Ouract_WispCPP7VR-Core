@@ -34,6 +34,7 @@
 *   [x] Refactor Backlog to KISS Table Format
 *   [x] Create Exportable CSV/JSON Backlog
 *   [x] Add AD-001: Iron Officer (GTX 5090) Task
+*   [x] Implement Iron Officer Python Bridge (Prototype)
 
 ---
 
