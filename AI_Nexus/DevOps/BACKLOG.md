@@ -13,7 +13,14 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | B-005 | Qi/Maturity Evolution Milestones | 5 | Todo | DevOps |
 | B-006 | VR Interaction Polish (Possession Lifecycle) | 5 | Todo | Protocols |
 | B-007 | Performance Baseline (1000+ Entities) | 8 | Todo | DevOps |
-| R-000 | PSTA Math Refinement: Trust & Conflict | 13 | Todo | Research |
+| R-000 | PSTA Core: Unified Safety & VSS | 8 | Done | Research |
+| R-001 | PSTA Math: Exponential Trust Hysteresis | 5 | Todo | Research |
+| R-002 | PSTA Math: Disagreement & Conflict Penalties | 8 | Todo | Research |
+| R-003 | PSTA Math: Residual Transparency Logging | 3 | Todo | Research |
+| R-004 | PSTA Math: Multi-Node Consensus (N > 2) | 8 | Todo | Research |
+| R-005 | PSTA Math: Weighted Epistemic Uncertainty | 5 | Todo | Research |
+| R-006 | PSTA Math: Strategic vs Tactical Drift | 5 | Done | Research |
+| R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research |
 
 ---
 
@@ -23,11 +30,12 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Complexity 13+:** "General" work. Massive research goals, deep spatial math, or framework-shifting paradigms.
 
 ## 📝 Next Priority
-**R-000: PSTA Math Refinement (Complexity 13)**
-- **Why:** To resolve the remaining "Deep-Sea" academic challenges (Challenges 2-8) and stabilize the Unified Safety Formula for PDF publication.
-- **What:**
-    - **Hysteresis & Exponential Recovery:** Implement $\Phi(t) = 1 - e^{-t/\tau}$ logic to prevent decision jitter.
-    - **Admin-Technical Conflict:** Define the specific Disagreement Penalty formula to penalize VSS when human intent and machine truth clash.
-    - **Residual Transparency:** Formalize the logging of $x_{raw} - x_{mean}$ for forensic human auditing.
-    - **Weighted Epistemic Uncertainty:** Refine $t_{caut}$ shifts to use Uncertainty Weights ($U_W$) instead of simple counts.
-- **How:** To be resolved via Jules (Researcher) in a dedicated "Alchemist" math sprint.
+**R-002: Disagreement & Conflict Penalties (Complexity 8)**
+- **Why:** To prevent "The Titanic Trap" by mathematically penalizing mission integrity when Human (Admin) and Machine (Technical) perspectives diverge.
+- **What:** Formalize the penalty function $\Psi(A, T)$ that reduces VSS based on the delta between human control intent and sensor-derived safety truth.
+- **How:** To be defined in the next "Alchemist" research session for PDF inclusion.
+
+**R-004: Multi-Node Consensus (Complexity 8)**
+- **Why:** To scale the $N$-Bit topology from simple stereo ($N=2$) to robust modular redundancy ($N \ge 3$).
+- **What:** Develop the $L^1$ consensus mean and majority-vote logic for clusters where one or more sensors disagree with the swarm.
+- **How:** Research into "Byzantine Fault Tolerance" models adapted for the Sovereign PSTA framework.
