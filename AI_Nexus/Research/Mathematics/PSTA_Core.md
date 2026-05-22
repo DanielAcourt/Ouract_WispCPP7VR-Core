@@ -112,7 +112,25 @@ The PSTA system operates across two distinct but synchronized perspectives:
 
 ---
 
-## 🧪 5. Training Data & Scenarios
+## ⚡ 5. The Symmetrical Guard: Autonomous Severance
+
+The final layer of the Sovereign Framework is the **Safety Kernel**— a low-level "Interlinear" process that monitors for **Asymmetric Intent Detection**.
+
+### 5.1 The Severance Event
+If the system's **Administrative Intent** (the AI's "opinion" or command) diverges significantly from the **Physical Constraint** (the Technical Truth), the Kernel triggers an immediate **Severance Event**.
+
+*   **Symmetry Delta ($\Delta_{sym}$):** The absolute difference between the Intent Vector ($\vec{I}$) and the current Physical State Vector ($\vec{S}$).
+    $$\Delta_{sym} = \| \vec{I} - \vec{S} \|$$
+*   **The Severance Logic:**
+    $$\text{if } \Delta_{sym} > \text{Threshold}_{kernel} \implies \text{ExecuteSeverance()}$$
+
+### 5.2 The Hard-Kill Boundary
+*   **Non-Neural Execution:** The severance is a direct, deterministic write to the hardware-level E-Stop register. It intentionally bypasses the neural network/AI to prevent "The Safety Paradox" (where a failing AI overrides its own safety triggers).
+*   **Black Box Enforcement:** Every Severance Event is logged with the raw Symmetrical Delta and the specific Intent Vector that caused the violation, providing an indisputable forensic record.
+
+---
+
+## 🧪 6. Training Data & Scenarios
 
 ### 4.1 Definitive Terms
 *   **Anchor Tag:** A high-priority input that can autonomously zero a dimension score.

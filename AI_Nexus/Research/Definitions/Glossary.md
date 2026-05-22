@@ -60,6 +60,12 @@ The ultimate mission health metric. It utilizes the **Unified Safety Formula** t
 ### **Coherence Coefficient ($\Phi$)**
 A mathematical measure of agreement within an $N$-bit sensor cluster. In a healthy state, $\Phi=1.0$. A breach of the $\Delta_{fault}$ threshold snaps $\Phi$ to $0.0$, triggering degraded single-channel operation and Exponential Trust Recovery.
 
+### **Severance Event**
+A hardware-level "Hard-Kill" command triggered by the **Symmetrical Guard** when AI Intent and Physical Truth diverge beyond a kernel-level threshold. It bypasses all software "opinion" to ensure safety.
+
+### **Symmetrical Guard (The Safety Kernel)**
+A deterministic, non-neural monitoring process that calculates the **Symmetry Delta** ($Δ_{sym}$) between what the system *intends* to do and what the physical environment *allows*.
+
 ### **Provable Trust**
 A state where every safety decision and status spike is traceable to a specific, weighted input factor ($x_{ij}$), providing a transparent audit trail for system behavior.
 

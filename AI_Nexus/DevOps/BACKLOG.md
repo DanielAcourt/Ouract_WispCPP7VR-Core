@@ -21,6 +21,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | R-005 | PSTA Math: Weighted Epistemic Uncertainty | 5 | Todo | Research |
 | R-006 | PSTA Math: Strategic vs Tactical Drift | 5 | Done | Research |
 | R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research |
+| R-008 | PSTA Math: Kernel-Level Severance Params | 5 | Todo | Research |
 
 ---
 
