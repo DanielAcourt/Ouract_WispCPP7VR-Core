@@ -7,6 +7,7 @@ A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5
 import os
 import json
 import requests
+import argparse
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -15,7 +16,12 @@ app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
 OLLAMA_BASE_URL = "http://localhost:11434/api"
-TARGET_MODEL = "llama3:70b"  # The ideal mission model
+TARGET_MODEL = "llama3:70b"
+
+# Global state for the 07 Salute
+NEXUS_PATH = "Unknown"
+DETECTED_MODELS = []
+HARDWARE_ID = "GTX 5090 (Assumed)"
 
 # --- Schemas ---
 class PSTATelemetry(BaseModel):
@@ -29,40 +35,72 @@ class VSSRequest(BaseModel):
 
 # --- Helper Functions ---
 
-def get_best_available_model() -> str:
-    """Attempts to find the target model, falls back to any available llama3."""
+def get_installed_models() -> List[str]:
+    """Queries Ollama for installed models."""
     try:
-        response = requests.get(f"{OLLAMA_BASE_URL}/tags")
+        response = requests.get(f"http://localhost:11434/api/tags")
         if response.status_code == 200:
-            models = [m['name'] for m in response.json().get('models', [])]
-
-            if TARGET_MODEL in models:
-                return TARGET_MODEL
-
-            # Look for any llama3 variants
-            llama3_variants = [m for m in models if "llama3" in m]
-            if llama3_variants:
-                return llama3_variants[0]
-
-            # Last resort: just use the first available model
-            if models:
-                return models[0]
-
-        return TARGET_MODEL # Try anyway
+            return [m['name'] for m in response.json().get('models', [])]
+        return []
     except:
+        return []
+
+def get_best_available_model() -> str:
+    """Attempts to find the target model, falls back to best available."""
+    models = get_installed_models()
+    if TARGET_MODEL in models:
         return TARGET_MODEL
+
+    # Fallback logic
+    llama3_variants = [m for m in models if "llama3" in m]
+    if llama3_variants: return llama3_variants[0]
+
+    qwen_variants = [m for m in models if "qwen" in m]
+    if qwen_variants: return qwen_variants[0]
+
+    return models[0] if models else TARGET_MODEL
+
+def perform_07_handshake():
+    """Outputs the 07 Protocol Salute to the terminal."""
+    global DETECTED_MODELS
+    DETECTED_MODELS = get_installed_models()
+
+    print("\n" + "="*50)
+    print("[07] Iron Officer Initialized.")
+    print(f"[07] Persona: Structural Lead (Local)")
+    print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
+    print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
+    print(f"[07] Hardware: {HARDWARE_ID}")
+
+    if os.path.exists(NEXUS_PATH):
+        print("[07] Administrative Pillar: VERIFIED")
+    else:
+        print("[07] Administrative Pillar: WARNING (Nexus Path Not Found)")
+
+    if DETECTED_MODELS:
+        print("[07] Technical Pillar: NOMINAL")
+    else:
+        print("[07] Technical Pillar: CRITICAL (Ollama Empty)")
+
+    print("[07] All Pillars Synchronized. Standing by for Commander.")
+    print("="*50 + "\n")
 
 # --- Core Logic ---
 
 @app.get("/")
 async def root():
-    return {"status": "online", "identity": "Iron Officer", "hardware": "GTX 5090"}
+    return {
+        "status": "online",
+        "identity": "Iron Officer",
+        "hardware": HARDWARE_ID,
+        "nexus": NEXUS_PATH,
+        "models": DETECTED_MODELS
+    }
 
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
-    """Checks if Ollama is reachable and lists available models."""
     try:
-        response = requests.get(f"{OLLAMA_BASE_URL}/tags")
+        response = requests.get(f"http://localhost:11434/api/tags")
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -70,25 +108,17 @@ async def get_ollama_status():
 
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
-    """
-    Evaluates Vessel Safety Status (VSS) using the best available local LLM.
-    """
-
     current_model = get_best_available_model()
 
     prompt = f"""
     [SYSTEM: Sovereign Iron Officer]
     Analyze the following PSTA telemetry for the Sovereign Framework.
+    Source Nexus: {NEXUS_PATH}
 
     Telemetry Data:
     {json.dumps([t.dict() for t in request.telemetry], indent=2)}
 
     Context: {request.context}
-
-    Task:
-    1. Calculate the VSS (Vessel Safety Status).
-    2. Identify if any pillar (P, S, T, A) is below failure thresholds.
-    3. Provide a 'Sovereign Command' if an immediate abort is required.
 
     Respond in JSON format only:
     {{
@@ -100,56 +130,27 @@ async def evaluate_safety(request: VSSRequest):
     """
 
     try:
-        payload = {
-            "model": current_model,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json"
-        }
-
-        response = requests.post(f"{OLLAMA_BASE_URL}/generate", json=payload)
-
+        response = requests.post(
+            f"{OLLAMA_BASE_URL}/generate",
+            json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}
+        )
         if response.status_code != 200:
-            error_body = response.text
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error ({response.status_code}): {error_body}")
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
 
         result = response.json()
-        return {
-            "analysis": json.loads(result['response']),
-            "model_used": current_model
-        }
-
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Network error talking to Ollama: {str(e)}")
+        return {"analysis": json.loads(result['response']), "model_used": current_model}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
-@app.post("/v1/nexus/query")
-async def query_nexus(query: str):
-    """
-    Queries the local AI Nexus research nodes using the 5090.
-    """
-    current_model = get_best_available_model()
-    prompt = f"Using the Sovereign AI Nexus documentation as your source of truth, answer: {query}"
-
-    try:
-        response = requests.post(
-            f"{OLLAMA_BASE_URL}/generate",
-            json={
-                "model": current_model,
-                "prompt": prompt,
-                "stream": False
-            }
-        )
-        response.raise_for_status()
-        return {
-            "query": query,
-            "response": response.json()['response'],
-            "model_used": current_model
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ollama Error: {str(e)}")
-
 if __name__ == "__main__":
     import uvicorn
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--nexus", help="Path to the local AI Nexus directory", default="Unknown")
+    args = parser.parse_args()
+
+    NEXUS_PATH = args.nexus
+
+    # Run handshake on startup
+    perform_07_handshake()
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

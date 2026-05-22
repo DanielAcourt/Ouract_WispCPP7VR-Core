@@ -28,7 +28,7 @@
   },
   {
     "ID": "B-004",
-    "Task": "Corpse Possession State Persistence",
+    "Task": "\"Corpse Possession\" State Persistence",
     "Complexity": "3",
     "Status": "Todo",
     "Node": "DevOps",
@@ -226,11 +226,11 @@
   },
   {
     "ID": "AD-001",
-    "Task": "Iron Officer (GTX 5090 Self-Hosted)",
+    "Task": "\"Iron Officer\" (GTX 5090 Self-Hosted)",
     "Complexity": "13",
     "Status": "In Progress",
     "Node": "Admin/DevOps",
     "Why": "Establish a high-performance local AI node to handle long-term tasks.",
-    "What": "Local LLM environment (5090 powered) with file-system access and Nexus integration."
+    "What": "Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Nexus integration."
   }
 ]

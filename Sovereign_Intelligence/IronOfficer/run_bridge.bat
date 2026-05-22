@@ -5,8 +5,18 @@
 echo [07] Initializing Iron Officer Bridge...
 echo [07] Hardware Target: GTX 5090
 
-set "BASE_DIR=%~dp0"
-cd /d "%BASE_DIR%"
+:: Get the directory where this batch file is located (IronOfficer folder)
+set "IRON_OFFICER_DIR=%~dp0"
+
+:: Navigate to the directory
+cd /d "%IRON_OFFICER_DIR%"
+
+:: Calculate the Nexus Path (Up two levels from IronOfficer/ to repo root)
+:: We use double-backslashes to ensure Python handles the path correctly
+set "REPO_ROOT=%~dp0..\.."
+pushd "%REPO_ROOT%"
+set "NEXUS_PATH=%cd%\AI_Nexus"
+popd
 
 :: 1. Try standard commands
 set "PY_CMD="
@@ -21,51 +31,28 @@ python3 --version >nul 2>&1
 if %errorlevel% EQU 0 (set "PY_CMD=python3" & goto :FOUND)
 
 :: 2. Search common local paths
-echo [07] Python not in PATH. Searching common directories...
-
 for /d %%D in ("%LocalAppData%\Programs\Python\Python*") do (
-    if exist "%%D\python.exe" (
-        set "PY_CMD="%%D\python.exe""
-        goto :FOUND
-    )
+    if exist "%%D\python.exe" (set "PY_CMD="%%D\python.exe"" & goto :FOUND)
 )
 
 for /d %%D in ("%ProgramFiles%\Python*") do (
-    if exist "%%D\python.exe" (
-        set "PY_CMD="%%D\python.exe""
-        goto :FOUND
-    )
+    if exist "%%D\python.exe" (set "PY_CMD="%%D\python.exe"" & goto :FOUND)
 )
 
-:: 3. If still not found, fail with instructions
-echo [ERROR] Python not found.
-echo ---------------------------------------------------------
-echo SOLUTION:
-echo 1. Re-install Python from https://www.python.org/
-echo 2. Check "Add Python to PATH" during installation.
-echo ---------------------------------------------------------
+echo [ERROR] Python not found. Please install Python 3.10+.
 pause
 exit /b
 
 :FOUND
-echo [07] Using Command: %PY_CMD%
-
 :: 4. Check for and Install Dependencies
-echo [07] Checking dependencies...
 %PY_CMD% -c "import requests, fastapi, uvicorn" >nul 2>&1
 if %errorlevel% NEQ 0 (
     echo [07] Missing dependencies detected. Installing now...
     %PY_CMD% -m pip install -r requirements.txt
-    if %errorlevel% NEQ 0 (
-        echo [ERROR] Failed to install dependencies. Please check your internet connection.
-        pause
-        exit /b
-    )
-    echo [07] Dependencies installed successfully.
 )
 
-:: 5. Start the Bridge
+:: 5. Start the Bridge with the local Nexus path
 echo [07] Starting FastAPI Service...
-%PY_CMD% bridge.py
+%PY_CMD% bridge.py --nexus "%NEXUS_PATH%"
 
 pause
