@@ -138,5 +138,5 @@ If the system's **Administrative Intent** (the AI's "opinion" or command) diverg
 *   **Risk Velocity:** The rate at which health is deteriorating.
 
 ### 4.2 Test Scenarios
-*   **The Island Stress Test:** Isla's biometric stress spikes. $D_P$ drops. If $V_P$ (velocity) is too high, PSS enters **Warning** immediately, even if $D_P$ is still $0.7$.
+*   **The Island Stress Test:** Isla's biometric stress spikes. $D_P$ drops. If $V_P$ (velocity) is too high, VSS enters **Warning** immediately, even if $D_P$ is still $0.7$.
 *   **The Engine Anchor:** A technical sensor for fuel pressure is marked as an **Anchor**. If it hits 0, $D_T$ becomes 0 instantly, aborting the mission via the Bottleneck Law.

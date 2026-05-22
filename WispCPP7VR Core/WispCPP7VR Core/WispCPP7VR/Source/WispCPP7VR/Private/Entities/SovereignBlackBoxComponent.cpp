@@ -120,11 +120,11 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         }
     }
 
-    // 3. CALCULATE HOLISTIC SAFETY (PSS): Implement the PSTA Bottleneck Law.
+    // 3. CALCULATE HOLISTIC SAFETY (VSS): Implement the Unified Safety Formula.
     if (PSTAConfig)
     {
-        float PSS = 0.0f;
-        float MinDi = 1.0f;
+        float VSS_WeightedSum = 0.0f;
+        bool bAnyDimensionFailed = false;
 
         for (EPSTADimension Dim : Dimensions)
         {
@@ -141,7 +141,12 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
             }
             // else Di = 0.0f (VOID SAFETY: Untracked dimensions are considered untrusted)
 
-            MinDi = FMath::Min(MinDi, Di);
+            // UNIFIED SAFETY CHECK (Non-Compensatory): Check against dimension-specific failure thresholds
+            float TauFail = PSTAConfig->DimensionFailureThresholds.Contains(Dim) ? PSTAConfig->DimensionFailureThresholds[Dim] : 0.0f;
+            if (Di < TauFail)
+            {
+                bAnyDimensionFailed = true;
+            }
 
             // Record Dimension Health (Di) only if a change is detected
             float* LastDi = LastDimensionHealth.Find(Dim);
@@ -153,19 +158,18 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
                 bHasChanges = true;
             }
 
-            // Accumulate weighted sum for the final Provable Safety Status (PSS)
+            // Accumulate weighted sum for the final Vessel Safety Status (VSS)
             float Alpha = PSTAConfig->DimensionWeights.Contains(Dim) ? PSTAConfig->DimensionWeights[Dim] : 0.0f;
-            PSS += Alpha * Di;
+            VSS_WeightedSum += Alpha * Di;
         }
 
-        // BOTTLENECK LAW: Apply aggressive scaling if any single dimension collapses.
-        float Scaling = (MinDi < PSTAConfig->CriticalInstabilityThreshold) ? (MinDi / PSTAConfig->CriticalInstabilityThreshold) : 1.0f;
-        PSS *= Scaling;
+        // UNIFIED SAFETY FORMULA: VSS = Product(Step(Di - TauFail)) * Sum(Alpha * Di)
+        float VSS = bAnyDimensionFailed ? 0.0f : VSS_WeightedSum;
 
-        if (FMath::Abs(PSS - LastPSS) >= 0.01f)
+        if (FMath::Abs(VSS - LastVSS) >= 0.01f)
         {
-            PendingEntries.Add(FBlackBoxEntry(TEXT("PSTA.PSS"), PSS));
-            LastPSS = PSS;
+            PendingEntries.Add(FBlackBoxEntry(TEXT("PSTA.VSS"), VSS));
+            LastVSS = VSS;
             bHasChanges = true;
         }
     }

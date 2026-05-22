@@ -315,6 +315,104 @@ void FSovereignBlackBoxSpec::Define()
         }
     });
 
+    It("Should implement the Unified Safety Formula (VSS) and non-compensatory failure", [this]()
+    {
+        // Arrange
+        TestTrue("Setup should be valid", BBComp != nullptr);
+        if (!BBComp) return;
+
+        USovereignPSTAConfig* Config = NewObject<USovereignPSTAConfig>();
+        if (!Config) return;
+
+        // Setup two dimensions: Technical and Social
+        FPSTATagMapping TechnicalMapping;
+        TechnicalMapping.TagKey = TEXT("Telemetry.TechnicalValue");
+        TechnicalMapping.Dimension = EPSTADimension::Technical;
+        TechnicalMapping.Weight = 1.0f;
+        TechnicalMapping.RangeMin = 0.0f;
+        TechnicalMapping.RangeMax = 100.0f;
+        Config->TagMappings.Add(TechnicalMapping);
+
+        FPSTATagMapping SocialMapping;
+        SocialMapping.TagKey = TEXT("Telemetry.SocialValue");
+        SocialMapping.Dimension = EPSTADimension::Social;
+        SocialMapping.Weight = 1.0f;
+        SocialMapping.RangeMin = 0.0f;
+        SocialMapping.RangeMax = 100.0f;
+        Config->TagMappings.Add(SocialMapping);
+
+        // Assign weights (50/50)
+        Config->DimensionWeights.Add(EPSTADimension::Technical, 0.5f);
+        Config->DimensionWeights.Add(EPSTADimension::Social, 0.5f);
+        Config->DimensionWeights.Add(EPSTADimension::Psychological, 0.0f);
+        Config->DimensionWeights.Add(EPSTADimension::Administrative, 0.0f);
+
+        // Set failure thresholds (0.3)
+        Config->DimensionFailureThresholds.Add(EPSTADimension::Technical, 0.3f);
+        Config->DimensionFailureThresholds.Add(EPSTADimension::Social, 0.3f);
+
+        BBComp->PSTAConfig = Config;
+
+        const FString FilePath = GetBlackBoxFilePath();
+
+        // SCENARIO 1: Nominal (Both 100%) -> VSS should be 1.0
+        TestActor->Tags.Empty();
+        TestActor->Tags.Add(TEXT("Telemetry.TechnicalValue:100"));
+        TestActor->Tags.Add(TEXT("Telemetry.SocialValue:100"));
+
+        CleanupBlackBoxFile(FilePath);
+        BBComp->RecordTruthSnapshot();
+
+        TSharedPtr<FJsonObject> JsonNominal = LoadJsonFile(FilePath);
+        if (JsonNominal.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Logs = nullptr;
+            if (JsonNominal->TryGetArrayField(TEXT("Logs"), Logs) && Logs)
+            {
+                bool bFoundVSS = false;
+                for (const auto& LogVal : *Logs)
+                {
+                    const TSharedPtr<FJsonObject> LogEntry = LogVal->AsObject();
+                    if (LogEntry && LogEntry->GetStringField(TEXT("Key")).Equals(TEXT("PSTA.VSS")))
+                    {
+                        bFoundVSS = true;
+                        TestEqual("Nominal VSS should be 1.0", (float)LogEntry->GetNumberField(TEXT("Value")), 1.0f);
+                    }
+                }
+                TestTrue("Should have recorded PSTA.VSS (Nominal)", bFoundVSS);
+            }
+        }
+
+        // SCENARIO 2: Partial Failure (Social at 20% < 30% Threshold) -> VSS should collapse to 0.0
+        // even though Technical is still 100% (Weighted Average would be 0.6)
+        TestActor->Tags.Empty();
+        TestActor->Tags.Add(TEXT("Telemetry.TechnicalValue:100"));
+        TestActor->Tags.Add(TEXT("Telemetry.SocialValue:20"));
+
+        CleanupBlackBoxFile(FilePath);
+        BBComp->RecordTruthSnapshot();
+
+        TSharedPtr<FJsonObject> JsonFail = LoadJsonFile(FilePath);
+        if (JsonFail.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Logs = nullptr;
+            if (JsonFail->TryGetArrayField(TEXT("Logs"), Logs) && Logs)
+            {
+                bool bFoundVSS = false;
+                for (const auto& LogVal : *Logs)
+                {
+                    const TSharedPtr<FJsonObject> LogEntry = LogVal->AsObject();
+                    if (LogEntry && LogEntry->GetStringField(TEXT("Key")).Equals(TEXT("PSTA.VSS")))
+                    {
+                        bFoundVSS = true;
+                        TestEqual("VSS should COLLAPSE to 0.0 due to non-compensatory Social failure", (float)LogEntry->GetNumberField(TEXT("Value")), 0.0f);
+                    }
+                }
+                TestTrue("Should have recorded PSTA.VSS (Failure)", bFoundVSS);
+            }
+        }
+    });
+
     It("Should enforce PSTA Anchor Tag failure and Void Safety", [this]()
     {
         // Arrange

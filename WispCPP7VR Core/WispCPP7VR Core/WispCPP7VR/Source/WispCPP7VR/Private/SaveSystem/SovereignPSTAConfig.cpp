@@ -9,6 +9,12 @@ USovereignPSTAConfig::USovereignPSTAConfig()
     DimensionWeights.Add(EPSTADimension::Social, 0.25f);
     DimensionWeights.Add(EPSTADimension::Technical, 0.25f);
     DimensionWeights.Add(EPSTADimension::Administrative, 0.25f);
+
+    // Default Failure Thresholds (0.3 by default)
+    DimensionFailureThresholds.Add(EPSTADimension::Psychological, 0.3f);
+    DimensionFailureThresholds.Add(EPSTADimension::Social, 0.3f);
+    DimensionFailureThresholds.Add(EPSTADimension::Technical, 0.3f);
+    DimensionFailureThresholds.Add(EPSTADimension::Administrative, 0.3f);
 }
 
 float USovereignPSTAConfig::NormalizeValue(const FPSTATagMapping& Mapping, float RawValue) const
