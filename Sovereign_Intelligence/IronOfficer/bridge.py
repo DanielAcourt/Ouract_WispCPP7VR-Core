@@ -7,7 +7,7 @@ A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5
 import os
 import json
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
 OLLAMA_BASE_URL = "http://localhost:11434/api"
-DEFAULT_MODEL = "llama3:70b"  # Optimized for GTX 5090
+TARGET_MODEL = "llama3:70b"  # The ideal mission model
 
 # --- Schemas ---
 class PSTATelemetry(BaseModel):
@@ -27,6 +27,31 @@ class VSSRequest(BaseModel):
     telemetry: List[PSTATelemetry]
     context: str = ""
 
+# --- Helper Functions ---
+
+def get_best_available_model() -> str:
+    """Attempts to find the target model, falls back to any available llama3."""
+    try:
+        response = requests.get(f"{OLLAMA_BASE_URL}/tags")
+        if response.status_code == 200:
+            models = [m['name'] for m in response.json().get('models', [])]
+
+            if TARGET_MODEL in models:
+                return TARGET_MODEL
+
+            # Look for any llama3 variants
+            llama3_variants = [m for m in models if "llama3" in m]
+            if llama3_variants:
+                return llama3_variants[0]
+
+            # Last resort: just use the first available model
+            if models:
+                return models[0]
+
+        return TARGET_MODEL # Try anyway
+    except:
+        return TARGET_MODEL
+
 # --- Core Logic ---
 
 @app.get("/")
@@ -37,7 +62,7 @@ async def root():
 async def get_ollama_status():
     """Checks if Ollama is reachable and lists available models."""
     try:
-        response = requests.get(f"http://localhost:11434/api/tags")
+        response = requests.get(f"{OLLAMA_BASE_URL}/tags")
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -46,8 +71,10 @@ async def get_ollama_status():
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
     """
-    Evaluates Vessel Safety Status (VSS) using the local LLM.
+    Evaluates Vessel Safety Status (VSS) using the best available local LLM.
     """
+
+    current_model = get_best_available_model()
 
     prompt = f"""
     [SYSTEM: Sovereign Iron Officer]
@@ -73,9 +100,8 @@ async def evaluate_safety(request: VSSRequest):
     """
 
     try:
-        # Use /generate endpoint (ensure it is correct for Ollama)
         payload = {
-            "model": DEFAULT_MODEL,
+            "model": current_model,
             "prompt": prompt,
             "stream": False,
             "format": "json"
@@ -88,7 +114,10 @@ async def evaluate_safety(request: VSSRequest):
             raise HTTPException(status_code=response.status_code, detail=f"Ollama Error ({response.status_code}): {error_body}")
 
         result = response.json()
-        return json.loads(result['response'])
+        return {
+            "analysis": json.loads(result['response']),
+            "model_used": current_model
+        }
 
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Network error talking to Ollama: {str(e)}")
@@ -100,19 +129,24 @@ async def query_nexus(query: str):
     """
     Queries the local AI Nexus research nodes using the 5090.
     """
+    current_model = get_best_available_model()
     prompt = f"Using the Sovereign AI Nexus documentation as your source of truth, answer: {query}"
 
     try:
         response = requests.post(
             f"{OLLAMA_BASE_URL}/generate",
             json={
-                "model": DEFAULT_MODEL,
+                "model": current_model,
                 "prompt": prompt,
                 "stream": False
             }
         )
         response.raise_for_status()
-        return {"query": query, "response": response.json()['response']}
+        return {
+            "query": query,
+            "response": response.json()['response'],
+            "model_used": current_model
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ollama Error: {str(e)}")
 
