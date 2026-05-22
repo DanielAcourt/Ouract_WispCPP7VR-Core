@@ -22,6 +22,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | R-006 | PSTA Math: Strategic vs Tactical Drift | 5 | Done | Research |
 | R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research |
 | R-008 | PSTA Math: Kernel-Level Severance Params | 5 | Todo | Research |
+| L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin |
 
 ---
 
@@ -40,3 +41,8 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Why:** To scale the $N$-Bit topology from simple stereo ($N=2$) to robust modular redundancy ($N \ge 3$).
 - **What:** Develop the $L^1$ consensus mean and majority-vote logic for clusters where one or more sensors disagree with the swarm.
 - **How:** Research into "Byzantine Fault Tolerance" models adapted for the Sovereign PSTA framework.
+
+**L-001: Legal & Heritage Compliance (Complexity 13)**
+- **Why:** To ensure the framework's "Autonomous Severance" and "Digital Heritage" ingestion models align with international safety standards and preservation protocols.
+- **What:** Analyze the legal implications of deterministic safety kernels in autonomous systems and the technical compliance requirements for IIIF-compliant heritage preservation.
+- **How:** Forensic audit of autonomous system liability and IIIF manifest integration strategies.
