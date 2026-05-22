@@ -1,0 +1,236 @@
+[
+  {
+    "ID": "B-001",
+    "Task": "Actor Synchronization (Fish Tank Telemetry)",
+    "Complexity": "8",
+    "Status": "Done",
+    "Node": "DevOps",
+    "Why": "Enable Unreal to act as a Digital Twin for real-world IoT sensors.",
+    "What": "JSON/Binary telemetry correctly maps to ASovereignBaseInteractable properties."
+  },
+  {
+    "ID": "B-002",
+    "Task": "Data Survivability (Black Box Protocol)",
+    "Complexity": "5",
+    "Status": "Done (Hardened)",
+    "Node": "Research",
+    "Why": "Ensure mission data persists even if the simulation instance collapses.",
+    "What": "Atomic (.tmp -> move) write pattern for telemetry logs with guaranteed integrity."
+  },
+  {
+    "ID": "B-003",
+    "Task": "Lidar Intelligence (Matrix Museum Summoning)",
+    "Complexity": "13",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Realize the 12-year vision of summoning historical artifacts into a spatial office.",
+    "What": "Runtime ingestion and mesh reconstruction of high-fidelity Lidar datasets."
+  },
+  {
+    "ID": "B-004",
+    "Task": "\"Corpse Possession\" State Persistence",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Allow the Wisp to possess and reactivate dead or inactive vessels.",
+    "What": "Possession lifecycle correctly restores state and controls for previously \"dead\" actors."
+  },
+  {
+    "ID": "B-005",
+    "Task": "Qi/Maturity Evolution Milestones",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Track the gamified \"Reflection\" state of entities over long timeframes.",
+    "What": "Milestone system that triggers visual/logical evolution based on persisted Qi/Time."
+  },
+  {
+    "ID": "B-006",
+    "Task": "VR Interaction Polish (Possession Lifecycle)",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Protocols",
+    "Why": "Ensure the core \"Possession\" mechanic is comfortable and intuitive for VR.",
+    "What": "Zero-hitch possession transitions with localized haptic and visual feedback."
+  },
+  {
+    "ID": "B-007",
+    "Task": "Performance Baseline (1000+ Entities)",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Stress-test the USovereignSaveableEntityComponent for massive swarm scenarios.",
+    "What": "Stable 60fps in VR while tracking and saving 1000+ active Sovereign entities."
+  },
+  {
+    "ID": "B-008",
+    "Task": "PSTA C++: N-Bit Topology Matrix",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Harden the T-pillar against single-sensor hardware glitches.",
+    "What": "FPSTACluster implemented to evaluate health based on N sensors with agreement masks."
+  },
+  {
+    "ID": "B-009",
+    "Task": "PSTA C++: Exponential Trust Recovery",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Prevent \"Decision Flapping\" when a sensor returns to nominal range.",
+    "What": "Hysteresis logic that slowly regains trust (Phi) using an exponential recovery curve."
+  },
+  {
+    "ID": "B-010",
+    "Task": "PSTA C++: Risk Velocity (Vi) Detection",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Detect failure before it happens by tracking the speed of health decay.",
+    "What": "High-frequency derivative check (dVSS/dt) that triggers Caution on rapid descent."
+  },
+  {
+    "ID": "B-011",
+    "Task": "PSTA C++: Symmetrical Guard (Severance)",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Provide an autonomous \"Hard-Kill\" if AI intent violates physical reality.",
+    "What": "Kernel-level check that triggers hardware severance when Intent/Truth delta is breached."
+  },
+  {
+    "ID": "B-012",
+    "Task": "Pi Kernel: Headless Safety Node",
+    "Complexity": "13",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Deploy the PSTA safety kernel on external Raspberry Pi hardware.",
+    "What": "C++ PSTA implementation running headlessly on Pi 4 with physical relay control."
+  },
+  {
+    "ID": "B-013",
+    "Task": "Data Bridge: Pi-Unreal Telemetry Link",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Mirror real-world hardware truth in the Unreal reflection.",
+    "What": "UDP/TCP listener subsystem in Unreal ingesting JSON telemetry from the Pi."
+  },
+  {
+    "ID": "B-014",
+    "Task": "Simulation: \"Fish Tank\" Visual Mapping",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Provide a high-fidelity visual representation of Pi-linked key species.",
+    "What": "Dynamic materials and animations in Unreal that reflect live Pi sensor data."
+  },
+  {
+    "ID": "B-015",
+    "Task": "Replay: Time-Dilation scrubbing",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Enable forensic analysis of Black Box logs at various speeds.",
+    "What": "Standardized replay interface for scrubbing through historical PSTA sessions."
+  },
+  {
+    "ID": "R-000",
+    "Task": "PSTA Core: Unified Safety & VSS",
+    "Complexity": "8",
+    "Status": "Done",
+    "Node": "Research",
+    "Why": "Move from \"Weakest Link\" (PSS) to \"Non-Compensatory\" (VSS) safety logic.",
+    "What": "Formalized VSS formula implemented and verified in C++ core."
+  },
+  {
+    "ID": "R-001",
+    "Task": "PSTA Math: Exponential Trust Hysteresis",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Define the mathematical bounds for trust recovery across all pillars.",
+    "What": "Formalized Phi(t) equations for recovery and failure snapping."
+  },
+  {
+    "ID": "R-002",
+    "Task": "PSTA Math: Disagreement & Conflict Penalties",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Penalize VSS when human intent (A) and machine truth (T) diverge.",
+    "What": "Mathematical definition of the Disagreement Penalty based on A/T vectors."
+  },
+  {
+    "ID": "R-003",
+    "Task": "PSTA Math: Residual Transparency Logging",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Ensure the \"Why\" of every safety decision is auditable.",
+    "What": "Protocol for logging the specific dimension residuals that caused a VSS collapse."
+  },
+  {
+    "ID": "R-004",
+    "Task": "PSTA Math: Multi-Node Consensus (N > 2)",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Extend safety logic to clusters with more than two redundant sensors.",
+    "What": "Generalization of the Operational Cluster Mean formula for N-bit agreement."
+  },
+  {
+    "ID": "R-005",
+    "Task": "PSTA Math: Weighted Epistemic Uncertainty",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Adjust caution thresholds based on how much the system \"doesn't know.\"",
+    "What": "Uncertainty Weight (Uw) formula that shifts safety bounds based on unknown tags."
+  },
+  {
+    "ID": "R-006",
+    "Task": "PSTA Math: Strategic vs Tactical Drift",
+    "Complexity": "5",
+    "Status": "Done",
+    "Node": "Research",
+    "Why": "Detect \"Normalization of Deviance\" by comparing current vs. factory baselines.",
+    "What": "Formalized Strategic/Tactical baseline comparison logic."
+  },
+  {
+    "ID": "R-007",
+    "Task": "PSTA Math: Common-Mode Failure Signatures",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Identify when multiple sensors fail for the same underlying reason.",
+    "What": "Pattern recognition logic for detecting correlated cluster failures."
+  },
+  {
+    "ID": "R-008",
+    "Task": "PSTA Math: Kernel-Level Severance Params",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Determine the physical bounds for autonomous AI severance.",
+    "What": "Calculated thresholds for the Symmetrical Guard based on hardware limits."
+  },
+  {
+    "ID": "L-001",
+    "Task": "Legal: Deterministic Safety & Heritage Compliance",
+    "Complexity": "13",
+    "Status": "Todo",
+    "Node": "Admin",
+    "Why": "Ensure the framework meets international safety and heritage standards.",
+    "What": "Whitepaper/Audit document proving the Sovereign Framework's compliance."
+  },
+  {
+    "ID": "AD-001",
+    "Task": "\"Iron Officer\" (GTX 5090 Self-Hosted)",
+    "Complexity": "13",
+    "Status": "Done (Bridge)",
+    "Node": "Admin/DevOps",
+    "Why": "Establish a high-performance local AI node to handle long-term tasks.",
+    "What": "Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Nexus integration."
+  }
+]

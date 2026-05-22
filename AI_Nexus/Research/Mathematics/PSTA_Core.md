@@ -1,3 +1,4 @@
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # Research Node: PSTA Core (Provable Trust Framework)
 
 ## 🔬 1. The Philosophical "Why"

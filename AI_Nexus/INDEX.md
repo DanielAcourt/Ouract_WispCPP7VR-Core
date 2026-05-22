@@ -65,6 +65,12 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Defines the persona, philosophy, and strategic goals of the Technical Lead (Daniel Acourt).
 *   **Personnel Audit:** `AI_Nexus/Admin/Personnel_Audit.md`
     *   Cognitive profiling, programmer percentile analysis, and personal SWOT for the Lead.
+*   **Terminal: MainDesktop:** `AI_Nexus/Admin/Terminal_MainDesktop.md`
+    *   Hardware profile and Sovereign role for the GTX 5090 host.
+*   **Terminal: Pi4_Headless:** `AI_Nexus/Admin/Terminal_Pi4_Headless.md`
+    *   Hardware profile and Sovereign role for the headless safety node.
+*   **Terminal: Pi4_OS:** `AI_Nexus/Admin/Terminal_Pi4_OS.md`
+    *   Hardware profile and Sovereign role for the managed Pi4 terminal.
 
 ---
 
