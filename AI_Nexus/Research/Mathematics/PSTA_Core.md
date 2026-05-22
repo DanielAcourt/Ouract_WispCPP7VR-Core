@@ -33,22 +33,26 @@ To account for the speed of failure, we introduce the **Risk Velocity**:
 $$V_i = \frac{\Delta D_i}{\Delta t}$$
 *   If $|V_i| > V_{threshold}$ (e.g., a rapid drop in trust), the system applies a **Momentum Penalty** to the $PSS$, triggering a warning before the health score even hits the threshold.
 
-### 2.4 Provable Safety Status (PSS)
-The PSS is the final holistic metric that determines if the mission is "Safe."
+### 2.4 Vessel Safety Status (VSS)
+The VSS is the final holistic metric that determines if the mission is "Safe." It transitions the system from simple "Provable Safety" (PSS) to a "Non-Compensatory" Unified Safety Logic.
 
-**The Refined Bottleneck Law:**
-To prevent over-punishing minor fluctuations while maintaining safety, we use a **Gated-Min** approach:
-$$PSS = \sigma(\min(D_i)) \cdot \left( \sum \alpha_i D_i \right)$$
-Where $\sigma$ is a scaling function that remains $\approx 1.0$ for high $D_i$, but aggressively drops to $0$ as any $D_i$ approaches a critical instability threshold (e.g., $0.3$).
+**The Unified Safety Formula (VSS):**
+To ensure that critical failure in any single dimension cannot be "hidden" by success in others, we apply a hard step-function product:
+
+$$VSS = \left( \prod_{i \in \{P,S,T,A\}} \text{step}(D_i - \tau_{fail, i}) \right) \cdot \sum_{i=1}^{n} \alpha_i D_i$$
+
+*   **The Kill Switch:** The product term acts as a binary gate. If any $D_i$ falls below its dimension-specific failure threshold $\tau_{fail, i}$, the entire VSS collapses to **0.0**, proving mission failure.
+*   **Non-Compensatory Logic:** Social (S) or Psychological (P) health cannot "average out" a Technical (T) failure.
 
 ---
 
 ## 🏗️ 3. The Structural Integration (The Discovery Layer)
 
-### 3.1 Handling Unknown Tags (Meta-Tagging)
-*   **Tag Registration:** New data sources ($x_{i,novel}$) provide a metadata header.
-*   **Residual Weight Allocation:** System siphons from $w_{reserve}$ for unknown tags.
-*   **Weight Correction:** The $\frac{1}{W_i}$ divisor ensures the score stays within $[0, 1]$.
+### 3.1 Handling Unknown Tags (Epistemic Uncertainty)
+*   **Tag Registration:** New data sources ($x_{i,novel}$) are ingested into the "Soul" (MetaTags).
+*   **Residual Weight Allocation:** The system assigns a residual weight to unknown tags.
+*   **Self-Normalization:** The $\frac{1}{W_i}$ divisor ensures $D_i$ remains bounded in $[0, 1]$ even as the number of factors ($K_i$) increases.
+*   **The Unknown Tag Ratio:** The ratio of "Unknown" to "Known" tags serves as a measure of epistemic uncertainty.
 
 ### 3.2 Technical (T) Hardening via Dynamic DNA
 The **Technical (T)** pillar relies on the **Sovereign Save System** to ingest truths that the simulation engine does not natively recognize.
@@ -61,16 +65,35 @@ To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spa
 *   **Autonomous Priority Mapping:** Known visual archetypes carry pre-defined impact weights, allowing the system to scale its risk assessment without manual human input.
 
 ### 3.3 Classification and Threshold Mapping
-*   **Critical ($0 \le PSS < t_{crit}$):** Abort.
-*   **Warning ($t_{crit} \le PSS < t_{warn}$):** Intervention.
-*   **Caution ($t_{warn} \le PSS < t_{caut}$):** Degraded.
-*   **Nominal ($t_{caut} \le PSS \le 1$):** Green.
+The system maps the continuous VSS score to a discrete operational status.
 
-**Confidence-Adjusted Thresholds:** High volumes of unknown tags cause the system to raise thresholds $T$ (Safety-First logic).
+| Status | Range | Logic with "Unknown" Discovery |
+| :--- | :--- | :--- |
+| **Critical** | $0 \le VSS < t_{crit}$ | **Immediate Abort.** Provable failure detected. |
+| **Warning** | $t_{crit} \le VSS < t_{warn}$ | **Human-in-the-loop (HITL):** Robot or human must verify. |
+| **Caution** | $t_{warn} \le VSS < t_{caut}$ | **Performance throttled.** System is investigating data. |
+| **Nominal** | $t_{caut} \le VSS \le 1$ | **Standard Ops.** Requires high tag-certainty. |
+
+**The Discovery Layer Constraint (Unknown Tag Penalty):**
+If the ratio of "Unknown Tags" to "Known Tags" exceeds a configured limit, the system automatically shifts $t_{caut}$ upward. This raises the "Nominal" health requirement, enforcing a safety-first posture when operating with low-confidence data.
+
+$$t_{caut, adj} = t_{caut, base} + \gamma \cdot \left( \frac{K_{unknown}}{K_{known} + K_{unknown}} \right)$$
+
+*   **Epistemic Skepticism ($\gamma$):** A sensitivity factor (typically $0.1$ to $0.3$) that determines how aggressively the system penalizes unknown data.
+*   **Safety Margin:** By increasing $t_{caut}$, the system demands a higher Dimensional Health ($D_i$) to stay in "Nominal" status, effectively "buying" safety with stricter performance requirements.
 
 ---
 
-## 🧪 4. Training Data & Scenarios
+## 📡 4. Truth vs. Reflection (The Sim-to-Real Bridge)
+
+The PSTA system operates across two distinct but synchronized perspectives:
+
+*   **The Truth (Real-World Vessel):** The physical entity (e.g., Robot, Pi-driven sensor) gathering relative truths from its environment. It generates the raw Black Box logs.
+*   **The Reflection (Unreal Simulation):** A high-fidelity "movie" of the Truth. It replays the logs to reconstruct the event, using the same PSTA math to verify that the reconstruction matches the intended historical truth.
+
+---
+
+## 🧪 5. Training Data & Scenarios
 
 ### 4.1 Definitive Terms
 *   **Anchor Tag:** A high-priority input that can autonomously zero a dimension score.

@@ -52,7 +52,10 @@ The four pillars of mission safety: **Psychological** (Operator stress), **Socia
 A normalized score $[0, 1]$ representing the performance of a specific PSTA dimension, calculated via a self-normalizing weighted average.
 
 ### **Provable Safety Status (PSS)**
-The ultimate mission health metric. It is a weighted aggregation of all Dimension Health scores, subject to the **Bottleneck Law** (if one dimension fails, the PSS drops to zero).
+(Legacy) A weighted aggregation of Dimension Health scores subject to the Bottleneck Law. Replaced by the **Vessel Safety Status (VSS)** in the Unified Safety Formula.
+
+### **Vessel Safety Status (VSS)**
+The ultimate mission health metric. It utilizes the **Unified Safety Formula** (a product of dimension-failure step functions multiplied by a weighted sum) to ensure absolute integrity. If any dimension fails its $\tau_{fail}$ threshold, VSS collapses to zero.
 
 ### **Provable Trust**
 A state where every safety decision and status spike is traceable to a specific, weighted input factor ($x_{ij}$), providing a transparent audit trail for system behavior.
