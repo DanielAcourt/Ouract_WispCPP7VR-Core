@@ -12,10 +12,26 @@ The Sovereign Save System is not merely a "game state" recorder; it is the **Arc
 ## 🧬 2. The Dynamic DNA (Unknown Meta-Tags)
 
 ### 2.1 The "Sandwich" Proof
-To verify the system's ability to persist data without pre-defined C++ members, we use the **"Sandwich" Tag**.
-*   **The Logic:** A tag named `Sandwich` is injected into the entity at runtime (via `AddUnknownTag` or `AActor::Tags`).
-*   **The Proof:** When the system saves to `.json`, the presence of `"Sandwich": "True"` (or a specific value) proves that the "Soul" can ingest, carry, and manifest "Unknown Truths."
+To verify the system's ability to persist data without pre-defined C++ members, we use the **"Sandwich" Tag** (Note: spelled as `Sandwhich` in test logs for deterministic matching).
+*   **The Logic:** A tag named `Sandwhich` is injected into the entity at runtime (via `AddUnknownTag` or `AActor::Tags`).
+*   **The Proof:** The presence of `"Sandwhich": "True"` in the generated `.json` proves that the "Soul" can ingest, carry, and manifest "Unknown Truths" that have no hard-coded equivalent in the C++ Vessel.
 *   **Strategic Value:** This is the cornerstone of the **PSTA Technical (T)** pillar. It proves the system can ingest novel sensor data (e.g., Lidar artifacts, IoT telemetry) without requiring a recompile of the core engine.
+
+#### 💡 Forensic Evidence (JSON Proof)
+```json
+{
+    "GUID": "C69C257843DCF78767898AA819929D9D",
+    "ParentID": "93B96D334E9DC507F0162C8CA927B6FA",
+    "Class": "/Game/Blueprint/Actors/Living/BP_Antelope.BP_Antelope_C",
+    "MetaTags":
+    {
+        "Sandwhich": "True", // <-- THE PROOF: Dynamic DNA persisting in the Soul
+        "AttributeComponent.STR": "10",
+        "QiComponent.Qi.Current": "0.0",
+        "Telemetry.temp_c": "0.0"
+    }
+}
+```
 
 ### 2.2 Ingestion & Replay
 Unknown tags allow the framework to act as a **Deterministic Replayer**. If an external Raspberry Pi sends a new telemetry key like `Telemetry.FluidDensity`, the Sovereign Framework:

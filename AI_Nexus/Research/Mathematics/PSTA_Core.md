@@ -50,7 +50,12 @@ Where $\sigma$ is a scaling function that remains $\approx 1.0$ for high $D_i$, 
 *   **Residual Weight Allocation:** System siphons from $w_{reserve}$ for unknown tags.
 *   **Weight Correction:** The $\frac{1}{W_i}$ divisor ensures the score stays within $[0, 1]$.
 
-### 3.2 Automated Discovery Layer (Vision Integration)
+### 3.2 Technical (T) Hardening via Dynamic DNA
+The **Technical (T)** pillar relies on the **Sovereign Save System** to ingest truths that the simulation engine does not natively recognize.
+*   **The "Sandwich" Proof:** By successfully persisting unknown tags (e.g., `Sandwhich: True`), the system demonstrates its ability to act as a **Deterministic Data Bridge**.
+*   **Namespace Scoping:** Data from `AttributeComponent` (Metabolics), `QiComponent` (Energy), and `Telemetry` (Physical IoT) is namespace-scoped in the JSON. This allows the PSTA system to target specific hardware or biological subsystems for risk assessment without architectural re-compiles.
+
+### 3.3 Automated Discovery Layer (Vision Integration)
 To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spatial sensors (Computer Vision/Lidar):
 *   **Semantic Transcription:** Objects identified via Image Recognition (e.g., a "High-Voltage Hazard") are automatically registered as $x_{ij}$ factors in the **Administrative (A)** or **Technical (T)** dimensions.
 *   **Autonomous Priority Mapping:** Known visual archetypes carry pre-defined impact weights, allowing the system to scale its risk assessment without manual human input.
