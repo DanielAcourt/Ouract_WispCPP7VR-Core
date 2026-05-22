@@ -36,11 +36,18 @@ $$D_i = \Omega_{anchor} \cdot \left( \frac{1}{W_i} \sum_{j=1}^{K_i} \left( \bar{
 *   Critical factors ($x_{anchor}$) possess "Override Authority." If any anchor's coherence-adjusted value hits zero, $\Omega_{anchor} = 0$, forcing $D_i = 0$ instantly.
 
 ### 2.3 Temporal Momentum & Dual-Baseline Detection
-To account for the speed of failure and "Slow-Drift" anomalies, we utilize a dual-baseline approach:
-*   **Strategic Baseline ($\mu_{strat}$):** The factory-set or mission-start "Nominal Truth."
-*   **Tactical Baseline ($\mu_{tact}$):** A short-term moving average (e.g., last 10 minutes).
-*   **Risk Velocity ($V_i$):** $V_i = \frac{\Delta D_i}{\Delta t}$. High velocity triggers warnings even if absolute health is nominal.
-*   **Drift Penalty:** If $|\mu_{tact} - \mu_{strat}| > \epsilon$, the **Administrative (A) Pillar** receives a "Normalization of Deviance" alert, signaling that the environment has drifted from its intended baseline.
+To account for the speed of failure and "Slow-Drift" anomalies, the system utilizes a Dual-Baseline Normalization strategy. This prevents the "Normalization of Deviance" where a slowly worsening environment is incorrectly accepted as the new normal.
+
+*   **Strategic Baseline ($\mu_{strat}$):** The "Calm Sea" reference. A factory-calibrated or mission-start "Absolute Truth" representing the ideal safe operating state (e.g., 25°C, zero pitch/yaw).
+*   **Tactical Baseline ($\mu_{tact}$):** The "Current Reading." A high-frequency moving average representing the vessel's technical reality *right now*.
+*   **Risk Velocity ($V_i$):** $V_i = \frac{\Delta D_i}{\Delta t}$. High velocity triggers warnings even if absolute health is within nominal thresholds.
+*   **Baseline Conflict ($\Psi_{drift}$):** Calculated as $|\mu_{tact} - \mu_{strat}|$.
+    *   If $\Psi_{drift} > \epsilon$ (the Drift Tolerance), the **Administrative (A) Pillar** receives a "Normalization of Deviance" alert.
+    *   This alert signals that the vessel is orienting itself to a reality that has fundamentally shifted from its safe baseline (e.g., a sustained lists/tilt during a storm).
+
+**Logging Hierarchy:**
+1. The **Tactical Reading** is logged for every sensor to maintain the high-fidelity Black Box "movie."
+2. The **Baseline Conflict** is logged as a discrete event to provide "Provable Reason" for system state changes (e.g., shifting to Caution because the "Calm Sea" baseline is no longer valid).
 
 ### 2.4 Vessel Safety Status (VSS)
 The VSS is the final holistic metric that determines if the mission is "Safe." It transitions the system from simple "Provable Safety" (PSS) to a "Non-Compensatory" Unified Safety Logic.

@@ -13,6 +13,7 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 | B-005 | Qi/Maturity Evolution Milestones | 5 | Todo | DevOps |
 | B-006 | VR Interaction Polish (Possession Lifecycle) | 5 | Todo | Protocols |
 | B-007 | Performance Baseline (1000+ Entities) | 8 | Todo | DevOps |
+| R-000 | PSTA Math Refinement: Trust & Conflict | 13 | Todo | Research |
 
 ---
 
@@ -22,7 +23,11 @@ This backlog uses Fibonacci scoring to estimate task complexity.
 - **Complexity 13+:** "General" work. Massive research goals, deep spatial math, or framework-shifting paradigms.
 
 ## 📝 Next Priority
-**B-002: Data Survivability Hardening (Complexity 5)**
-- Why: To ensure the "Black Box" protocol is resilient against file system failures and UE 5.7 API shifts.
-- What: Implementing atomic write hardening, PSTA hot-loop optimization, and modern automation world management.
-- How: Resolved via Jules (Tactician) B-002 Audit & Hardening sprint.
+**R-000: PSTA Math Refinement (Complexity 13)**
+- **Why:** To resolve the remaining "Deep-Sea" academic challenges (Challenges 2-8) and stabilize the Unified Safety Formula for PDF publication.
+- **What:**
+    - **Hysteresis & Exponential Recovery:** Implement $\Phi(t) = 1 - e^{-t/\tau}$ logic to prevent decision jitter.
+    - **Admin-Technical Conflict:** Define the specific Disagreement Penalty formula to penalize VSS when human intent and machine truth clash.
+    - **Residual Transparency:** Formalize the logging of $x_{raw} - x_{mean}$ for forensic human auditing.
+    - **Weighted Epistemic Uncertainty:** Refine $t_{caut}$ shifts to use Uncertainty Weights ($U_W$) instead of simple counts.
+- **How:** To be resolved via Jules (Researcher) in a dedicated "Alchemist" math sprint.
