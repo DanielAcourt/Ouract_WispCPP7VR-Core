@@ -73,11 +73,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PSTA|Mappings")
     TArray<FPSTATagMapping> TagMappings;
 
-    /** Weights for the final PSS calculation (alpha_i). Should ideally sum to 1.0. */
+    /** Weights for the final VSS calculation (alpha_i). Should ideally sum to 1.0. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PSTA|Weights")
     TMap<EPSTADimension, float> DimensionWeights;
 
-    /** The threshold below which PSS aggressively drops to 0 via the Bottleneck Law. */
+    /** Dimension-specific failure thresholds (tau_fail,i). If Di falls below this, VSS collapses to 0. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PSTA|Thresholds")
+    TMap<EPSTADimension, float> DimensionFailureThresholds;
+
+    /** The legacy threshold for the Bottleneck Law (Deprecating in favor of VSS). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PSTA|Thresholds", meta = (ClampMin = "0.0", ClampMax = "1.0"))
     float CriticalInstabilityThreshold = 0.3f;
 

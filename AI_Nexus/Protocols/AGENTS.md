@@ -14,10 +14,23 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.
 - **Claude (IDE Architect / Localized Logic):** Focuses on code-level implementation, specific architectural patterns within the IDE, and individual module logic. Claude works "inside the code" to build out the features defined by the framework.
 
+### ⚔️ Parallel Execution (Conflict Mitigation)
+To prevent merge conflicts and "Backlog Drift" when multiple agents or roles are active:
+1.  **Backlog Ownership:** Only the **Strategist** or **Commander** roles may permanently modify `BACKLOG.md`. Other roles must propose changes via `_AGENT_CONTEXT.md` or a pull request.
+2.  **File Segmentation:** Work on PSTA modules should be segmented:
+    *   **Researcher:** Modifies `PSTA_Core.md` and research-level math definitions.
+    *   **Tactician:** Modifies C++ implementation in `USovereignBlackBoxComponent`.
+    *   **DevOps:** Manages the Pi-Unreal Bridge and telemetry sockets.
+3.  **Atomic Commits:** Agents should commit small, functional increments with clear prefixes (e.g., `PSTA: Implement N-Bit Cluster logic`) to facilitate easier merging.
+
 ### Communication Protocol
 - Use `AI_Nexus/DevOps/_AGENT_CONTEXT.md` for active sprint status and task tracking.
 - All major architectural shifts must be documented in `AI_Nexus/Protocols/`.
 - Timeline updates and version history belong in `AI_Nexus/Timeline/MD.md`.
+
+### ⚠️ Infrastructure Constraints (Agent Workarounds)
+- **Large-Scale Changes:** During global refactors (e.g., adding copyright headers or licenses across the entire codebase), agents may encounter limitations when pushing to DevOps.
+- **Workaround:** If a `git push` failure occurs due to change volume, the agent should prioritize creating a local `.zip` of the source changes and notify the Lead to facilitate a manual merge.
 
 ## 🏗️ Architectural Constraints
 - **The Sovereign Rule:** All attachments during possession MUST use `FAttachmentTransformRules::SnapToTargetNotIncludingScale`.
