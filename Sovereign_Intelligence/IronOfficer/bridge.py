@@ -16,7 +16,6 @@ app = FastAPI(title="Sovereign Iron Officer Bridge")
 # --- Configuration ---
 OLLAMA_BASE_URL = "http://localhost:11434/api"
 DEFAULT_MODEL = "llama3:70b"  # Optimized for GTX 5090
-VSS_THRESHOLD_NOMINAL = 0.8
 
 # --- Schemas ---
 class PSTATelemetry(BaseModel):
@@ -34,11 +33,20 @@ class VSSRequest(BaseModel):
 async def root():
     return {"status": "online", "identity": "Iron Officer", "hardware": "GTX 5090"}
 
+@app.get("/v1/ollama/status")
+async def get_ollama_status():
+    """Checks if Ollama is reachable and lists available models."""
+    try:
+        response = requests.get(f"http://localhost:11434/api/tags")
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama: {str(e)}")
+
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
     """
     Evaluates Vessel Safety Status (VSS) using the local LLM.
-    Acts as the Administrative (A) "brain" analyzing Technical (T) and Psychological (P) telemetry.
     """
 
     prompt = f"""
@@ -65,39 +73,48 @@ async def evaluate_safety(request: VSSRequest):
     """
 
     try:
+        # Use /generate endpoint (ensure it is correct for Ollama)
+        payload = {
+            "model": DEFAULT_MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json"
+        }
+
+        response = requests.post(f"{OLLAMA_BASE_URL}/generate", json=payload)
+
+        if response.status_code != 200:
+            error_body = response.text
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error ({response.status_code}): {error_body}")
+
+        result = response.json()
+        return json.loads(result['response'])
+
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Network error talking to Ollama: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+
+@app.post("/v1/nexus/query")
+async def query_nexus(query: str):
+    """
+    Queries the local AI Nexus research nodes using the 5090.
+    """
+    prompt = f"Using the Sovereign AI Nexus documentation as your source of truth, answer: {query}"
+
+    try:
         response = requests.post(
             f"{OLLAMA_BASE_URL}/generate",
             json={
                 "model": DEFAULT_MODEL,
                 "prompt": prompt,
-                "stream": False,
-                "format": "json"
+                "stream": False
             }
         )
         response.raise_for_status()
-        result = response.json()
-        return json.loads(result['response'])
-
+        return {"query": query, "response": response.json()['response']}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ollama Error: {str(e)}")
-
-@app.post("/v1/nexus/query")
-async def query_nexus(query: str):
-    """
-    Queries the local AI Nexus research nodes using the 5090 for high-parameter reasoning.
-    """
-    # Placeholder for RAG implementation
-    prompt = f"Using the Sovereign AI Nexus documentation as your source of truth, answer: {query}"
-
-    response = requests.post(
-        f"{OLLAMA_BASE_URL}/generate",
-        json={
-            "model": DEFAULT_MODEL,
-            "prompt": prompt,
-            "stream": False
-        }
-    )
-    return {"query": query, "response": response.json()['response']}
 
 if __name__ == "__main__":
     import uvicorn
