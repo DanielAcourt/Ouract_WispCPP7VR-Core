@@ -11,6 +11,7 @@
 - [x] Create `SaveSystem_Error_Audit.md` (Security Audit)
 - [x] Create `SAVESYSTEM_SETUP_GUIDE.md` (SOP)
 - [x] Align `CONTRIBUTING.md` with multi-agent reality
+- [x] Codify `SaveSystem_Design.md` (Architecture & Sandwich Proof)
 
 ## Phase 3: Verification (COMPLETED)
 - [x] Run pre-commit verification
