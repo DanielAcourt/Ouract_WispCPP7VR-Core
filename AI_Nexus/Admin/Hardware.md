@@ -33,6 +33,9 @@ If the 07 Handshake fails or Ollama is "Refusing Connection":
 1. **Ollama Service:** Ensure the Ollama icon is visible in the Windows System Tray.
 2. **Port Conflict (10048):** The Bridge requires Port 8000. If blocked, find and kill the process: `netstat -ano | findstr :8000`.
 3. **IPv4 Binding:** Ensure the bridge is bound to `127.0.0.1`. Windows often fails to resolve `localhost` in restricted environments.
+4. **Empty Model List:** If Ollama is running but no models are detected:
+    - Open a CMD window and run `ollama list`.
+    - If `ollama list` shows models but the Bridge does not, verify the `OLLAMA_MODELS` environment variable in `config.json` matches your actual storage path.
 
 ---
 

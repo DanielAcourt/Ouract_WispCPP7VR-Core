@@ -92,6 +92,8 @@ def perform_07_handshake():
     print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
     print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
     print(f"[07] Hardware: {HARDWARE_ID}")
+    print(f"[07] Ollama Host: {OLLAMA_HOST}")
+    print(f"[07] Ollama Models Dir: {os.environ.get('OLLAMA_MODELS', 'Default')}")
 
     if os.path.exists(NEXUS_PATH):
         print("[07] Administrative Pillar: VERIFIED")

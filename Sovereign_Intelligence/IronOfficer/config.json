@@ -10,7 +10,10 @@
         "port": 11434,
         "install_path": "C:\\Users\\Danie\\AppData\\Local\\Programs\\Ollama",
         "model_path": "%USERPROFILE%\\.ollama\\models",
-        "target_model": "llama3:70b"
+        "target_model": "llama3:70b",
+        "env_overrides": {
+            "OLLAMA_MODELS": "%USERPROFILE%\\.ollama\\models"
+        }
     },
     "bridge": {
         "host": "0.0.0.0",

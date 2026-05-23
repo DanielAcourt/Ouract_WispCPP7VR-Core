@@ -57,15 +57,26 @@ if %errorlevel% EQU 0 (
     echo [07 WARNING] Port 8000 is already in use.
     echo [07] Run this to kill the blocker: taskkill /F /PID [PID_FROM_NETSTAT]
     netstat -ano | findstr :8000
+    :: We don't pause here to allow for restart scenarios, but user is warned.
+)
+
+:: Check for Ollama process (try both common names)
+set "OLLAMA_RUNNING=0"
+tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+tasklist /FI "IMAGENAME eq ollama app.exe" 2>NUL | find /I /N "ollama app.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+
+if "%OLLAMA_RUNNING%" NEQ "1" (
+    echo [07 CRITICAL] Ollama is not running.
+    echo [07] Please start Ollama from your System Tray or Start Menu.
+    :: We pause here because the bridge will definitely fail without Ollama
     pause
 )
 
-tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
-if "%ERRORLEVEL%" NEQ "0" (
-    echo [07 CRITICAL] Ollama is not running.
-    echo [07] Please start Ollama from your System Tray or Start Menu.
-    pause
-)
+:: Set Ollama Environment Overrides if needed
+:: (Defaults to standard locations if not set in config)
+set "OLLAMA_MODELS=%USERPROFILE%\.ollama\models"
 
 :: 6. Start the Bridge with the local Nexus path
 echo [07] Starting FastAPI Service...
