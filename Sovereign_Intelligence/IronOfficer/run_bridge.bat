@@ -51,7 +51,23 @@ if %errorlevel% NEQ 0 (
     %PY_CMD% -m pip install -r requirements.txt
 )
 
-:: 5. Start the Bridge with the local Nexus path
+:: 5. Pre-flight Checks (Port 8000 & Ollama)
+netstat -ano | findstr :8000 | findstr LISTENING >nul
+if %errorlevel% EQU 0 (
+    echo [07 WARNING] Port 8000 is already in use.
+    echo [07] Run this to kill the blocker: taskkill /F /PID [PID_FROM_NETSTAT]
+    netstat -ano | findstr :8000
+    pause
+)
+
+tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
+if "%ERRORLEVEL%" NEQ "0" (
+    echo [07 CRITICAL] Ollama is not running.
+    echo [07] Please start Ollama from your System Tray or Start Menu.
+    pause
+)
+
+:: 6. Start the Bridge with the local Nexus path
 echo [07] Starting FastAPI Service...
 %PY_CMD% bridge.py --nexus "%NEXUS_PATH%"
 

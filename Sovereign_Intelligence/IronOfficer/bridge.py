@@ -15,9 +15,26 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-# Use 127.0.0.1 instead of localhost for Windows stability (IPv4 preference)
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 OLLAMA_HOST = "http://127.0.0.1:11434"
 TARGET_MODEL = "llama3:70b"
+BRIDGE_PORT = 8000
+
+def load_config():
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r") as f:
+                cfg = json.load(f)
+                ollama_cfg = cfg.get("ollama", {})
+                bridge_cfg = cfg.get("bridge", {})
+                OLLAMA_HOST = f"http://{ollama_cfg.get('host', '127.0.0.1')}:{ollama_cfg.get('port', 11434)}"
+                TARGET_MODEL = ollama_cfg.get("target_model", "llama3:70b")
+                BRIDGE_PORT = bridge_cfg.get("port", 8000)
+        except Exception as e:
+            print(f"[07 WARNING] Failed to load config.json: {e}")
+
+load_config()
 
 # Global state for the 07 Salute
 NEXUS_PATH = "Unknown"
@@ -157,4 +174,4 @@ if __name__ == "__main__":
     # Run handshake on startup
     perform_07_handshake()
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)

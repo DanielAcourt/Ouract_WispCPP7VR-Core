@@ -19,6 +19,7 @@ These modules are confirmed installed on the 5090 and accessible via the Iron Of
 
 **Installation Root:** `C:\Users\Danie\AppData\Local\Programs\Ollama`
 **Model Storage:** `%USERPROFILE%\.ollama\models`
+**Technical Config:** `Sovereign_Intelligence/IronOfficer/config.json`
 
 | NAME | ID | SIZE | ROLE |
 |:---|:---|:---|:---|

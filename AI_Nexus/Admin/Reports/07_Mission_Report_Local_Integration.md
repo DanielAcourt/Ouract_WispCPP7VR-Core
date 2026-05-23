@@ -32,13 +32,15 @@ This report formalizes the successful "07 Handshake" between the Technical Lead 
 2.  **Hardware Manifest:** Documented the inventory of the GTX 5090 and its inference capabilities.
 3.  **Role Alignment:** Formalized the Lead's position as the primary Admin with root privileges over the framework's physical vessels.
 4.  **T-Pillar Hardening:** Resolved deprecation warnings in Pydantic and added diagnostic logic for Windows socket errors (10048, 10061).
+5.  **Persistent Configuration:** Implemented `config.json` and enhanced the launcher with pre-flight diagnostics.
 
 ---
 
 ## 🔬 4. Diagnostic Log: Connection Recovery
-* **Error 10048:** Detected as a "Port Collision." Bridge now includes instructions to kill orphaned processes on Port 8000.
-* **Error 10061:** Detected as "Ollama Offline." Verification script now proactively prompts for System Tray check.
-* **Deprecation Fix:** Successfully migrated `.dict()` to `.model_dump()` to ensure future-proofing against Pydantic V3.
+* **Error 10048:** Detected as a "Port Collision." Bridge now includes instructions and automated checks for Port 8000.
+* **Error 10061:** Detected as "Ollama Offline." The launcher now proactively checks for `ollama.exe`.
+* **Deprecation Fix:** Successfully migrated `.dict()` to `.model_dump()` for Pydantic V2 compatibility.
+* **Config Persistence:** All technical paths and ports are now codified in `config.json` for deterministic startup.
 
 ---
 
