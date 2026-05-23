@@ -7,7 +7,7 @@ Run this to test the connection between the Bridge, Ollama, and your GTX 5090.
 import requests
 import json
 
-BRIDGE_URL = "http://localhost:8000"
+BRIDGE_URL = "http://127.0.0.1:8000"
 
 def test_bridge_health():
     print("--- Testing Bridge Health ---")
@@ -16,8 +16,11 @@ def test_bridge_health():
         print(f"Status: {response.status_code}")
         print(f"Response: {response.json()}")
     except Exception as e:
-        print(f"Error connecting to Bridge: {e}")
-        print("Make sure 'run_bridge.bat' is running in another window.")
+        print(f"[07 ERROR] Connection to Bridge failed: {e}")
+        if "10061" in str(e):
+            print(">>> SOLUTION: Run 'run_bridge.bat' first.")
+        elif "10048" in str(e):
+            print(">>> SOLUTION: Another bridge is already running. Check Task Manager.")
 
 def check_ollama_models():
     print("\n--- Checking Ollama Models ---")
@@ -33,7 +36,8 @@ def check_ollama_models():
         else:
             print(f"Error: {response.json()}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"[07 ERROR] Bridge cannot talk to Ollama: {e}")
+        print(">>> SOLUTION: Ensure Ollama is running in the Windows System Tray.")
 
 def test_vss_evaluation():
     print("\n--- Testing VSS Evaluation (Ollama + 5090) ---")

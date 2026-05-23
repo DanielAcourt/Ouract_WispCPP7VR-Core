@@ -104,7 +104,7 @@ async def root():
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
     try:
-        response = requests.get(f"{OLLAMA_HOST}/api/tags")
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -120,7 +120,7 @@ async def evaluate_safety(request: VSSRequest):
     Source Nexus: {NEXUS_PATH}
 
     Telemetry Data:
-    {json.dumps([t.dict() for t in request.telemetry], indent=2)}
+    {json.dumps([t.model_dump() for t in request.telemetry], indent=2)}
 
     Context: {request.context}
 

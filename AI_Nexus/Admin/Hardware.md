@@ -27,6 +27,14 @@ These modules are confirmed installed on the 5090 and accessible via the Iron Of
 
 ---
 
+## 🛠️ Troubleshooting & Technical (T) Pillar Recovery
+If the 07 Handshake fails or Ollama is "Refusing Connection":
+1. **Ollama Service:** Ensure the Ollama icon is visible in the Windows System Tray.
+2. **Port Conflict (10048):** The Bridge requires Port 8000. If blocked, find and kill the process: `netstat -ano | findstr :8000`.
+3. **IPv4 Binding:** Ensure the bridge is bound to `127.0.0.1`. Windows often fails to resolve `localhost` in restricted environments.
+
+---
+
 ## 🍓 3. Edge Node: "Key Species Monitor"
 *   **Hardware:** Raspberry Pi 4
 *   **Role:** Headless safety node (PSTA) monitoring physical Key Species (Vessel: Fish Tank/Plant).
