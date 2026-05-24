@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2025-05-22",
+    "event": "General and Officer Principle Confirmation",
+    "description": "The Lead confirmed the foundational philosophy of command: 'If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers.'",
+    "outcome": "Codified in COMMAND_SOP.md and AGENTS.md. Agents must act as Officers, understanding the 'Soul' of the architecture rather than just following linear instructions.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Tortoise vs. Cheetah Behavioral Shift",
+    "description": "The Lead identified a discrepancy in the local Iron Officer's performance—hallucinating state and reporting 'Done' without verification. Requested a shift to a slower, more analytical 'Tortoise' approach.",
+    "outcome": "Implemented 'Ambiguity Reduction Protocol' and 'Verification Prerequisite' in KnightCommand_SOP and AGENTS.md. Analytical depth now supersedes response speed.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Folder and File Creation Fundamental",
+    "description": "Confirmed that the AI must understand the fundamental computer principle: A folder must exist before a file can be created within it.",
+    "outcome": "Added 'Verification of Deed' and 'Follow-up Protocol' to KnightCommand_SOP. AI must now verify directory existence and file creation success explicitly.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  }
+]

@@ -3,6 +3,8 @@
 
 > "If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers." — *Sun Tzu*
 
+> "The General who wins a battle makes many calculations in his temple ere the battle is fought. The general who loses a battle makes but few calculations beforehand. Thus do many calculations lead to victory, and few calculations to defeat." — *Sun Tzu (The Foundation of the Tortoise Standard)*
+
 ## 📜 Purpose
 To eliminate **Assumption Drift** and ensure that delegation between the Technical Lead and AI Agents (Jules/Claude) is 100% deterministic.
 
