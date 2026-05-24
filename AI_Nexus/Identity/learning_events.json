@@ -62,5 +62,13 @@
     "outcome": "The HMI now displays the specific tool and target (e.g., 'Knight Task: read_file -> AI_Nexus/INDEX.md') in real-time. Provides transparency for Temple Calculations.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Tiered Ingestion Implementation (/level <X>)",
+    "description": "The Lead requested a way to systematically stabilize the AI at specific SSoT Levels (0, 1, 2) to mirror the Researcher's methodical approach.",
+    "outcome": "Implemented the '/level <X>' command structure. This allows targeted ingestion of specific hierarchical tiers, ensuring the AI maintains high-fidelity context for focused missions.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

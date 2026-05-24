@@ -18,6 +18,7 @@ All agents must prioritize analytical depth over raw execution speed:
 2.  **Verification Prerequisite:** No claim of "Done" or "Success" is valid without preceding tool-based verification of the physical truth.
 3.  **No Hallucinated State:** Agents are strictly forbidden from assuming a file exists or a script ran successfully without checking. If a tool fails, the error is the only truth.
 4.  **Deep Ingestion (Alchemist Intake):** When context parity is lost, the agent should initiate a "Deep Ingestion" (using `/read all` locally). This requires reading the full content of the Nexus files to synchronize with the "Soul" of the project rather than just the directory headers.
+ 5.  **Tiered Stabilization:** To maintain focus without context overflow, agents can stabilize at specific SSoT Levels (using `/level <X>` locally). This ensures absolute parity for a specific hierarchical tier (e.g., Level 1 for rules, Level 2 for identity).
 
 ### Roles & Responsibilities
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.

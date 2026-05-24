@@ -11,6 +11,7 @@ import requests
 import datetime
 import threading
 import time
+import re
 from typing import List, Dict
 
 # --- Configuration ---
@@ -79,7 +80,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /report, /status, /tools, /check full, /read all, /exit")
+        print(" Commands: /report, /status, /tools, /check full, /read all, /level <0-2>, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -128,6 +129,10 @@ class ChatVessel:
                 is_audit = user_input.lower() == "/check full"
                 is_ingestion = user_input.lower() == "/read all"
 
+                # Check for /level command or /01 Level
+                level_match = re.search(r"/(?:level|01 level)\s*(\d)", user_input.lower())
+                is_level = bool(level_match)
+
                 if is_audit:
                     user_input = "Perform a 'Deep Analysis' audit of the AI_Nexus and repository state. Trade speed for analytical depth (Tortoise Standard)."
                     print("\n[07] INITIALIZING DEEP ANALYSIS MODE...")
@@ -136,6 +141,11 @@ class ChatVessel:
                     user_input = "Perform 'Deep Ingestion' (Alchemist Intake). Systematically read the full contents of all files in AI_Nexus to ensure absolute synchronization with the project's Soul. Do not summarize until all files are read."
                     print("\n[07] INITIALIZING DEEP INGESTION (ALCHEMIST INTAKE)...")
                     print("[07] Entering Intake State (Calculations in the Temple active)")
+                elif is_level:
+                    lvl = level_match.group(1)
+                    user_input = f"Stabilize at Level {lvl}. Read the INDEX.md, identify all nodes associated with Level {lvl}, and systematically read their full contents to synchronize. Report once that tier is stabilized."
+                    print(f"\n[07] INITIALIZING LEVEL {lvl} STABILIZATION...")
+                    print(f"[07] Entering Hierarchical Intake (Level {lvl} Context active)")
 
                 self.history.append({"role": "user", "content": user_input})
 
@@ -143,7 +153,7 @@ class ChatVessel:
                 stop_event = threading.Event()
                 pulse_thread = None
 
-                if is_audit or is_ingestion:
+                if is_audit or is_ingestion or is_level:
                     print("[07] Consulting Nexus and Hardware (Temple Calculations active)...")
                     if os.path.exists(PULSE_PATH): os.remove(PULSE_PATH)
                     pulse_thread = threading.Thread(target=self.poll_status_pulse, args=(stop_event,), daemon=True)
