@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -18,11 +18,12 @@ class WISPCPP7VR_API AWispsGameModeBase : public AGameModeBase
 public:
 	AWispsGameModeBase();
 
+	/** Helper to find species data during spawning [v36.4.1] */
+	class USovereignSpeciesData* GetSpeciesDataByTag(FGameplayTag SpeciesTag);
+
 protected:
 	/** Global reference to your Species/Item Data Table */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data")
 	class UDataTable* ItemDataTable;
 
-	/** Helper to find species data during spawning */
-	class USovereignSpeciesData* GetSpeciesDataByTag(FGameplayTag SpeciesTag);
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. All Rights Reserved. Confidential & Proprietary.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 /*1. The Data Structs (GardenData.h)
 Class Type: "None" (Header Only)
@@ -160,8 +160,9 @@ struct FEntitySaveData
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FTransform WorldTransform;
 
-    //UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    //EGrowthState CurrentState;
+    /** The Unique Identity Tag for the species. Used for Tag-to-Asset lookup. [v36.4.1] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
+    FGameplayTag SpeciesTag;
 
     /** * THE SECRET SAUCE: Handles tags the system can't know in advance.
      * This is where your "Key:Value" scraper saves its data.
@@ -169,10 +170,10 @@ struct FEntitySaveData
     TSharedPtr<FJsonObject> UnknownMetaTags;
 
 
-    /** * The blueprint path of the actor.
-     * Essential if Player needs to respawn an object that was deleted.
+    /** * [DEPRECATED] Use SpeciesTag for lookup.
+     * Kept for backward compatibility with v0.36 vessels.
      */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Legacy")
     FString ClassPath;
 
     // We save the frequency so the heartbeat restores correctly!
