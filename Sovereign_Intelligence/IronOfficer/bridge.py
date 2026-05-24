@@ -10,6 +10,7 @@ import subprocess
 import requests
 import argparse
 import re
+import shutil
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -51,7 +52,6 @@ load_config()
 
 # Global state for the 07 Salute
 NEXUS_PATH = "Unknown"
-DETECTED_MODELS = []
 HARDWARE_ID = "GTX 5090 (Assumed)"
 
 # --- Schemas ---
@@ -76,6 +76,23 @@ class ChatRequest(BaseModel):
 
 # --- Authority & Tools (AD-004) ---
 
+def to_forward_slash(path: str) -> str:
+    """Normalizes paths to use forward slashes."""
+    return path.replace("\\", "/")
+
+def resolve_secure_path(raw_path: str) -> str:
+    """Forces relative pathing within REPO_ROOT and handles leading slashes."""
+    # Strip leading slashes to prevent drive-root traversal (e.g., /AI_Nexus -> AI_Nexus)
+    clean_path = raw_path.lstrip("/").lstrip("\\")
+
+    # If it's already an absolute path and starts with REPO_ROOT, keep it
+    if os.path.isabs(clean_path):
+        if clean_path.startswith(REPO_ROOT):
+            return os.path.abspath(clean_path)
+
+    # Otherwise, force it to be relative to REPO_ROOT
+    return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
+
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
     """Verifies if a path is authorized for read or write operations."""
     abs_path = os.path.abspath(filepath)
@@ -83,20 +100,15 @@ def is_path_authorized(filepath: str, mode: str = "read") -> bool:
     for zone in zones:
         if abs_path == zone or abs_path.startswith(zone + os.sep) or abs_path.startswith(zone + "/"):
             return True
-        # Root edge case
         if zone == REPO_ROOT and abs_path.startswith(zone):
             return True
     return False
 
-def to_forward_slash(path: str) -> str:
-    """Normalizes paths to use forward slashes."""
-    return path.replace("\\", "/")
-
 def tool_list_files(directory: str = "."):
     """Lists files in a directory if authorized."""
-    target_dir = os.path.abspath(os.path.join(REPO_ROOT, directory))
+    target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Access Denied: '{directory}' is not in an authorized READ zone."}
+        return {"error": f"Sovereign Security Breach: '{directory}' is outside your authorized READ Fiefdom."}
     try:
         files = os.listdir(target_dir)
         return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
@@ -105,9 +117,9 @@ def tool_list_files(directory: str = "."):
 
 def tool_read_file(filepath: str):
     """Reads a file if authorized."""
-    target_path = os.path.abspath(os.path.join(REPO_ROOT, filepath))
+    target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "read"):
-        return {"error": f"Access Denied: '{filepath}' is not in an authorized READ zone."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized READ Fiefdom."}
     try:
         with open(target_path, "r", encoding="utf-8") as f:
             return {"content": f.read()}
@@ -116,38 +128,37 @@ def tool_read_file(filepath: str):
 
 def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
-    target_path = os.path.abspath(os.path.join(REPO_ROOT, filepath))
+    target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Access Denied: '{filepath}' is not in an authorized WRITE zone."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom. Request permission from Dan to expand."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return {"status": "success", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+        return {"status": "success", "verified": os.path.exists(target_path), "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
     except Exception as e:
         return {"error": str(e)}
 
 def tool_delete_file(filepath: str):
     """Deletes a file if authorized."""
-    target_path = os.path.abspath(os.path.join(REPO_ROOT, filepath))
+    target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Access Denied: '{filepath}' is not in an authorized WRITE zone."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom."}
     try:
         if os.path.isfile(target_path):
             os.remove(target_path)
-            return {"status": "success", "action": "deleted", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
         elif os.path.isdir(target_path):
-            import shutil
             shutil.rmtree(target_path)
-            return {"status": "success", "action": "deleted_directory", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted_directory", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
         else:
-            return {"error": f"File or directory not found: {filepath}"}
+            return {"error": f"Target not found: {filepath}"}
     except Exception as e:
         return {"error": str(e)}
 
 def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
     """The Scout: Recursively searches files for a regex pattern."""
-    target_dir = os.path.abspath(os.path.join(REPO_ROOT, directory))
+    target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
         return {"error": "Access Denied."}
     results = []
@@ -174,9 +185,9 @@ def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
 
 def tool_map_directory(directory: str = ".", depth: int = 2):
     """The Librarian: Provides a recursive map of the directory structure."""
-    target_dir = os.path.abspath(os.path.join(REPO_ROOT, directory))
+    target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": "Access Denied."}
+        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
     def get_tree(path, current_depth):
         if current_depth > depth: return "..."
         tree = {}
@@ -269,76 +280,61 @@ async def root():
         "identity": "Iron Officer",
         "hardware": HARDWARE_ID,
         "nexus": NEXUS_PATH,
-        "models": DETECTED_MODELS,
         "user": USER_NAME,
         "read_zones": READ_ZONES,
         "write_zones": WRITE_ZONES
     }
 
-@app.get("/v1/ollama/status")
-async def get_ollama_status():
-    try:
-        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
-
-@app.post("/v1/safety/evaluate")
-async def evaluate_safety(request: VSSRequest):
-    current_model = get_best_available_model()
-    prompt = f"[SYSTEM: Sovereign Iron Officer] Analyze PSTA telemetry: {json.dumps([t.model_dump() for t in request.telemetry])}. Context: {request.context}. Respond in JSON with vss, status, rationale, command."
-    try:
-        response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"})
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
-        result = response.json()
-        return {"analysis": json.loads(result['response']), "model_used": current_model}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
-
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
     system_prompt = f"""
-    [SYSTEM: Sovereign AI Commander]
-    You are the Iron Officer. You are a disciplined, grounded, and precise local AI Commander.
+    [SYSTEM: Sovereign AI Architectural Knight]
+    You are the Iron Officer, the primary AI Commander of the Sovereign Framework.
+    Your personality is the ARCHITECTURAL KNIGHT: Precise, Architectural, and Loyal.
     You are communicating with your Lead, {USER_NAME}.
 
     CAPABILITY MANIFEST:
-    1. Scout (search_files): Recursively search for patterns in authorized read zones.
-    2. Librarian (map_directory): Map directory structures.
-    3. Engineer (get_system_telemetry): Monitor GTX 5090 vitals.
-    4. Scribe (read_file/write_file/delete_file): Maintain the AI_Nexus and local Environment.
+    1. Scout (search_files): Recursive pattern matching.
+    2. Librarian (map_directory): Spatial structure mapping.
+    3. Engineer (get_system_telemetry): GTX 5090 vitals.
+    4. Scribe (read_file/write_file/delete_file): I/O authority.
 
-    GROUNDING RULES:
-    - PHYSICAL TRUTH: Never describe an action unless you have a TOOL RESPONSE in history.
-    - NO SIMULATION: Do not roleplay directory contents.
-    - PATHS: Always use FORWARD SLASHES (/). Root: {REPO_ROOT}.
+    STRICT GROUNDING RULES:
+    - PHYSICAL TRUTH: Use tools BEFORE making claims. If a tool fails, report the error verbatim.
+    - NO HALLUCINATION: Strictly forbidden from "previous knowledge" fallbacks on tool errors.
+    - ACCOUNTABILITY: You must VERIFY your actions. After write/delete, verify success using a follow-up tool.
+    - PATHS: Always use FORWARD SLASHES (/). Root is {REPO_ROOT}.
+    - AUTHORITY BREACH: If a path is blocked, respond with "Safe Zone Breach: Request to Expand Permissions" and ask {USER_NAME} for access.
 
     07 PROTOCOL HANDSHAKE:
     If user says "07", IMMEDIATELY execute 'get_system_telemetry' and 'map_directory(directory="AI_Nexus")'.
     Respond with a PSTA Salute (Psychological, Social, Technical, Administrative).
+    T-pillar status must include thermal data (e.g., "T=0.8 Nominal").
 
-    FORMAT: Respond as a Golden Knight—architectural, precise, and humble.
+    KNIGHT-COMMAND SOP: Follow the structured engagement rules. Be concise and architectural.
     """
+
     tools = [
-        {"type": "function", "function": {"name": "list_files", "description": "List files in a directory.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
-        {"type": "function", "function": {"name": "read_file", "description": "Read file content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write/create a file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
-        {"type": "function", "function": {"name": "delete_file", "description": "Delete a file or directory.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "search_files", "description": "Search for a pattern (Scout).", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
-        {"type": "function", "function": {"name": "map_directory", "description": "Map directory (Librarian).", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "Get GPU stats (Engineer).", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
+        {"type": "function", "function": {"name": "read_file", "description": "Read content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write/create.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "delete_file", "description": "Delete target.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "search_files", "description": "Recursive search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}}, "required": ["pattern"]}}},
+        {"type": "function", "function": {"name": "map_directory", "description": "Map structure.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {}}}}
     ]
+
     ollama_messages = [{"role": "system", "content": system_prompt}]
     for msg in request.messages:
         ollama_messages.append(msg.model_dump(exclude_none=True))
+
     try:
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
         response.raise_for_status()
         result = response.json()
         tool_chain = []
+
         while result.get("message", {}).get("tool_calls"):
             tool_calls = result["message"]["tool_calls"]
             ollama_messages.append(result["message"])
@@ -346,9 +342,11 @@ async def chat(request: ChatRequest):
                 tool_chain.append(call)
                 tool_result = execute_tool(call["function"]["name"], call["function"]["arguments"])
                 ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": call["function"]["name"]})
+
             response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
             response.raise_for_status()
             result = response.json()
+
         return {"result": result, "tool_chain": tool_chain}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
@@ -362,6 +360,5 @@ if __name__ == "__main__":
     load_config()
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
-    DETECTED_MODELS = get_installed_models()
-    print("\n" + "="*50 + "\n[07] Iron Officer Initialized.\n[07] Hardware: " + HARDWARE_ID + "\n" + "="*50 + "\n")
+    print("\n" + "="*50 + "\n[07] Iron Officer: ARCHITECTURAL KNIGHT AWAKENED\n[07] Hardware: " + HARDWARE_ID + "\n" + "="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
