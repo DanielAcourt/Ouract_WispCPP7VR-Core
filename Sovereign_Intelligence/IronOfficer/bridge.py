@@ -118,6 +118,25 @@ def tool_write_file(filepath: str, content: str):
     except Exception as e:
         return {"error": str(e)}
 
+def tool_delete_file(filepath: str):
+    """Deletes a file if safe."""
+    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
+    if not is_path_safe(target_path):
+        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+
+    try:
+        if os.path.isfile(target_path):
+            os.remove(target_path)
+            return {"status": "success", "action": "deleted", "path": target_path}
+        elif os.path.isdir(target_path):
+            import shutil
+            shutil.rmtree(target_path)
+            return {"status": "success", "action": "deleted_directory", "path": target_path}
+        else:
+            return {"error": f"File or directory not found: {filepath}"}
+    except Exception as e:
+        return {"error": str(e)}
+
 def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Dispatches tool calls to local functions."""
     if name == "list_files":
@@ -126,6 +145,8 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return tool_read_file(**arguments)
     elif name == "write_file":
         return tool_write_file(**arguments)
+    elif name == "delete_file":
+        return tool_delete_file(**arguments)
     else:
         return {"error": f"Tool '{name}' not found."}
 
@@ -257,6 +278,7 @@ async def chat(request: ChatRequest):
     1. You can LIST files in Sovereign Safe-Zones.
     2. You can READ files in Sovereign Safe-Zones.
     3. You can WRITE/CREATE files in Sovereign Safe-Zones.
+    4. You can DELETE files or directories in Sovereign Safe-Zones.
 
     SAFE-ZONES: {', '.join(SAFE_ZONES)}
 
@@ -310,6 +332,20 @@ async def chat(request: ChatRequest):
                         "content": {"type": "string", "description": "The content to write."}
                     },
                     "required": ["filepath", "content"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "delete_file",
+                "description": "Delete a file or directory within Safe-Zones.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string", "description": "The path to the file or directory."}
+                    },
+                    "required": ["filepath"]
                 }
             }
         }
