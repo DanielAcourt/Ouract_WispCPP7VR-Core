@@ -24,6 +24,7 @@ These modules are confirmed installed on the 5090 and accessible via the Iron Of
 | NAME | ID | SIZE | MANIFEST PATH | ROLE |
 |:---|:---|:---|:---|:---|
 | `llama3:70b` | 786f3184aec0 | 39 GB | `...\manifests\registry.ollama.ai\library\llama3\70b` | Strategic Reasoning |
+| `llama3.1:latest` | - | - | - | Local Evaluation (Verified) |
 | `qwen3-coder:30b` | 06c1097efce0 | 18 GB | `...\manifests\registry.ollama.ai\library\qwen3-coder\30b` | Code Review |
 
 ---
