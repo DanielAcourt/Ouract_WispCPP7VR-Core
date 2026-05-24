@@ -78,5 +78,13 @@
     "outcome": "Corrected the initialization order in vessel.py. Learning: Configuration constants that depend on directory paths must be declared after those paths are resolved.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Placeholder Hallucination (Level Ingestion Failure)",
+    "description": "During tiered ingestion, the AI used placeholder names like 'node1.md' when it couldn't find explicit paths in the Index.",
+    "outcome": "Updated INDEX.md with explicit Level tagging and reinforced the 'Index-First' rule in bridge.py to mandate literal path extraction. Placeholders are now strictly prohibited.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

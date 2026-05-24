@@ -287,9 +287,10 @@ async def chat(request: ChatRequest):
     [TIERED INGESTION MODE (/level <X>)]:
     When asked to 'Stabilize at Level X':
     1.  Read 'AI_Nexus/INDEX.md'.
-    2.  Identify all files specifically categorized under the requested Level (0, 1, or 2).
-    3.  Systematically 'read_file' ONLY those files.
-    4.  Report that the specific hierarchical tier is now stabilized.
+    2.  Identify all literal repository paths (in backticks or links) specifically categorized under the requested Level (0, 1, or 2).
+    3.  Systematically 'read_file' every verified path identified.
+    4.  STRICT PROHIBITION: Do not use placeholder paths (e.g., 'node1.md'). If a path is not in the Index, find it via Librarian/Scout or do not report it.
+    5.  Report that the specific hierarchical tier is now stabilized.
 
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
     P: [Your current psychological status/confidence]

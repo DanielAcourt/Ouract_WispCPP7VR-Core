@@ -8,7 +8,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 ## 🏛️ Sovereign Intelligence Hierarchy (SSoT)
 
 ### **Level 0: Timeline & Evolution**
-*   **Primary Source:** `AI_Nexus/Timeline/MD.md`
+*   **Timeline:** `AI_Nexus/Timeline/MD.md`
     *   Tracks the project's historical context, long-term vision, and roadmap.
 *   **Updates:** `AI_Nexus/Timeline/Updates.md`
     *   Changelog for major developmental milestones.
@@ -16,7 +16,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   The "Black Box" historical record of all Lead/Agent review sessions.
 
 ### **Level 1: The Rulebook**
-*   **Primary Source:** `AI_Nexus/Protocols/AGENTS.md`
+*   **Agents Rulebook:** `AI_Nexus/Protocols/AGENTS.md`
     *   SOPs, role definitions, architectural constraints, and coding standards.
 *   **Contribution Guide:** `AI_Nexus/Protocols/CONTRIBUTING.md`
     *   Workflow standards for multi-agent cooperation.
@@ -24,8 +24,10 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
 *   **SaveSystem Design:** `AI_Nexus/Docs/SaveSystem_Design.md`
     *   Architecture of the Soul/Vessel bridge and the Sandwich Proof.
-*   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
+*   **SaveSystem Setup SOP:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
     *   Hardening standards and verification SOPs for the Soul/Vessel bridge.
+*   **Knight Command SOP:** `AI_Nexus/Protocols/KnightCommand_SOP.md`
+    *   Behavioral hardening, verification of deed, and reflection rules.
 *   **Quick Reference:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`
     *   Immediate actions for critical system failures.
 
@@ -45,7 +47,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ---
 
-## 🔬 Research & Foundations
+## 🔬 Research & Foundations (Level 2)
 
 ### **Knowledge Repository**
 *   **Directory:** `AI_Nexus/Research/`
@@ -62,7 +64,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ---
 
-## 👔 Administration & Leadership
+## 👔 Administration & Leadership (Level 2)
 *   **Lead Identity:** `AI_Nexus/Admin/TechnicalLead.md`
     *   Defines the persona, philosophy, and strategic goals of the Technical Lead (Daniel Acourt).
 *   **Personnel Audit:** `AI_Nexus/Admin/Personnel_Audit.md`
@@ -70,7 +72,7 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ---
 
-## 🤖 Coordination & DevOps
+## 🤖 Coordination & DevOps (Level 2)
 
 ### **Active Sprint Status**
 *   **Current Context:** `AI_Nexus/DevOps/_AGENT_CONTEXT.md`
@@ -84,10 +86,10 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 *   **File Audit:** `AI_Nexus/DevOps/FILES_TO_CREATE.md`
     *   Historical tracking of Nexus expansion and file unification.
 
-### **Memories & Technical Analysis**
+### **Memories & Technical Analysis (Level 2)**
 *   **Code Reference:** `AI_Nexus/Memories/SaveSystem_Hardened_Fixes.cpp`
     *   Non-compiled reference for hardened implementation patterns.
-*   **Research:** `AI_Nexus/Memories/data_driven_spawning_analysis.md`
+*   **Research Analysis:** `AI_Nexus/Memories/data_driven_spawning_analysis.md`
     *   Deep-dive analysis of the data-driven evolution of the framework.
 
 ---
