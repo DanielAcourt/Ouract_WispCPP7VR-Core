@@ -167,10 +167,20 @@ def perform_07_handshake():
     print("\n" + "="*50)
     print("[07] Iron Officer Initialized.")
     print(f"[07] Persona: Structural Lead (Local)")
+    print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
     print(f"[07] Safe-Zones Active: {len(SAFE_ZONES)}")
     for zone in SAFE_ZONES:
         print(f"  -> {zone}")
+    print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
     print(f"[07] Hardware: {HARDWARE_ID}")
+    print(f"[07] Ollama Host: {OLLAMA_HOST}")
+
+    if DETECTED_MODELS:
+        print("[07] Technical Pillar: NOMINAL")
+    else:
+        print("[07] Technical Pillar: CRITICAL (Ollama Empty or Offline)")
+
+    print("[07] All Pillars Synchronized. Standing by for Commander.")
     print("="*50 + "\n")
 
 # --- Core Logic ---
@@ -186,6 +196,51 @@ async def root():
         "user": USER_NAME,
         "safe_zones": SAFE_ZONES
     }
+
+@app.get("/v1/ollama/status")
+async def get_ollama_status():
+    try:
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
+
+@app.post("/v1/safety/evaluate")
+async def evaluate_safety(request: VSSRequest):
+    current_model = get_best_available_model()
+
+    prompt = f"""
+    [SYSTEM: Sovereign Iron Officer]
+    Analyze the following PSTA telemetry for the Sovereign Framework.
+    Source Nexus: {NEXUS_PATH}
+
+    Telemetry Data:
+    {json.dumps([t.model_dump() for t in request.telemetry], indent=2)}
+
+    Context: {request.context}
+
+    Respond in JSON format only:
+    {{
+        "vss": float,
+        "status": "Nominal|Caution|Warning|Critical",
+        "rationale": "...",
+        "command": "STAY|ABORT|THROTTLE"
+    }}
+    """
+
+    try:
+        response = requests.post(
+            f"{OLLAMA_HOST}/api/generate",
+            json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+
+        result = response.json()
+        return {"analysis": json.loads(result['response']), "model_used": current_model}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
