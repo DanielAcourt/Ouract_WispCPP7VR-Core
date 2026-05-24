@@ -41,6 +41,7 @@ This report formalizes the successful "07 Handshake" between the Technical Lead 
 * **Error 10061:** Detected as "Ollama Offline." The launcher now proactively checks for `ollama.exe`.
 * **Deprecation Fix:** Successfully migrated `.dict()` to `.model_dump()` for Pydantic V2 compatibility.
 * **Config Persistence:** All technical paths and ports are now codified in `config.json` for deterministic startup.
+* **Manifest Verification:** Verified the exact manifest storage for `llama3:70b` and `qwen3-coder:30b` at `C:\Users\Danie\.ollama\models`.
 
 ---
 

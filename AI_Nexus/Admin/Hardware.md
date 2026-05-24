@@ -18,13 +18,13 @@ All hardware listed herein is owned and operated by the **Technical Lead (Admin)
 These modules are confirmed installed on the 5090 and accessible via the Iron Officer bridge.
 
 **Installation Root:** `C:\Users\Danie\AppData\Local\Programs\Ollama`
-**Model Storage:** `%USERPROFILE%\.ollama\models`
+**Model Storage:** `C:\Users\Danie\.ollama\models`
 **Technical Config:** `Sovereign_Intelligence/IronOfficer/config.json`
 
-| NAME | ID | SIZE | ROLE |
-|:---|:---|:---|:---|
-| `llama3:70b` | 786f3184aec0 | 39 GB | Strategic Reasoning & Planning |
-| `qwen3-coder:30b` | 06c1097efce0 | 18 GB | Technical Implementation & Code Review |
+| NAME | ID | SIZE | MANIFEST PATH | ROLE |
+|:---|:---|:---|:---|:---|
+| `llama3:70b` | 786f3184aec0 | 39 GB | `...\manifests\registry.ollama.ai\library\llama3\70b` | Strategic Reasoning |
+| `qwen3-coder:30b` | 06c1097efce0 | 18 GB | `...\manifests\registry.ollama.ai\library\qwen3-coder\30b` | Code Review |
 
 ---
 
