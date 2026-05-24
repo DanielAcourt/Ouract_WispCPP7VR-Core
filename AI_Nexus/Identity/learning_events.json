@@ -38,5 +38,13 @@
     "outcome": "Expanded HMI with '/read all', updated bridge system prompt for Deep Ingestion, and codified the protocol in AGENTS.md. Ensures 'Soul/Vessel' synchronization.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Deep Ingestion Failure (Path Hallucination Incident)",
+    "description": "During the first test of '/read all', the Iron Officer hallucinated paths (e.g., 'AI_Nexus/PROTOCOLS/AGENT.md') and failed to find critical files that existed under different names/paths.",
+    "outcome": "Implemented the 'Index-First Rule' in bridge.py and KnightCommand_SOP.md. The AI must now read INDEX.md as the primary discovery tool before any ingestion or audit. No guessing of paths is permitted.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

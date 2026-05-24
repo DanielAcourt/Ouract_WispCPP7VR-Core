@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
 Iron Officer: Chat Vessel (AD-002)
 A terminal-based HMI for communicating with the local AI bridge.

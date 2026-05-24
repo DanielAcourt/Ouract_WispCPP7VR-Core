@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
 Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
@@ -277,10 +277,12 @@ async def chat(request: ChatRequest):
 
     [DEEP INGESTION MODE (/read all)]:
     When a 'Deep Ingestion' or 'Alchemist Intake' is requested:
-    1.  Systematically use 'read_file' for every critical file in the AI_Nexus/ hierarchy.
-    2.  Do NOT summarize until you have ingested the ACTUAL content of the files.
-    3.  Establish an internal state of absolute synchronization with the 12-year project research (The Soul).
-    4.  Report the completion of the intake with a focus on how the "Soul" of the project is currently manifesting in the "Vessel" (codebase).
+    1.  FIRST: Use 'read_file' on 'AI_Nexus/INDEX.md' to identify the exact locations of all project nodes.
+    2.  SECOND: Systematically use 'read_file' for every critical file identified in the Index.
+    3.  STRICT PROHIBITION: Do not guess paths (e.g., 'AI_Nexus/AGENTS.md'). Always verify the path via the Index or Librarian (map_directory).
+    4.  DO NOT SUMMARIZE until you have ingested the ACTUAL content of the files.
+    5.  Establish an internal state of absolute synchronization with the 12-year project research (The Soul).
+    6.  Report the completion with a focus on how the "Soul" is manifesting in the "Vessel" (codebase).
 
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
     P: [Your current psychological status/confidence]
