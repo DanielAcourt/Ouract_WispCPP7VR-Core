@@ -90,11 +90,20 @@ def get_gpu_info() -> str:
     except Exception:
         return "GPU Detection Failed (Is nvidia-smi in PATH?)"
 
+def check_cli_parity():
+    """Checks if 'ollama list' via CLI matches the API response."""
+    try:
+        output = subprocess.check_output(["ollama", "list"], encoding='utf-8')
+        return output
+    except Exception:
+        return "CLI Check Failed"
+
 def perform_07_handshake():
     """Outputs the 07 Protocol Salute to the terminal."""
     global DETECTED_MODELS, HARDWARE_ID
     DETECTED_MODELS = get_installed_models()
     gpu_info = get_gpu_info()
+    cli_output = check_cli_parity()
 
     if "5090" in gpu_info:
         HARDWARE_ID = f"GTX 5090 (Verified: {gpu_info})"
@@ -109,6 +118,14 @@ def perform_07_handshake():
     print(f"[07] Hardware: {HARDWARE_ID}")
     print(f"[07] Ollama Host: {OLLAMA_HOST}")
     print(f"[07] Ollama Models Dir: {os.environ.get('OLLAMA_MODELS', 'Default')}")
+
+    # CLI Parity Alert
+    if "llama3" in cli_output and not DETECTED_MODELS:
+        print("\n" + "!"*50)
+        print("[07 WARNING] CLI detects models, but API does not!")
+        print("[07] This usually means Ollama.app.exe was started without the OLLAMA_MODELS variable.")
+        print("[07] SOLUTION: Quit Ollama from System Tray, then run 'run_bridge.bat' to restart.")
+        print("!"*50 + "\n")
 
     if os.path.exists(NEXUS_PATH):
         print("[07] Administrative Pillar: VERIFIED")

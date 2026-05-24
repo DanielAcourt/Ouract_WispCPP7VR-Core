@@ -42,7 +42,9 @@ If the 07 Handshake fails or Ollama is "Refusing Connection":
 3. **IPv4 Binding:** Ensure the bridge is bound to `127.0.0.1`. Windows often fails to resolve `localhost` in restricted environments.
 4. **Empty Model List:** If Ollama is running but no models are detected:
     - Open a CMD window and run `ollama list`.
-    - If `ollama list` shows models but the Bridge does not, verify the `OLLAMA_MODELS` environment variable in `config.json` matches your actual storage path.
+    - If `ollama list` shows models but the Bridge does not, it means the **Ollama.app.exe** process is unaware of your custom model path.
+    - **Permanent Fix:** Add a System Environment Variable named `OLLAMA_MODELS` pointing to your path.
+    - **Session Fix:** Fully exit Ollama from the Windows System Tray, then launch it via `run_bridge.bat` which injects the variable.
 5. **Nvidia-SMI Not Found:** If GPU detection fails, ensure the Nvidia Drivers are installed and `C:\Program Files\NVIDIA Corporation\NVSMI` is in your System PATH.
 
 ---

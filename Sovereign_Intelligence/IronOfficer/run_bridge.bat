@@ -72,6 +72,8 @@ tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
 if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
 tasklist /FI "IMAGENAME eq ollama app.exe" 2>NUL | find /I /N "ollama app.exe">NUL
 if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+tasklist /FI "IMAGENAME eq Ollama.app.exe" 2>NUL | find /I /N "Ollama.app.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
 
 if "%OLLAMA_RUNNING%" NEQ "1" (
     echo [07 CRITICAL] Ollama is not running.

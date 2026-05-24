@@ -13,10 +13,11 @@
         "host": "127.0.0.1",
         "port": 11434,
         "install_path": "C:\\Users\\Danie\\AppData\\Local\\Programs\\Ollama",
-        "model_path": "%USERPROFILE%\\.ollama\\models",
+        "model_path": "C:\\Users\\Danie\\.ollama\\models",
         "target_model": "llama3:70b",
+        "process_names": ["ollama.exe", "ollama app.exe", "Ollama.app.exe"],
         "env_overrides": {
-            "OLLAMA_MODELS": "%USERPROFILE%\\.ollama\\models"
+            "OLLAMA_MODELS": "C:\\Users\\Danie\\.ollama\\models"
         }
     },
     "bridge": {
