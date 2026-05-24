@@ -380,7 +380,14 @@ async def chat(request: ChatRequest):
     try:
         return await process_chat_request(current_model, ollama_messages, tools, retry_count=0)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
+        error_msg = f"Bridge Error: {str(e)}"
+        print(f"[07 ERROR] {error_msg}")
+        # Capture specific detail if it's a requests error with a response
+        if hasattr(e, 'response') and e.response is not None:
+             try:
+                 error_msg += f" | Status: {e.response.status_code} | Body: {e.response.text}"
+             except: pass
+        raise HTTPException(status_code=500, detail=error_msg)
 
 def write_status_pulse(tool_name: str, arguments: Dict[str, Any]):
     """Writes a real-time status pulse for the HMI to display during long tasks."""
@@ -410,8 +417,15 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
         iteration += 1
         print(f"[07 DEBUG] Temple Calculation Iteration: {iteration}")
 
-        response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options, "keep_alive": -1})
-        response.raise_for_status()
+        try:
+            response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options, "keep_alive": -1})
+            if response.status_code != 200:
+                print(f"[07 ERROR] Ollama Chat Failed ({response.status_code}): {response.text}")
+            response.raise_for_status()
+        except Exception as e:
+            print(f"[07 ERROR] Ollama Request Exception: {str(e)}")
+            raise
+
         result = response.json()
         ai_msg = result.get("message", {})
 
@@ -464,14 +478,34 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
 def get_installed_models() -> List[str]:
     try:
         response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
-        if response.status_code == 200: return [m['name'] for m in response.json().get('models', [])]
+        if response.status_code == 200:
+            models = [m['name'] for m in response.json().get('models', [])]
+            print(f"[07 DEBUG] Detected Ollama Models: {models}")
+            return models
+        print(f"[07 WARNING] Ollama Tags returned status {response.status_code}: {response.text}")
         return []
-    except: return []
+    except Exception as e:
+        print(f"[07 ERROR] Failed to fetch Ollama tags: {e}")
+        return []
 
 def get_best_available_model() -> str:
     models = get_installed_models()
-    if TARGET_MODEL in models: return TARGET_MODEL
-    return models[0] if models else TARGET_MODEL
+    if not models:
+        print(f"[07 WARNING] No models detected via API. Defaulting to: {TARGET_MODEL}")
+        return TARGET_MODEL
+
+    if TARGET_MODEL in models:
+        return TARGET_MODEL
+
+    # Try matching without tag
+    base_target = TARGET_MODEL.split(":")[0]
+    for m in models:
+        if m.startswith(base_target + ":"):
+            print(f"[07 INFO] Target model '{TARGET_MODEL}' not found. Using sibling: {m}")
+            return m
+
+    print(f"[07 INFO] Target model '{TARGET_MODEL}' not found. Falling back to: {models[0]}")
+    return models[0]
 
 def get_gpu_info() -> str:
     try: return subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8').strip()

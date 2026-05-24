@@ -150,5 +150,13 @@
     "outcome": "Verified that explicit question-based handshaking (using request_user_input) eliminates assumption drift and ensures high-fidelity persona alignment (Researcher/Alchemist). This is now the 'Gold Standard' for mission initialization.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2026-02-20",
+    "event": "Ollama Bridge 404 Diagnostic (AD-008)",
+    "description": "The local Iron Officer encountered a 404 error on the /api/chat endpoint during Level 0 stabilization. This indicates a mismatch between the bridge's expectations and the actual Ollama API surface or model availability.",
+    "outcome": "Implemented detailed error logging in bridge.py to capture response bodies and status codes. Enhanced get_best_available_model with sibling-model discovery and clearer warnings for missing model tags.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]
