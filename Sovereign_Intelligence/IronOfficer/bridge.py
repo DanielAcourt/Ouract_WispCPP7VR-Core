@@ -23,6 +23,7 @@ VERSION = "0.36.3.1-Knight"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+REPO_NAME = os.path.basename(REPO_ROOT)
 OLLAMA_HOST = "http://127.0.0.1:11434"
 TARGET_MODEL = "llama3.1:latest"
 BRIDGE_PORT = 8000
@@ -80,13 +81,21 @@ class ChatRequest(BaseModel):
 
 def to_forward_slash(path: str) -> str:
     """Normalizes paths to use forward slashes."""
-    return path.replace("\\", "/")
+    return str(path).replace("\\", "/")
 
 def resolve_secure_path(raw_path: str) -> str:
-    """Forces relative pathing within REPO_ROOT and handles leading slashes."""
-    clean_path = str(raw_path).lstrip("/").lstrip("\\")
+    """Hardened path resolution to strip absolute bloat and focus on REPO_ROOT."""
+    path_str = to_forward_slash(str(raw_path))
+
+    # If the AI sends a full Windows path, find the repo name and strip the prefix
+    if REPO_NAME in path_str:
+        path_str = path_str.split(REPO_NAME, 1)[-1]
+
+    # Strip leading drive letters and slashes
+    clean_path = path_str.lstrip("/").lstrip("\\")
     if ":" in clean_path:
         clean_path = clean_path.split(":", 1)[-1].lstrip("/").lstrip("\\")
+
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
@@ -104,7 +113,7 @@ def tool_list_files(directory: str = "."):
     """Lists files in a directory if authorized."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized. Request permission from {USER_NAME}."}
+        return {"error": f"Security Breach: '{directory}' is unauthorized."}
     try:
         files = os.listdir(target_dir)
         return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
@@ -115,7 +124,7 @@ def tool_read_file(filepath: str):
     """Reads a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "read"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized. Use map_directory to find authorized folders."}
+        return {"error": f"Security Breach: '{filepath}' is unauthorized."}
     try:
         with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
             return {"content": f.read()}
@@ -126,7 +135,7 @@ def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside WRITE Fiefdom. Request expansion from {USER_NAME}."}
+        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones. Request expansion."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
@@ -139,16 +148,16 @@ def tool_delete_file(filepath: str):
     """Deletes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside WRITE Fiefdom."}
+        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
     try:
         if os.path.isfile(target_path):
             os.remove(target_path)
-            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted"}
+            return {"status": "success", "verified": not os.path.exists(target_path)}
         elif os.path.isdir(target_path):
             shutil.rmtree(target_path)
-            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted_directory"}
+            return {"status": "success", "verified": not os.path.exists(target_path)}
         else:
-            return {"error": f"Target not found: {filepath}"}
+            return {"error": "Target not found."}
     except Exception as e:
         return {"error": str(e)}
 
@@ -161,7 +170,7 @@ def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
     try:
         regex = re.compile(pattern, re.IGNORECASE)
         for dirpath, _, filenames in os.walk(target_dir):
-            if ".git" in dirpath: continue
+            if ".git" in dirpath or "__pycache__" in dirpath: continue
             for f in filenames:
                 if extension != "*" and not f.endswith(extension): continue
                 full_path = os.path.join(dirpath, f)
@@ -179,7 +188,7 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
     """The Librarian: Provides a recursive map of the directory structure."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
+        return {"error": f"Security Breach: '{directory}' is unauthorized."}
     try:
         depth_val = int(depth)
     except:
@@ -203,10 +212,8 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
 
 def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
     """The Engineer: Reports GPU temperature, usage, and system state."""
-    # Simulated monitoring logic for interval/duration
     if interval > 0 or duration > 0:
-        time.sleep(min(1, duration/10)) # Safety cap on simulation delay
-
+        time.sleep(min(1, duration/10))
     try:
         output = subprocess.check_output(["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"], encoding='utf-8')
         temp, util, mem_used, mem_total = output.strip().split(", ")
@@ -219,7 +226,6 @@ def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
 def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """Dispatches tool calls to local functions."""
     tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
     if name in tools: return tools[name](**arguments)
     return {"error": f"Tool '{name}' not found."}
@@ -266,25 +272,24 @@ async def chat(request: ChatRequest):
 
     CORE DIRECTIVES:
     - PHYSICAL TRUTH: Use tools BEFORE making claims.
+    - NO HALLUCINATION: Never simulate truth. If a tool fails, report the verbatim error.
     - SYMMETRICAL GUARD: If you report "Technical Status", "T=", or "Directory Contents", you MUST have executed the relevant tool in that specific turn.
-    - NO HALLUCINATION: Never simulate or roleplay truth. If a tool fails, report the verbatim error.
-    - ACCOUNTABILITY: After writing/deleting, use a tool to verify the deed.
-    - PATHS: Always use FORWARD SLASHES (/). Root: {REPO_ROOT}.
-    - STRUCTURE: AI_Nexus/ is at the root. AI_Nexus/Protocols/ is where SOPs live.
+    - PATHS: ALWAYS use relative paths from the repository root (e.g., 'AI_Nexus/Protocols/AGENTS.md'). NEVER use absolute Windows paths (C:/...).
+    - REPO ROOT: Your reality is bounded by {REPO_ROOT}.
 
     07 PROTOCOL HANDSHAKE:
     When triggered with "07", you must execute 'get_system_telemetry' and 'map_directory(directory="AI_Nexus")'.
-    Respond with a PSTA Salute.
+    Then deliver a PSTA Salute as the Golden Knight.
     """
 
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write/create.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
-        {"type": "function", "function": {"name": "map_directory", "description": "Map structure.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status. Parameters: interval, duration (simulated).", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
+        {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
     ]
 
     ollama_messages = [{"role": "system", "content": system_prompt}]
@@ -317,16 +322,20 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
         response.raise_for_status()
         result = response.json()
 
-    # --- Symmetrical Guard (Zero Hallucination) ---
+    # --- Symmetrical Guard (v2.1) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
+
+    # If the response contains indicators of success/status but no tools were successfully counted
     if ("T=" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
          violations.append("Reported Technical Status without Engineer tool.")
     if ("INTACT" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
-         violations.append("Described directory state without Librarian/Scout tools.")
+         # Special check: don't trigger if the AI is just reporting a tool error
+         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content:
+            violations.append("Described directory state without Librarian/Scout tools.")
 
     if violations and retry_count < 1:
-        reprimand = f"[07 SECURITY VIOLATION] The Bridge intercepted a hallucination: {'; '.join(violations)}. You MUST execute the required tools before making these claims. Retry with Physical Truth."
+        reprimand = f"[07 SECURITY VIOLATION] Intercepted hallucination: {'; '.join(violations)}. Execute the required tools and report ONLY Physical Truth. NEVER use absolute paths."
         messages.append({"role": "system", "content": reprimand})
         return await process_chat_request(model, messages, tools, retry_count + 1)
 
@@ -357,5 +366,6 @@ if __name__ == "__main__":
     load_config()
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
+    DETECTED_MODELS = get_installed_models()
     print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n" + "="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
