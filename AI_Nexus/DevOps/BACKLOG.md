@@ -34,8 +34,8 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin | Ensure the framework meets international safety and heritage standards. | Whitepaper/Audit document proving the Sovereign Framework's compliance. |
 | AD-001 | Iron Officer: Bridge Foundation | 13 | Done | Admin/DevOps | Establish a high-performance local AI node to handle long-term tasks. | Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Hardware Manifest. |
 | AD-002 | Iron Officer: HMI (User Medium) | 5 | Done | Admin/DevOps | Provide a way for the Lead to interact with the local AI locally. | Terminal-based Chat Vessel (vessel.py) with /report functionality and 07 Persona. |
-| AD-004 | Iron Officer: Sovereign Authority | 5 | In Progress | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Local file system authority within Safe-Zones (Read/Write) and Tool Execution. |
-| AD-003 | Iron Officer: Session & Local Memory | 8 | Todo | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
+| AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
+| AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
 
 ---
