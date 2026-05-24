@@ -1,5 +1,5 @@
 
-// Copyright (c) 2013-2025 Daniel Acourt. All Rights Reserved. Confidential & Proprietary.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "SaveSystem/SovereignSaveManager.h"
 #include "SaveSystem/SovereignSaveGame.h"
@@ -10,6 +10,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h" // Requires "JsonUtilities" in Build.cs
+#include "CoreModules/WispsGameModeBase.h"
+#include "DataTables/SovereignSpeciesData.h"
+#include "Entities/SovereignBaseEntity.h"
 
 void USaveManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -91,6 +94,12 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 Data.WorldTransform = TargetActor->GetActorTransform();
                 Data.ClassPath = TargetActor->GetClass()->GetPathName();
 
+                // Capture Species Identity if available [v36.4.1]
+                if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(TargetActor))
+                {
+                    Data.SpeciesTag = MyEntity->IdentitySignature;
+                }
+
                 // 4. THE SOVEREIGN BRIDGE : The Master Scrape
                 Data.UnknownMetaTags = SaveComp->CaptureFullEntityState();
 
@@ -147,13 +156,26 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
         // Spawn if missing
         if (!TargetActor)
         {
-            if (Data.ClassPath.IsEmpty())
+            UClass* ActorClass = nullptr;
+
+            // Tier 1: Tag-to-Asset Bridge (The Alchemist's Resolution) [v36.4.1]
+            if (Data.SpeciesTag.IsValid())
             {
-                UE_LOG(LogTemp, Warning, TEXT("SaveSystem: Entity %s has empty ClassPath. Skipping spawn."), *Data.MyGUID.ToString());
-                continue;
+                if (AWispsGameModeBase* GameMode = Cast<AWispsGameModeBase>(World->GetAuthGameMode()))
+                {
+                    if (USovereignSpeciesData* SpeciesData = GameMode->GetSpeciesDataByTag(Data.SpeciesTag))
+                    {
+                        ActorClass = SpeciesData->ActorClass.LoadSynchronous();
+                    }
+                }
             }
 
-            UClass* ActorClass = LoadObject<UClass>(nullptr, *Data.ClassPath);
+            // Tier 2: Legacy ClassPath Fallback
+            if (!ActorClass && !Data.ClassPath.IsEmpty())
+            {
+                ActorClass = LoadObject<UClass>(nullptr, *Data.ClassPath);
+            }
+
             if (ActorClass)
             {
                 FActorSpawnParameters SpawnParams;
@@ -238,6 +260,12 @@ USovereignSaveGame* USaveManager::ConvertJsonToSuitcase(const FString& JsonConte
                     FGuid::Parse(Obj->GetStringField(TEXT("ParentID")), Data.ParentID);
                 }
 
+                // Tiered Identity Lookup [v36.4.1]
+                if (Obj->HasField(TEXT("SpeciesTag")))
+                {
+                    Data.SpeciesTag = FGameplayTag::RequestGameplayTag(FName(*Obj->GetStringField(TEXT("SpeciesTag"))));
+                }
+
                 Data.ClassPath = Obj->GetStringField(TEXT("Class"));
                 Data.WorldTransform.InitFromString(Obj->GetStringField(TEXT("Transform")));
 
@@ -276,7 +304,13 @@ FString USaveManager::ConvertSuitcaseToJson(USovereignSaveGame* Suitcase)
         // 2. Lineage (The Genetic Link)
         Writer->WriteValue(TEXT("ParentID"), Data.ParentID.ToString());
 
-        // 3. Physicals
+        // 3. Identity (The Soul)
+        if (Data.SpeciesTag.IsValid())
+        {
+            Writer->WriteValue(TEXT("SpeciesTag"), Data.SpeciesTag.ToString());
+        }
+
+        // 4. Physicals
         Writer->WriteValue(TEXT("Class"), Data.ClassPath);
         Writer->WriteValue(TEXT("Transform"), Data.WorldTransform.ToString());
 
