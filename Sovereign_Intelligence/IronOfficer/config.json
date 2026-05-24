@@ -14,8 +14,8 @@
         "port": 11434,
         "install_path": "C:\\Users\\Danie\\AppData\\Local\\Programs\\Ollama",
         "model_path": "C:\\Users\\Danie\\.ollama\\models",
-        "target_model": "llama3:70b",
-        "fallback_models": ["llama3.1:latest", "llama3:8b", "qwen3-coder:30b"],
+        "target_model": "llama3.1:latest",
+        "fallback_models": ["llama3:70b", "llama3:8b", "qwen3-coder:30b"],
         "process_names": ["ollama.exe", "ollama app.exe", "Ollama.app.exe"],
         "env_overrides": {
             "OLLAMA_MODELS": "C:\\Users\\Danie\\.ollama\\models"
