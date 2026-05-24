@@ -70,5 +70,13 @@
     "outcome": "Implemented the '/level <X>' command structure. This allows targeted ingestion of specific hierarchical tiers, ensuring the AI maintains high-fidelity context for focused missions.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Vessel Initialization Bug (NameError: REPORT_DIR)",
+    "description": "The HMI crashed on startup because PULSE_PATH was defined before REPORT_DIR.",
+    "outcome": "Corrected the initialization order in vessel.py. Learning: Configuration constants that depend on directory paths must be declared after those paths are resolved.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

@@ -17,13 +17,14 @@ from typing import List, Dict
 # --- Configuration ---
 VESSEL_VERSION = "0.37.1-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
-PULSE_PATH = os.path.join(REPORT_DIR, "status_pulse.json")
 
 # Handle PyInstaller paths
 if getattr(sys, 'frozen', False):
     REPORT_DIR = os.path.dirname(sys.executable)
 else:
     REPORT_DIR = os.path.dirname(__file__)
+
+PULSE_PATH = os.path.join(REPORT_DIR, "status_pulse.json")
 
 class ChatVessel:
     def __init__(self):
