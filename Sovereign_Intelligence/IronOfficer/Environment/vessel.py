@@ -13,7 +13,11 @@ from typing import List, Dict
 
 # --- Configuration ---
 BRIDGE_URL = "http://127.0.0.1:8000"
-REPORT_DIR = os.path.dirname(__file__)
+# Handle PyInstaller paths
+if getattr(sys, 'frozen', False):
+    REPORT_DIR = os.path.dirname(sys.executable)
+else:
+    REPORT_DIR = os.path.dirname(__file__)
 
 class ChatVessel:
     def __init__(self):
@@ -21,6 +25,7 @@ class ChatVessel:
         self.history: List[Dict[str, str]] = []
         self.user_name = "User"
         self.identity = "Iron Officer"
+        self.show_tools = True # Tool Transparency
         self.fetch_bridge_info()
 
     def fetch_bridge_info(self):
@@ -45,7 +50,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL {self.session_id}")
         print(f" User: {self.user_name} | Theme: Dark")
         print("="*60)
-        print(" Commands: /report (Save Mission Report), /status (Health), /exit")
+        print(" Commands: /report (Save), /status (Health), /tools (Toggle Logs), /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -65,7 +70,7 @@ class ChatVessel:
         try:
             with open(filepath, "w") as f:
                 json.dump(report, f, indent=4)
-            print(f"\n[07] Mission Report saved to: {filename}")
+            print(f"\n[07] Mission Report saved to: {to_forward_slash(filepath)}")
         except Exception as e:
             print(f"\n[07 ERROR] Failed to save report: {e}")
 
@@ -77,7 +82,8 @@ class ChatVessel:
             print("\n" + "-"*30)
             print(f"BRIDGE STATUS: {data.get('status')}")
             print(f"HARDWARE: {data.get('hardware')}")
-            print(f"ACTIVE MODELS: {', '.join(data.get('models', []))}")
+            print(f"READ ZONES: {data.get('read_zones')}")
+            print(f"WRITE ZONES: {data.get('write_zones')}")
             print("-"*30 + "\n")
         except Exception as e:
             print(f"\n[07 ERROR] Failed to fetch status: {e}")
@@ -104,6 +110,11 @@ class ChatVessel:
                     self.show_status()
                     continue
 
+                if user_input.lower() == "/tools":
+                    self.show_tools = not self.show_tools
+                    print(f"[07] Tool Transparency: {'ON' if self.show_tools else 'OFF'}")
+                    continue
+
                 # Add to history
                 self.history.append({"role": "user", "content": user_input})
 
@@ -111,12 +122,27 @@ class ChatVessel:
                 response = requests.post(
                     f"{BRIDGE_URL}/v1/chat",
                     json={"messages": self.history},
-                    timeout=60
+                    timeout=120
                 )
 
                 if response.status_code == 200:
-                    ai_msg = response.json().get("message", {})
+                    data = response.json()
+                    tool_chain = data.get("tool_chain", [])
+                    result = data.get("result", {})
+
+                    # Handle Tool Transparency (Logs)
+                    if self.show_tools and tool_chain:
+                        print("\n[KNIGHT TOOL LOG]")
+                        for tool in tool_chain:
+                            name = tool.get("function", {}).get("name", "unknown")
+                            args = tool.get("function", {}).get("arguments", "{}")
+                            print(f" -> EXECUTING: {name}({args})")
+                        print("-" * 20)
+
+                    ai_msg = result.get("message", {})
                     content = ai_msg.get("content", "...")
+
+                    # Log the response content
                     print(f"\n{self.identity}> {content}\n")
                     self.history.append({"role": "assistant", "content": content})
                 else:
@@ -127,6 +153,9 @@ class ChatVessel:
                 break
             except Exception as e:
                 print(f"\n[07 ERROR] Communication failure: {e}\n")
+
+def to_forward_slash(path: str) -> str:
+    return path.replace("\\", "/")
 
 if __name__ == "__main__":
     vessel = ChatVessel()
