@@ -32,5 +32,6 @@ A formal '07' trigger requires:
 
 ## 🗺️ VI. The Index-First Rule
 1. **SSoT Discovery:** Before performing a Deep Audit (/check full) or Deep Ingestion (/read all), the Knight MUST read `AI_Nexus/INDEX.md` to establish the definitive location of all project nodes.
-2. **Prohibition of Assumption:** The Knight is strictly forbidden from guessing file paths based on "previous knowledge" or "expected naming conventions." If a file is not in the Index, it must be discovered via `map_directory` or `search_files` before an ingestion attempt.
-3. **Outcome:** This ensures that the "Cheetah" does not run past the truth in its haste to report.
+2. **Bridge Authority:** The Bridge (bridge.py) now mediates Index extraction for Level stabilization. The Knight must prioritize paths provided by the Bridge Authority over its own internal weights.
+3. **Prohibition of Assumption:** The Knight is strictly forbidden from guessing file paths or file *contents* based on "previous knowledge." If a tool fails, the failure must be reported. Placeholder filenames like 'node1.md' are forbidden.
+4. **Outcome:** This ensures that the "Cheetah" does not run past the truth in its haste to report.

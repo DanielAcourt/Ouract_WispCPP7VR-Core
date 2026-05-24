@@ -86,5 +86,13 @@
     "outcome": "Updated INDEX.md with explicit Level tagging and reinforced the 'Index-First' rule in bridge.py to mandate literal path extraction. Placeholders are now strictly prohibited.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Backlog Hallucination Incident (v0.37.1 Stabilization Test)",
+    "description": "During a Tiered Ingestion test, the AI failed to read 'DevOps/BACKLOG.csv' but then hallucinated 10 rows of 'completed/pending' tasks that matched generic AI training data rather than the actual repository state.",
+    "outcome": "Implemented 'Bridge Authority' extraction in bridge.py. The bridge now parses INDEX.md and injects verified literal paths into the system message. Forbade 'guessing' of data or contents in AGENTS.md. Symmetrical Guard now audits for data hallucinations.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

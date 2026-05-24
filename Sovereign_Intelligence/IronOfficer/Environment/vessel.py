@@ -46,7 +46,9 @@ class ChatVessel:
                         data = json.load(f)
                         if data["timestamp"] > last_pulse:
                             last_pulse = data["timestamp"]
-                            print(f"[07] Knight Task: {data['tool']} -> {data['target']}          ", end="\r")
+                            # Fixed width clearing to prevent leftover text
+                            status = f"[07] Knight Task: {data['tool']} -> {data['target']}"
+                            print(f"{status:<80}", end="\r")
                 except: pass
             time.sleep(0.5)
 

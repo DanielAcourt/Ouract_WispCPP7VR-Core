@@ -12,6 +12,7 @@ import argparse
 import re
 import shutil
 import time
+import glob
 from typing import Dict, Any, List, Optional, Set
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -251,6 +252,26 @@ async def evaluate_safety(request: VSSRequest):
         return {"analysis": json.loads(result['response']), "model_used": current_model}
     except Exception as e: raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
+def extract_index_levels() -> Dict[int, List[str]]:
+    """Bridge-level extraction of the INDEX.md to provide Physical Truth for tiered ingestion."""
+    index_path = os.path.join(REPO_ROOT, "AI_Nexus", "INDEX.md")
+    levels = {0: [], 1: [], 2: []}
+    if not os.path.exists(index_path): return levels
+
+    current_level = -1
+    try:
+        with open(index_path, "r", encoding="utf-8") as f:
+            for line in f:
+                level_match = re.search(r"Level (\d)", line)
+                if level_match:
+                    current_level = int(level_match.group(1))
+
+                path_match = re.findall(r"`([^`]+\.[a-z]{2,4})`", line)
+                if path_match and current_level in levels:
+                    levels[current_level].extend(path_match)
+    except: pass
+    return levels
+
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
@@ -311,7 +332,19 @@ async def chat(request: ChatRequest):
         {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
     ]
 
-    ollama_messages = [{"role": "system", "content": system_prompt}]
+    # Targeted context injection for Level stabilization
+    last_msg = request.messages[-1].content.lower() if request.messages else ""
+    level_match = re.search(r"stabilize at level (\d)", last_msg)
+
+    extra_context = ""
+    if level_match:
+        lvl = int(level_match.group(1))
+        index_data = extract_index_levels()
+        files = index_data.get(lvl, [])
+        if files:
+            extra_context = f"\n[BRIDGE AUTHORITY] The literal paths for Level {lvl} from INDEX.md are: {', '.join(files)}. You MUST systematically use 'read_file' on each of these paths now."
+
+    ollama_messages = [{"role": "system", "content": system_prompt + extra_context}]
     for msg in request.messages: ollama_messages.append(msg.model_dump(exclude_none=True))
 
     try:
