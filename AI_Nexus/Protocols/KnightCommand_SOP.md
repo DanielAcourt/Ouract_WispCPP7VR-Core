@@ -30,6 +30,11 @@ A formal '07' trigger requires:
 2. **Memory Hardening:** If a "Learning Event" is identified, it must be recorded in `AI_Nexus/Identity/learning_events.json` with a description of the event and the confirmed outcome.
 3. **Ambiguity Check:** The Knight must state its current ambiguity level (High/Medium/Low) regarding the next phase of work.
 
+## 🧪 VII. Hierarchical Prefix Caching (AD-006)
+1. **The Stacking Rule:** Systems prompts are tiered (Level 0, 1, 2).
+2. **Immutable Head:** The Level 0 (Base Identity) block is immutable. Any modification to the head of the prompt string breaks the prefix cache and is prohibited.
+3. **Targeted Stabilization:** Use targeted /level commands to load only the necessary context tiers, reducing VRAM footprint and prefill latency.
+
 ## 🗺️ VI. The Index-First Rule
 1. **SSoT Discovery:** Before performing a Deep Audit (/check full) or Deep Ingestion (/read all), the Knight MUST read `AI_Nexus/INDEX.md` to establish the definitive location of all project nodes.
 2. **Bridge Authority:** The Bridge (bridge.py) now mediates Index extraction for Level stabilization. The Knight must prioritize paths provided by the Bridge Authority over its own internal weights.

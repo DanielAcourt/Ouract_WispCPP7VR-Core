@@ -37,6 +37,7 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
 | AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
+| AD-006 | Hierarchical Prefix Caching | 8 | Todo | DevOps | Optimize inference speeds and prefill times during repetitive deep sweeps. | Strict tiered prompt stacking (Level 0->1->2) exploiting Automatic Prefix Caching (APC). |
 
 ---
 

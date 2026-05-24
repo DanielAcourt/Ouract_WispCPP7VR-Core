@@ -21,10 +21,11 @@ All agents must prioritize analytical depth over raw execution speed:
  5.  **Non-Autonomous Persistence:** Agents are forbidden from creating status files, logs, or reports on disk (e.g., in AI_Nexus/) unless explicitly commanded. All reporting must be via chat response.
  6.  **Deep Ingestion (Alchemist Intake):** When context parity is lost, the agent should initiate a "Deep Ingestion" (using `/read all` locally). This requires reading the full content of the Nexus files to synchronize with the "Soul" of the project rather than just the directory headers.
  5.  **Tiered Stabilization:** To maintain focus without context overflow, agents can stabilize at specific SSoT Levels (using `/level <X>` locally).
-     - **Level 0 (Chronological):** Stabilize Timeline, Updates, and Roadmap.
-     - **Level 1 (Protocol):** Stabilize AGENTS, SOPs, and Contribution rules.
-     - **Level 2 (Identity):** Stabilize Logic, Identity schemas, and Learning Logs.
+     - **Level 0 (Base/Chronological):** Core persona rules and Timeline/Roadmap.
+     - **Level 1 (Repository Schema):** Protocol Parity, AGENTS, and INDEX.md traversal.
+     - **Level 2 (Runtime/Identity):** identity.json logic, HMI monitoring, and Learning Logs.
      This ensures absolute parity for a specific hierarchical tier.
+ 6.  **Deterministic Prompt Stacking (AD-006):** To exploit local hardware prefix caching (APC), agents utilize a tiered prompt-stacking system. Levels are stacked strictly (0 -> 1 -> 2). Lower tiers must never be modified to ensure 0ms context prefill times on the 5090.
 
 ### Roles & Responsibilities
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.

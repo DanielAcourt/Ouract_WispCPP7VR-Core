@@ -268,5 +268,14 @@
     "Node": "Admin/DevOps",
     "Why": "Mirror the Iron Officer persona inside the Unreal simulation.",
     "What": "High-fidelity 3D agent manifestation responding to live PSTA telemetry."
+  },
+  {
+    "ID": "AD-006",
+    "Task": "Hierarchical Prefix Caching",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Optimize inference speeds and reduce LLM context prefill times to 0ms during repetitive deep sweeps.",
+    "What": "Strict tiered prompt stacking system (Level 0->1->2) exploiting local engine Automatic Prefix Caching (APC)."
   }
 ]

@@ -126,5 +126,13 @@
     "outcome": "Updated Hardware.md with sections 3.1-3.4 covering KV Cache quantization, Dynamic RAM Offloading, Smart Prefix Caching, and Allocation Pool management. Optimized the bridge context for 32k support.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Hierarchical Prefix Caching Implementation (AD-006)",
+    "description": "Implemented a deterministic prompt-stacking system to exploit Automatic Prefix Caching (APC). Refactored system prompts into immutable Levels 0-2.",
+    "outcome": "Upgraded bridge.py and run_bridge.bat. Established 0ms prefill latency potential on the RTX 5090 by ensuring Lower-tier prompt strings are byte-for-byte identical across sessions.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

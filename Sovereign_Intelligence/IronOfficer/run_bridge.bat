@@ -86,6 +86,10 @@ if "%OLLAMA_RUNNING%" NEQ "1" (
 :: (Defaults to standard locations if not set in config)
 set "OLLAMA_MODELS=%USERPROFILE%\.ollama\models"
 
+:: AD-006: Optimization for Hierarchical Prefix Caching
+:: Force single-session stability to prevent cache thrashing
+set "OLLAMA_NUM_PARALLEL=1"
+
 :: 6. Start the Bridge with the local Nexus path
 echo [07] Starting FastAPI Service...
 %PY_CMD% bridge.py --nexus "%NEXUS_PATH%"
