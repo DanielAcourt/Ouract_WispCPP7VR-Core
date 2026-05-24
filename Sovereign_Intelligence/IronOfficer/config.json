@@ -1,0 +1,39 @@
+{
+    "identity": "Iron Officer",
+    "version": "0.36.3.1MABackup",
+    "user_preference": {
+        "name": "Dan",
+        "theme": "dark"
+    },
+    "hardware": {
+        "host": "GTX 5090",
+        "os": "Windows 10.0.26200.8457",
+        "gpu": {
+            "expected_id": "5090",
+            "verification_tool": "nvidia-smi"
+        }
+    },
+    "ollama": {
+        "host": "127.0.0.1",
+        "port": 11434,
+        "install_path": "C:\\Users\\Danie\\AppData\\Local\\Programs\\Ollama",
+        "model_path": "C:\\Users\\Danie\\.ollama\\models",
+        "target_model": "llama3.1:latest",
+        "fallback_models": ["llama3:70b", "llama3:8b", "qwen3-coder:30b"],
+        "process_names": ["ollama.exe", "ollama app.exe", "Ollama.app.exe"],
+        "env_overrides": {
+            "OLLAMA_MODELS": "C:\\Users\\Danie\\.ollama\\models"
+        }
+    },
+    "bridge": {
+        "host": "0.0.0.0",
+        "port": 8000,
+        "read_zones": [
+            "."
+        ],
+        "write_zones": [
+            "Sovereign_Intelligence/IronOfficer/Environment",
+            "AI_Nexus"
+        ]
+    }
+}

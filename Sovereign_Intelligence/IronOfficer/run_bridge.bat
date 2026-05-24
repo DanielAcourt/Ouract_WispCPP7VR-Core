@@ -51,7 +51,42 @@ if %errorlevel% NEQ 0 (
     %PY_CMD% -m pip install -r requirements.txt
 )
 
-:: 5. Start the Bridge with the local Nexus path
+:: 5. Pre-flight Checks (Port 8000 & Ollama)
+netstat -ano | findstr :8000 | findstr LISTENING >nul
+if %errorlevel% EQU 0 (
+    echo [07 WARNING] Port 8000 is already in use.
+    for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do set "PID=%%a"
+    echo [07] Blocker PID: %PID%
+    set /p choice="[07] Would you like to kill the blocking process? (y/n): "
+    if /i "%choice%"=="y" (
+        taskkill /F /PID %PID%
+        echo [07] Process terminated. Continuing...
+    ) else (
+        echo [07] Continuing with caution...
+    )
+)
+
+:: Check for Ollama process (try both common names)
+set "OLLAMA_RUNNING=0"
+tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+tasklist /FI "IMAGENAME eq ollama app.exe" 2>NUL | find /I /N "ollama app.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+tasklist /FI "IMAGENAME eq Ollama.app.exe" 2>NUL | find /I /N "Ollama.app.exe">NUL
+if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
+
+if "%OLLAMA_RUNNING%" NEQ "1" (
+    echo [07 CRITICAL] Ollama is not running.
+    echo [07] Please start Ollama from your System Tray or Start Menu.
+    :: We pause here because the bridge will definitely fail without Ollama
+    pause
+)
+
+:: Set Ollama Environment Overrides if needed
+:: (Defaults to standard locations if not set in config)
+set "OLLAMA_MODELS=%USERPROFILE%\.ollama\models"
+
+:: 6. Start the Bridge with the local Nexus path
 echo [07] Starting FastAPI Service...
 %PY_CMD% bridge.py --nexus "%NEXUS_PATH%"
 

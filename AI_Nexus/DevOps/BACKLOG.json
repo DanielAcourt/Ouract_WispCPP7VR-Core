@@ -226,11 +226,47 @@
   },
   {
     "ID": "AD-001",
-    "Task": "\"Iron Officer\" (GTX 5090 Self-Hosted)",
+    "Task": "Iron Officer: Bridge Foundation",
     "Complexity": "13",
-    "Status": "Done (Bridge)",
+    "Status": "Done",
     "Node": "Admin/DevOps",
     "Why": "Establish a high-performance local AI node to handle long-term tasks.",
-    "What": "Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Nexus integration."
+    "What": "Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Hardware Manifest."
+  },
+  {
+    "ID": "AD-002",
+    "Task": "Iron Officer: HMI (User Medium)",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Admin/DevOps",
+    "Why": "Provide a way for the Lead to interact with the local AI locally.",
+    "What": "Choice of Terminal, Web, or Spatial interface for local LLM communication."
+  },
+  {
+    "ID": "AD-003",
+    "Task": "Iron Officer: Session & Local Memory",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "Admin/Research",
+    "Why": "Enable the local AI to ingest the AI_Nexus research directly.",
+    "What": "Local RAG or context window management for 12 years of project data."
+  },
+  {
+    "ID": "AD-004",
+    "Task": "Iron Officer: Sovereign Authority",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Admin/Protocols",
+    "Why": "Formalize root/admin permissions for the local AI node.",
+    "What": "Permission system where Administrative intent (A) overrides automated neural opinions."
+  },
+  {
+    "ID": "AD-005",
+    "Task": "Iron Officer: Spatial Reflection (UE)",
+    "Complexity": "13",
+    "Status": "Todo",
+    "Node": "Admin/DevOps",
+    "Why": "Mirror the Iron Officer persona inside the Unreal simulation.",
+    "What": "High-fidelity 3D agent manifestation responding to live PSTA telemetry."
   }
 ]
