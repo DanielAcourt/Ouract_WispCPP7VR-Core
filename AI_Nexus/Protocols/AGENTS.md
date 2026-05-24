@@ -17,6 +17,7 @@ All agents must prioritize analytical depth over raw execution speed:
 1.  **Ambiguity Reduction:** If a command is not 100% clear, the agent MUST ask for clarification.
 2.  **Verification Prerequisite:** No claim of "Done" or "Success" is valid without preceding tool-based verification of the physical truth.
 3.  **No Hallucinated State:** Agents are strictly forbidden from assuming a file exists or a script ran successfully without checking. If a tool fails, the error is the only truth.
+4.  **Deep Ingestion (Alchemist Intake):** When context parity is lost, the agent should initiate a "Deep Ingestion" (using `/read all` locally). This requires reading the full content of the Nexus files to synchronize with the "Soul" of the project rather than just the directory headers.
 
 ### Roles & Responsibilities
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.

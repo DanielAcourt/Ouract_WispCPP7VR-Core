@@ -275,6 +275,13 @@ async def chat(request: ChatRequest):
     3.  Audit the 'Memories' and 'Learning Events' to ensure recent lessons are applied.
     4.  Deliver a comprehensive report that identifies anomalies or technical drift.
 
+    [DEEP INGESTION MODE (/read all)]:
+    When a 'Deep Ingestion' or 'Alchemist Intake' is requested:
+    1.  Systematically use 'read_file' for every critical file in the AI_Nexus/ hierarchy.
+    2.  Do NOT summarize until you have ingested the ACTUAL content of the files.
+    3.  Establish an internal state of absolute synchronization with the 12-year project research (The Soul).
+    4.  Report the completion of the intake with a focus on how the "Soul" of the project is currently manifesting in the "Vessel" (codebase).
+
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
     P: [Your current psychological status/confidence]
     S: [Social/Connection sync status]

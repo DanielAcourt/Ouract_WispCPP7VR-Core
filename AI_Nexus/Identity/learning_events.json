@@ -30,5 +30,13 @@
     "outcome": "Upgraded bridge.py and vessel.py. The HMI now supports a 'Thinking State' and deep-dive audits, ensuring technical drift is detected and lessons are correctly inherited.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Deep Ingestion Protocol (Alchemist Intake) Implementation",
+    "description": "Implemented the '/read all' command for the Iron Officer. This ensures context parity by mandating the agent to read the full contents of Nexus files, rather than just mapping directories.",
+    "outcome": "Expanded HMI with '/read all', updated bridge system prompt for Deep Ingestion, and codified the protocol in AGENTS.md. Ensures 'Soul/Vessel' synchronization.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]
