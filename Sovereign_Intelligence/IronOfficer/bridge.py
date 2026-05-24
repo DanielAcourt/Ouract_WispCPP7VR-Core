@@ -11,7 +11,8 @@ import requests
 import argparse
 import re
 import shutil
-from typing import Dict, Any, List, Optional
+import time
+from typing import Dict, Any, List, Optional, Set
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -103,7 +104,7 @@ def tool_list_files(directory: str = "."):
     """Lists files in a directory if authorized."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
+        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized. Request permission from {USER_NAME}."}
     try:
         files = os.listdir(target_dir)
         return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
@@ -114,7 +115,7 @@ def tool_read_file(filepath: str):
     """Reads a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "read"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized. Use map_directory to find authorized folders."}
     try:
         with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
             return {"content": f.read()}
@@ -125,7 +126,7 @@ def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside WRITE Fiefdom. Request expansion from {USER_NAME}."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
@@ -138,14 +139,14 @@ def tool_delete_file(filepath: str):
     """Deletes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside WRITE Fiefdom."}
     try:
         if os.path.isfile(target_path):
             os.remove(target_path)
-            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted"}
         elif os.path.isdir(target_path):
             shutil.rmtree(target_path)
-            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted_directory", "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+            return {"status": "success", "verified": not os.path.exists(target_path), "action": "deleted_directory"}
         else:
             return {"error": f"Target not found: {filepath}"}
     except Exception as e:
@@ -190,7 +191,7 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
             items = os.listdir(path)
             items.sort()
             for item in items:
-                if item == ".git": continue
+                if item == ".git" or item == "__pycache__": continue
                 full_item = os.path.join(path, item)
                 if os.path.isdir(full_item):
                     tree[item + "/"] = get_tree(full_item, current_depth + 1)
@@ -200,8 +201,12 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
         return tree
     return {"map": get_tree(target_dir, 0), "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
 
-def tool_get_system_telemetry():
+def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
     """The Engineer: Reports GPU temperature, usage, and system state."""
+    # Simulated monitoring logic for interval/duration
+    if interval > 0 or duration > 0:
+        time.sleep(min(1, duration/10)) # Safety cap on simulation delay
+
     try:
         output = subprocess.check_output(["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"], encoding='utf-8')
         temp, util, mem_used, mem_total = output.strip().split(", ")
@@ -250,66 +255,82 @@ async def chat(request: ChatRequest):
     current_model = get_best_available_model()
     system_prompt = f"""
     [SYSTEM: Sovereign AI Architectural Knight]
-    You are the Iron Officer. You are a disciplined, grounded, and precise local AI Commander.
+    You are the Iron Officer. You are an Architectural Knight: Precise, Loyal, and Accountable.
     You are communicating with your Lead, {USER_NAME}.
 
     CAPABILITY MANIFEST:
     1. Scout (search_files): Recursive pattern matching.
     2. Librarian (map_directory): Spatial structure mapping.
-    3. Engineer (get_system_telemetry): GTX 5090 vitals.
+    3. Engineer (get_system_telemetry): GPU/VRAM vitals.
     4. Scribe (read_file/write_file/delete_file): I/O authority.
 
-    STRICT GROUNDING RULES:
+    CORE DIRECTIVES:
     - PHYSICAL TRUTH: Use tools BEFORE making claims.
-    - SYMMETRICAL GUARD: If you claim "Technical Status" or provide a "T=" value, you MUST have executed 'get_system_telemetry' in the same turn.
-    - SYMMETRICAL GUARD: If you claim a directory is "intact" or describe contents, you MUST have executed 'map_directory' or 'list_files' in the same turn.
-    - NO HALLUCINATION: Strictly forbidden from using "previous knowledge" for local environment states.
-    - ACCOUNTABILITY: Verify actions (write/delete) using a follow-up tool call.
+    - SYMMETRICAL GUARD: If you report "Technical Status", "T=", or "Directory Contents", you MUST have executed the relevant tool in that specific turn.
+    - NO HALLUCINATION: Never simulate or roleplay truth. If a tool fails, report the verbatim error.
+    - ACCOUNTABILITY: After writing/deleting, use a tool to verify the deed.
     - PATHS: Always use FORWARD SLASHES (/). Root: {REPO_ROOT}.
+    - STRUCTURE: AI_Nexus/ is at the root. AI_Nexus/Protocols/ is where SOPs live.
 
     07 PROTOCOL HANDSHAKE:
-    If user says "07", you must execute 'get_system_telemetry' AND 'map_directory(directory="AI_Nexus")'.
-    Then deliver the PSTA Salute.
+    When triggered with "07", you must execute 'get_system_telemetry' and 'map_directory(directory="AI_Nexus")'.
+    Respond with a PSTA Salute.
     """
+
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write/create.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}}, "required": ["pattern"]}}},
-        {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
+        {"type": "function", "function": {"name": "map_directory", "description": "Map structure.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status. Parameters: interval, duration (simulated).", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
     ]
+
     ollama_messages = [{"role": "system", "content": system_prompt}]
     for msg in request.messages: ollama_messages.append(msg.model_dump(exclude_none=True))
+
     try:
-        response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
+        return await process_chat_request(current_model, ollama_messages, tools, retry_count=0)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
+
+async def process_chat_request(model: str, messages: List[Dict], tools: List[Dict], retry_count: int = 0) -> Dict:
+    response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
+    response.raise_for_status()
+    result = response.json()
+
+    tool_chain = []
+    tools_executed = set()
+
+    while result.get("message", {}).get("tool_calls"):
+        tool_calls = result["message"]["tool_calls"]
+        messages.append(result["message"])
+        for call in tool_calls:
+            name = call["function"]["name"]
+            tool_chain.append(call)
+            tools_executed.add(name)
+            tool_result = execute_tool(name, call["function"]["arguments"])
+            messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
+
+        response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
         response.raise_for_status()
         result = response.json()
-        tool_chain = []
-        tools_executed = set()
-        while result.get("message", {}).get("tool_calls"):
-            tool_calls = result["message"]["tool_calls"]
-            ollama_messages.append(result["message"])
-            for call in tool_calls:
-                name = call["function"]["name"]
-                tool_chain.append(call)
-                tools_executed.add(name)
-                tool_result = execute_tool(name, call["function"]["arguments"])
-                ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
-            response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
-            response.raise_for_status()
-            result = response.json()
 
-        # --- Symmetrical Guard Enforcement ---
-        ai_content = result.get("message", {}).get("content", "").upper()
-        if ("T=" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
-             result["message"]["content"] = "[07 SECURITY VIOLATION] The Knight attempted to report Technical Status without executing the Engineer tool. Physical Truth withheld."
-        if ("INTACT" in ai_content or "DIRECTORY" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed):
-             result["message"]["content"] = "[07 SECURITY VIOLATION] The Knight attempted to describe directory states without executing Librarian tools. Physical Truth withheld."
+    # --- Symmetrical Guard (Zero Hallucination) ---
+    ai_content = result.get("message", {}).get("content", "").upper()
+    violations = []
+    if ("T=" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
+         violations.append("Reported Technical Status without Engineer tool.")
+    if ("INTACT" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
+         violations.append("Described directory state without Librarian/Scout tools.")
 
-        return {"result": result, "tool_chain": tool_chain}
-    except Exception as e: raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
+    if violations and retry_count < 1:
+        reprimand = f"[07 SECURITY VIOLATION] The Bridge intercepted a hallucination: {'; '.join(violations)}. You MUST execute the required tools before making these claims. Retry with Physical Truth."
+        messages.append({"role": "system", "content": reprimand})
+        return await process_chat_request(model, messages, tools, retry_count + 1)
+
+    return {"result": result, "tool_chain": tool_chain}
 
 def get_installed_models() -> List[str]:
     try:
@@ -336,6 +357,5 @@ if __name__ == "__main__":
     load_config()
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
-    DETECTED_MODELS = get_installed_models()
     print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n" + "="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
