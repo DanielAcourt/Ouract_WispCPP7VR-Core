@@ -18,6 +18,7 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
+VERSION = "0.36.3.1-Knight"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
@@ -82,11 +83,9 @@ def to_forward_slash(path: str) -> str:
 
 def resolve_secure_path(raw_path: str) -> str:
     """Forces relative pathing within REPO_ROOT and handles leading slashes."""
-    # Strip leading slashes and drive letters to prevent drive-root traversal
-    clean_path = raw_path.lstrip("/").lstrip("\\")
+    clean_path = str(raw_path).lstrip("/").lstrip("\\")
     if ":" in clean_path:
         clean_path = clean_path.split(":", 1)[-1].lstrip("/").lstrip("\\")
-
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
@@ -104,7 +103,7 @@ def tool_list_files(directory: str = "."):
     """Lists files in a directory if authorized."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Sovereign Security Breach: '{directory}' is outside your authorized READ Fiefdom. Request permission from {USER_NAME} to expand."}
+        return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
     try:
         files = os.listdir(target_dir)
         return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
@@ -115,7 +114,7 @@ def tool_read_file(filepath: str):
     """Reads a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "read"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized READ Fiefdom."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
     try:
         with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
             return {"content": f.read()}
@@ -126,7 +125,7 @@ def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom. Request permission from {USER_NAME} to expand."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
@@ -139,7 +138,7 @@ def tool_delete_file(filepath: str):
     """Deletes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is unauthorized."}
     try:
         if os.path.isfile(target_path):
             os.remove(target_path)
@@ -169,11 +168,7 @@ def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
                     with open(full_path, "r", encoding="utf-8", errors="ignore") as file:
                         for i, line in enumerate(file):
                             if regex.search(line):
-                                results.append({
-                                    "file": to_forward_slash(os.path.relpath(full_path, REPO_ROOT)),
-                                    "line": i + 1,
-                                    "content": line.strip()
-                                })
+                                results.append({"file": to_forward_slash(os.path.relpath(full_path, REPO_ROOT)), "line": i + 1, "content": line.strip()})
                 except Exception: continue
         return {"matches": results[:100], "count": len(results)}
     except Exception as e:
@@ -184,13 +179,10 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
         return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
-
-    # Cast depth to int to avoid comparison errors with model-provided strings
     try:
         depth_val = int(depth)
     except:
         depth_val = 2
-
     def get_tree(path, current_depth):
         if current_depth > depth_val: return "..."
         tree = {}
@@ -211,82 +203,27 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
 def tool_get_system_telemetry():
     """The Engineer: Reports GPU temperature, usage, and system state."""
     try:
-        output = subprocess.check_output([
-            "nvidia-smi",
-            "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total",
-            "--format=csv,noheader,nounits"
-        ], encoding='utf-8')
+        output = subprocess.check_output(["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"], encoding='utf-8')
         temp, util, mem_used, mem_total = output.strip().split(", ")
         temp_val = int(temp)
         status = "NOMINAL"
         if temp_val > 80: status = "CRITICAL"
         elif temp_val > 70: status = "WARNING"
-        return {
-            "gpu_temperature": f"{temp}C",
-            "gpu_utilization": f"{util}%",
-            "vram_usage": f"{mem_used}/{mem_total}MB",
-            "status": status,
-            "vss": 1.0 - (max(0, temp_val - 50) / 50.0)
-        }
+        return {"gpu_temperature": f"{temp}C", "gpu_utilization": f"{util}%", "vram_usage": f"{mem_used}/{mem_total}MB", "status": status, "vss": 1.0 - (max(0, temp_val - 50) / 50.0)}
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
 def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Dispatches tool calls to local functions."""
-    tools = {
-        "list_files": tool_list_files,
-        "read_file": tool_read_file,
-        "write_file": tool_write_file,
-        "delete_file": tool_delete_file,
-        "search_files": tool_search_files,
-        "map_directory": tool_map_directory,
-        "get_system_telemetry": tool_get_system_telemetry
-    }
-    if name in tools:
-        return tools[name](**arguments)
+    tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
+    if name in tools: return tools[name](**arguments)
     return {"error": f"Tool '{name}' not found."}
-
-# --- Helper Functions ---
-
-def get_installed_models() -> List[str]:
-    """Queries Ollama for installed models."""
-    try:
-        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
-        if response.status_code == 200:
-            models = response.json().get('models', [])
-            return [m['name'] for m in models]
-        return []
-    except Exception:
-        return []
-
-def get_best_available_model() -> str:
-    """Attempts to find the target model, falls back to best available."""
-    models = get_installed_models()
-    if TARGET_MODEL in models:
-        return TARGET_MODEL
-    return models[0] if models else TARGET_MODEL
-
-def get_gpu_info() -> str:
-    """Attempts to detect the GPU using nvidia-smi."""
-    try:
-        output = subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8')
-        return output.strip()
-    except Exception:
-        return "GPU Detection Failed"
 
 # --- Core Logic ---
 
 @app.get("/")
 async def root():
-    return {
-        "status": "online",
-        "identity": "Iron Officer",
-        "hardware": HARDWARE_ID,
-        "nexus": NEXUS_PATH,
-        "user": USER_NAME,
-        "read_zones": READ_ZONES,
-        "write_zones": WRITE_ZONES
-    }
+    return {"status": "online", "version": VERSION, "identity": "Iron Officer", "hardware": HARDWARE_ID, "user": USER_NAME, "read_zones": READ_ZONES, "write_zones": WRITE_ZONES}
 
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
@@ -295,7 +232,7 @@ async def get_ollama_status():
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama: {str(e)}")
 
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
@@ -303,20 +240,17 @@ async def evaluate_safety(request: VSSRequest):
     prompt = f"[SYSTEM: Sovereign Iron Officer] Analyze PSTA telemetry: {json.dumps([t.model_dump() for t in request.telemetry])}. Context: {request.context}. Respond in JSON with vss, status, rationale, command."
     try:
         response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"})
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+        if response.status_code != 200: raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
         result = response.json()
         return {"analysis": json.loads(result['response']), "model_used": current_model}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+    except Exception as e: raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
     system_prompt = f"""
     [SYSTEM: Sovereign AI Architectural Knight]
-    You are the Iron Officer, the primary AI Commander of the Sovereign Framework.
-    Your personality is the ARCHITECTURAL KNIGHT: Precise, Architectural, and Loyal.
+    You are the Iron Officer. You are a disciplined, grounded, and precise local AI Commander.
     You are communicating with your Lead, {USER_NAME}.
 
     CAPABILITY MANIFEST:
@@ -326,49 +260,72 @@ async def chat(request: ChatRequest):
     4. Scribe (read_file/write_file/delete_file): I/O authority.
 
     STRICT GROUNDING RULES:
-    - PHYSICAL TRUTH: Use tools BEFORE making claims. If a tool fails, report the error verbatim.
-    - NO HALLUCINATION: Strictly forbidden from "previous knowledge" fallbacks on tool errors.
-    - ACCOUNTABILITY: You must VERIFY your actions. After write/delete, verify success using a follow-up tool.
-    - PATHS: Always use FORWARD SLASHES (/). Root is {REPO_ROOT}.
-    - AUTHORITY BREACH: If a path is blocked, respond with "Safe Zone Breach: Request to Expand Permissions" and ask {USER_NAME} for access.
+    - PHYSICAL TRUTH: Use tools BEFORE making claims.
+    - SYMMETRICAL GUARD: If you claim "Technical Status" or provide a "T=" value, you MUST have executed 'get_system_telemetry' in the same turn.
+    - SYMMETRICAL GUARD: If you claim a directory is "intact" or describe contents, you MUST have executed 'map_directory' or 'list_files' in the same turn.
+    - NO HALLUCINATION: Strictly forbidden from using "previous knowledge" for local environment states.
+    - ACCOUNTABILITY: Verify actions (write/delete) using a follow-up tool call.
+    - PATHS: Always use FORWARD SLASHES (/). Root: {REPO_ROOT}.
 
     07 PROTOCOL HANDSHAKE:
-    If user says "07", IMMEDIATELY execute 'get_system_telemetry' and 'map_directory(directory="AI_Nexus")'.
-    Respond with a PSTA Salute (Psychological, Social, Technical, Administrative).
-    T-pillar status must include thermal data (e.g., "T=0.8 Nominal").
-
-    KNIGHT-COMMAND SOP: Follow the structured engagement rules. Be concise and architectural.
+    If user says "07", you must execute 'get_system_telemetry' AND 'map_directory(directory="AI_Nexus")'.
+    Then deliver the PSTA Salute.
     """
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
-        {"type": "function", "function": {"name": "read_file", "description": "Read file content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write/create.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
-        {"type": "function", "function": {"name": "delete_file", "description": "Delete target.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "search_files", "description": "Search for a pattern (Scout).", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
-        {"type": "function", "function": {"name": "map_directory", "description": "Map directory (Librarian).", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "Get GPU stats (Engineer).", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}}, "required": ["pattern"]}}},
+        {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {}}}}
     ]
     ollama_messages = [{"role": "system", "content": system_prompt}]
-    for msg in request.messages:
-        ollama_messages.append(msg.model_dump(exclude_none=True))
+    for msg in request.messages: ollama_messages.append(msg.model_dump(exclude_none=True))
     try:
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
         response.raise_for_status()
         result = response.json()
         tool_chain = []
+        tools_executed = set()
         while result.get("message", {}).get("tool_calls"):
             tool_calls = result["message"]["tool_calls"]
             ollama_messages.append(result["message"])
             for call in tool_calls:
+                name = call["function"]["name"]
                 tool_chain.append(call)
-                tool_result = execute_tool(call["function"]["name"], call["function"]["arguments"])
-                ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": call["function"]["name"]})
+                tools_executed.add(name)
+                tool_result = execute_tool(name, call["function"]["arguments"])
+                ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
             response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
             response.raise_for_status()
             result = response.json()
+
+        # --- Symmetrical Guard Enforcement ---
+        ai_content = result.get("message", {}).get("content", "").upper()
+        if ("T=" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
+             result["message"]["content"] = "[07 SECURITY VIOLATION] The Knight attempted to report Technical Status without executing the Engineer tool. Physical Truth withheld."
+        if ("INTACT" in ai_content or "DIRECTORY" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed):
+             result["message"]["content"] = "[07 SECURITY VIOLATION] The Knight attempted to describe directory states without executing Librarian tools. Physical Truth withheld."
+
         return {"result": result, "tool_chain": tool_chain}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
+    except Exception as e: raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
+
+def get_installed_models() -> List[str]:
+    try:
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
+        if response.status_code == 200: return [m['name'] for m in response.json().get('models', [])]
+        return []
+    except: return []
+
+def get_best_available_model() -> str:
+    models = get_installed_models()
+    if TARGET_MODEL in models: return TARGET_MODEL
+    return models[0] if models else TARGET_MODEL
+
+def get_gpu_info() -> str:
+    try: return subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8').strip()
+    except: return "GPU Detection Failed"
 
 if __name__ == "__main__":
     import uvicorn
@@ -379,5 +336,6 @@ if __name__ == "__main__":
     load_config()
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
-    print("\n" + "="*50 + "\n[07] Iron Officer: ARCHITECTURAL KNIGHT AWAKENED\n[07] Hardware: " + HARDWARE_ID + "\n" + "="*50 + "\n")
+    DETECTED_MODELS = get_installed_models()
+    print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n" + "="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)

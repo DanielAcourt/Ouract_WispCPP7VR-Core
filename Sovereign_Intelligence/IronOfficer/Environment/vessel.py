@@ -12,7 +12,9 @@ import datetime
 from typing import List, Dict
 
 # --- Configuration ---
+VESSEL_VERSION = "0.36.3.1-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
+
 # Handle PyInstaller paths
 if getattr(sys, 'frozen', False):
     REPORT_DIR = os.path.dirname(sys.executable)
@@ -25,18 +27,28 @@ class ChatVessel:
         self.history: List[Dict[str, str]] = []
         self.user_name = "User"
         self.identity = "Iron Officer"
-        self.show_tools = True # Tool Transparency
+        self.show_tools = True
+        self.bridge_version = "Unknown"
         self.fetch_bridge_info()
 
     def fetch_bridge_info(self):
-        """Syncs with the bridge to get user identity and status."""
+        """Syncs with the bridge and checks version compatibility."""
         try:
             response = requests.get(f"{BRIDGE_URL}/", timeout=2)
             if response.status_code == 200:
                 data = response.json()
                 self.user_name = data.get("user", "Dan")
                 self.identity = data.get("identity", "Iron Officer")
-                print(f"[07] Connected to {self.identity}. Greetings, {self.user_name}.")
+                self.bridge_version = data.get("version", "Legacy")
+
+                print(f"[07] Connected to {self.identity} (Bridge v{self.bridge_version})")
+
+                if self.bridge_version != VESSEL_VERSION:
+                    print("\n" + "!"*60)
+                    print(f"[07 WARNING] Version Mismatch Detected!")
+                    print(f"Vessel: {VESSEL_VERSION} | Bridge: {self.bridge_version}")
+                    print("[07] Please run 'build_vessel.bat' to synchronize.")
+                    print("!"*60 + "\n")
             else:
                 print(f"[07 WARNING] Bridge returned status {response.status_code}")
         except Exception as e:
@@ -47,115 +59,79 @@ class ChatVessel:
     def print_header(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print("="*60)
-        print(f" SOVEREIGN IRON OFFICER | VESSEL {self.session_id}")
-        print(f" User: {self.user_name} | Theme: Dark")
+        print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
+        print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /report (Save), /status (Health), /tools (Toggle Logs), /exit")
+        print(" Commands: /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
-        """Exports the current session history to a JSON Mission Report."""
         filename = f"Mission_Report_{self.session_id}.json"
         filepath = os.path.join(REPORT_DIR, filename)
-
         report = {
-            "mission_id": self.session_id,
+            "vessel_version": VESSEL_VERSION,
+            "bridge_version": self.bridge_version,
             "timestamp": datetime.datetime.now().isoformat(),
-            "commander": self.identity,
-            "lead": self.user_name,
             "transcript": self.history,
-            "status": "COMPLETED"
         }
-
         try:
             with open(filepath, "w") as f:
                 json.dump(report, f, indent=4)
-            print(f"\n[07] Mission Report saved to: {to_forward_slash(filepath)}")
+            print(f"\n[07] Report saved: {filepath.replace('\\', '/')}")
         except Exception as e:
-            print(f"\n[07 ERROR] Failed to save report: {e}")
+            print(f"\n[07 ERROR] Failed: {e}")
 
     def show_status(self):
-        """Queries the bridge for health and hardware status."""
         try:
             response = requests.get(f"{BRIDGE_URL}/", timeout=2)
             data = response.json()
             print("\n" + "-"*30)
-            print(f"BRIDGE STATUS: {data.get('status')}")
+            print(f"BRIDGE: {data.get('status')} v{data.get('version')}")
             print(f"HARDWARE: {data.get('hardware')}")
-            print(f"READ ZONES: {data.get('read_zones')}")
-            print(f"WRITE ZONES: {data.get('write_zones')}")
+            print(f"SAFE ZONES (R): {len(data.get('read_zones', []))}")
+            print(f"SAFE ZONES (W): {len(data.get('write_zones', []))}")
             print("-"*30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Failed to fetch status: {e}")
+            print(f"\n[07 ERROR] Status failed: {e}")
 
     def run(self):
         self.print_header()
-
         while True:
             try:
                 user_input = input(f"{self.user_name}> ").strip()
-
-                if not user_input:
-                    continue
-
-                if user_input.lower() == "/exit":
-                    print("[07] Terminating session. Goodbye.")
-                    break
-
-                if user_input.lower() == "/report":
-                    self.save_mission_report()
-                    continue
-
-                if user_input.lower() == "/status":
-                    self.show_status()
-                    continue
-
+                if not user_input: continue
+                if user_input.lower() == "/exit": break
+                if user_input.lower() == "/report": self.save_mission_report(); continue
+                if user_input.lower() == "/status": self.show_status(); continue
                 if user_input.lower() == "/tools":
                     self.show_tools = not self.show_tools
-                    print(f"[07] Tool Transparency: {'ON' if self.show_tools else 'OFF'}")
+                    print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
                     continue
 
-                # Add to history
                 self.history.append({"role": "user", "content": user_input})
-
-                # Send to bridge
-                response = requests.post(
-                    f"{BRIDGE_URL}/v1/chat",
-                    json={"messages": self.history},
-                    timeout=120
-                )
+                response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=120)
 
                 if response.status_code == 200:
                     data = response.json()
                     tool_chain = data.get("tool_chain", [])
                     result = data.get("result", {})
 
-                    # Handle Tool Transparency (Logs)
                     if self.show_tools and tool_chain:
                         print("\n[KNIGHT TOOL LOG]")
                         for tool in tool_chain:
                             name = tool.get("function", {}).get("name", "unknown")
-                            args = tool.get("function", {}).get("arguments", "{}")
-                            print(f" -> EXECUTING: {name}({args})")
+                            print(f" -> EXECUTING: {name}")
                         print("-" * 20)
 
                     ai_msg = result.get("message", {})
                     content = ai_msg.get("content", "...")
-
-                    # Log the response content
                     print(f"\n{self.identity}> {content}\n")
                     self.history.append({"role": "assistant", "content": content})
                 else:
                     print(f"\n[07 ERROR] Bridge Error: {response.text}\n")
 
-            except KeyboardInterrupt:
-                print("\n[07] Interrupted by user.")
-                break
-            except Exception as e:
-                print(f"\n[07 ERROR] Communication failure: {e}\n")
-
-def to_forward_slash(path: str) -> str:
-    return path.replace("\\", "/")
+            except KeyboardInterrupt: break
+            except Exception as e: print(f"\n[07 ERROR] {e}\n")
 
 if __name__ == "__main__":
     vessel = ChatVessel()
