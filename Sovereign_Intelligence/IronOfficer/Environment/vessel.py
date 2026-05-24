@@ -12,7 +12,7 @@ import datetime
 from typing import List, Dict
 
 # --- Configuration ---
-VESSEL_VERSION = "0.36.3.1-Knight"
+VESSEL_VERSION = "0.37.0-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
 
 # Handle PyInstaller paths
@@ -62,7 +62,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /report, /status, /tools, /exit")
+        print(" Commands: /report, /status, /tools, /check full, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -108,8 +108,19 @@ class ChatVessel:
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
                     continue
 
+                is_audit = user_input.lower() == "/check full"
+                if is_audit:
+                    user_input = "Perform a 'Deep Analysis' audit of the AI_Nexus and repository state. Trade speed for analytical depth (Tortoise Standard)."
+                    print("\n[07] INITIALIZING DEEP ANALYSIS MODE...")
+                    print("[07] Entering Thinking State (Tortoise Standard active)")
+
                 self.history.append({"role": "user", "content": user_input})
-                response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=120)
+
+                # Show a thinking indicator
+                if is_audit:
+                    print("[07] Consulting Nexus and Hardware...", end="\r")
+
+                response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=300) # Increased timeout for deep analysis
 
                 if response.status_code == 200:
                     data = response.json()

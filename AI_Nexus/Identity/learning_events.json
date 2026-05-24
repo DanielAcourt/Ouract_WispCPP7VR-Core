@@ -22,5 +22,13 @@
     "outcome": "Added 'Verification of Deed' and 'Follow-up Protocol' to KnightCommand_SOP. AI must now verify directory existence and file creation success explicitly.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Iron Officer Upgrade (v0.37.0-Knight)",
+    "description": "Expanded the Iron Officer's local capabilities to include a '/check full' Deep Analysis mode. This mode explicitly activates the 'Tortoise Standard' for auditing AI_Nexus and repository state.",
+    "outcome": "Upgraded bridge.py and vessel.py. The HMI now supports a 'Thinking State' and deep-dive audits, ensuring technical drift is detected and lessons are correctly inherited.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]
