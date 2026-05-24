@@ -124,9 +124,9 @@ class ChatVessel:
 
                 # Show a thinking indicator
                 if is_audit or is_ingestion:
-                    print("[07] Consulting Nexus and Hardware...", end="\r")
+                    print("[07] Consulting Nexus and Hardware (Temple Calculations active)...", end="\r")
 
-                response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=600) # Further increased for deep ingestion
+                response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=900) # Maximum timeout for deep ingestion
 
                 if response.status_code == 200:
                     data = response.json()

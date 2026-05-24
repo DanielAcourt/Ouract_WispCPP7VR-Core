@@ -46,5 +46,13 @@
     "outcome": "Implemented the 'Index-First Rule' in bridge.py and KnightCommand_SOP.md. The AI must now read INDEX.md as the primary discovery tool before any ingestion or audit. No guessing of paths is permitted.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "AI Ghosting Incident (v0.37.0 Ingestion Failure)",
+    "description": "During the first full '/read all' test, the AI went silent (ghosted) after performing tool calls. This was likely due to the context window filling and a lack of a definitive 'Final Report' trigger.",
+    "outcome": "Stabilized v0.37.1 with an Anti-Ghosting Protocol in bridge.py. Increased context window to 32k and added a system-level force-report trigger if the AI goes silent after tools. Increased HMI timeout to 900s.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

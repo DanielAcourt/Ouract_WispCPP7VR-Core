@@ -312,7 +312,10 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
 
 async def process_chat_request(model: str, messages: List[Dict], tools: List[Dict], retry_count: int = 0) -> Dict:
-    response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
+    # --- Tortoise Configuration: Increase context window for deep ingestion ---
+    options = {"num_ctx": 32768, "temperature": 0.2}
+
+    response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options})
     response.raise_for_status()
     result = response.json()
 
@@ -331,9 +334,15 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
             tool_outputs.append(tool_result)
             messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
 
-        response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
+        response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options})
         response.raise_for_status()
         result = response.json()
+
+    # --- Anti-Ghosting Protocol ---
+    if not result.get("message", {}).get("content") and not result.get("message", {}).get("tool_calls"):
+        # If the model went silent after tool execution, force a final report
+        messages.append({"role": "system", "content": "[ANTI-GHOSTING] Tool execution complete. Deliver your final report based on the ingested data now."})
+        return await process_chat_request(model, messages, tools, retry_count)
 
     # --- Symmetrical Guard (v2.2) ---
     ai_content = result.get("message", {}).get("content", "").upper()
