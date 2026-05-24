@@ -6,6 +6,7 @@ A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5
 
 import os
 import json
+import subprocess
 import requests
 import argparse
 from typing import Dict, Any, List, Optional
@@ -81,10 +82,24 @@ def get_best_available_model() -> str:
 
     return models[0] if models else TARGET_MODEL
 
+def get_gpu_info() -> str:
+    """Attempts to detect the GPU using nvidia-smi."""
+    try:
+        output = subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8')
+        return output.strip()
+    except Exception:
+        return "GPU Detection Failed (Is nvidia-smi in PATH?)"
+
 def perform_07_handshake():
     """Outputs the 07 Protocol Salute to the terminal."""
-    global DETECTED_MODELS
+    global DETECTED_MODELS, HARDWARE_ID
     DETECTED_MODELS = get_installed_models()
+    gpu_info = get_gpu_info()
+
+    if "5090" in gpu_info:
+        HARDWARE_ID = f"GTX 5090 (Verified: {gpu_info})"
+    else:
+        HARDWARE_ID = f"Unknown GPU (Detected: {gpu_info})"
 
     print("\n" + "="*50)
     print("[07] Iron Officer Initialized.")
@@ -176,4 +191,14 @@ if __name__ == "__main__":
     # Run handshake on startup
     perform_07_handshake()
 
-    uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
+    except Exception as e:
+        print("\n" + "!"*50)
+        print(f"[07 CRITICAL] Bridge crashed during startup: {e}")
+        if "10048" in str(e):
+            print(f"[07] SOLUTION: Port {BRIDGE_PORT} is blocked. Use 'taskkill /F /PID [PID]' to clear it.")
+        print("!"*50 + "\n")
+        # Keep the process alive for a moment so the user can see the error in the batch window
+        import time
+        time.sleep(10)

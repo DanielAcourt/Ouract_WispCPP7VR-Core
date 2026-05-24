@@ -3,7 +3,11 @@
     "version": "0.36.3.1MABackup",
     "hardware": {
         "host": "GTX 5090",
-        "os": "Windows 10.0.26200.8457"
+        "os": "Windows 10.0.26200.8457",
+        "gpu": {
+            "expected_id": "5090",
+            "verification_tool": "nvidia-smi"
+        }
     },
     "ollama": {
         "host": "127.0.0.1",

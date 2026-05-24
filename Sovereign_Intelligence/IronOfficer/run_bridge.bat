@@ -55,9 +55,15 @@ if %errorlevel% NEQ 0 (
 netstat -ano | findstr :8000 | findstr LISTENING >nul
 if %errorlevel% EQU 0 (
     echo [07 WARNING] Port 8000 is already in use.
-    echo [07] Run this to kill the blocker: taskkill /F /PID [PID_FROM_NETSTAT]
-    netstat -ano | findstr :8000
-    :: We don't pause here to allow for restart scenarios, but user is warned.
+    for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do set "PID=%%a"
+    echo [07] Blocker PID: %PID%
+    set /p choice="[07] Would you like to kill the blocking process? (y/n): "
+    if /i "%choice%"=="y" (
+        taskkill /F /PID %PID%
+        echo [07] Process terminated. Continuing...
+    ) else (
+        echo [07] Continuing with caution...
+    )
 )
 
 :: Check for Ollama process (try both common names)

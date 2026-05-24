@@ -28,6 +28,13 @@ These modules are confirmed installed on the 5090 and accessible via the Iron Of
 
 ---
 
+## 🛠️ "Iron Officer" Self-Healing Features
+- **GPU Verification:** The bridge now uses `nvidia-smi` to confirm hardware truth (GTX 5090) on startup.
+- **Port Autodiscovery:** The launcher detects port blockers and offers to terminate them automatically.
+- **Environment Parity:** The `config.json` synchronizes `OLLAMA_MODELS` paths with the Windows host.
+
+---
+
 ## 🛠️ Troubleshooting & Technical (T) Pillar Recovery
 If the 07 Handshake fails or Ollama is "Refusing Connection":
 1. **Ollama Service:** Ensure the Ollama icon is visible in the Windows System Tray.
@@ -36,6 +43,7 @@ If the 07 Handshake fails or Ollama is "Refusing Connection":
 4. **Empty Model List:** If Ollama is running but no models are detected:
     - Open a CMD window and run `ollama list`.
     - If `ollama list` shows models but the Bridge does not, verify the `OLLAMA_MODELS` environment variable in `config.json` matches your actual storage path.
+5. **Nvidia-SMI Not Found:** If GPU detection fails, ensure the Nvidia Drivers are installed and `C:\Program Files\NVIDIA Corporation\NVSMI` is in your System PATH.
 
 ---
 
