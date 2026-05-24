@@ -126,25 +126,23 @@ if (ClassToSpawn)
 return nullptr;
 ```
 
-### (Optional) Step 4: JSON Serialization
+### 🛑 Step 4: [DEPRECATED] JSON Serialization of Classes
 
-If you are also using your separate JSON files to define species (in addition to `UDataAsset`s), you will need to handle serialization.
+**Architectural Conflict Resolved:**
+Previous analysis suggested saving raw class paths in JSON. This is now **DEPRECATED**.
 
-**Saving to JSON:**
+**The Decision:**
+To ensure a **Single Source of Truth (SSoT)**, the "Soul" of the entity (its Class and default meshes) must reside exclusively in the `USovereignSpeciesData` asset. The JSON "Vessel" must only carry **Instance Data**.
 
-```cpp
-// Get the path string from the TSoftClassPtr
-FString ClassPath = SpeciesData->ActorClass.ToString();
-JsonObject->SetStringField(TEXT("ActorClass"), ClassPath);
-```
+**The New Data Contract:**
+1.  **JSON Instance:** Stores only the `SpeciesTag` (e.g., `Species.Plant.Oak`).
+2.  **Runtime Lookup:** The Spawner uses the `SpeciesTag` to fetch the corresponding `UDataAsset`.
+3.  **Asset Authority:** The `UDataAsset` provides the `TSoftClassPtr<ASovereignBaseEntity>`.
 
-**Loading from JSON:**
+**Why this matters:**
+This prevents "Redundancy Drift" where a JSON file might point to an old version of a class while the DataAsset has been updated. It keeps the "Soul" clean and the "Vessel" lean.
 
-```cpp
-// Get the path string from the JSON
-FString ClassPath = JsonObject->GetStringField(TEXT("ActorClass"));
-// Construct the TSoftClassPtr from the path
-SpeciesData->ActorClass = TSoftClassPtr<ASovereignBaseEntity>(FSoftObjectPath(ClassPath));
-```
+---
 
-By following these steps, you will have a robust, scalable, and data-driven system for spawning your game's entities.
+## 🏛️ Convergence: The Alchemist's Resolution
+The AI hit a wall because it was trying to reconcile a Web-Agnostic pattern (JSON-only) with an Unreal-Standard pattern (DataAsset). By enforcing the **Tag-to-Asset** bridge, we align with the 12-year vision of a deterministic, data-driven framework.
