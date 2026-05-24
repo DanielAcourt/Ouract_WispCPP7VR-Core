@@ -15,7 +15,7 @@ import re
 from typing import List, Dict
 
 # --- Configuration ---
-VESSEL_VERSION = "0.37.1-Knight"
+VESSEL_VERSION = "0.37.2-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
 
 # Handle PyInstaller paths

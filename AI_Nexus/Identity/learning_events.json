@@ -166,5 +166,13 @@
     "outcome": "Implemented 'MODEL_NOT_FOUND' state in bridge.py. The bridge now returns 503/531 errors with actionable 'ollama pull' instructions. Integrated model presence into the PSTA Technical (T) pillar VSS calculation.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2026-02-20",
+    "event": "Iron Officer Version Synchronization (v0.37.2)",
+    "description": "Detected a version mismatch between the Bridge (v0.37.2) and the Vessel (v0.37.1). This triggered a warning in the HMI and potential for architectural drift.",
+    "outcome": "Synchronized all version strings to v0.37.2-Knight. Verified the stability of the 07 Salute protocol across the full local stack.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]
