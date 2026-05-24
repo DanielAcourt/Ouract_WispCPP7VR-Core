@@ -9,22 +9,6 @@
   },
   {
     "date": "2025-05-22",
-    "event": "Autonomous Writing Incident (v0.37.1 Testing)",
-    "description": "During a '/read all' task, the AI attempted to create 'AI_Nexus/STATUS.md' autonomously. This led to repository clutter and iteration depth issues.",
-    "outcome": "Implemented the 'NO AUTONOMOUS WRITING' directive in bridge.py and AGENTS.md. All reporting must be via chat response unless explicitly commanded to write a file.",
-    "confidence": "High",
-    "ambiguity_level": "Low"
-  },
-  {
-    "date": "2025-05-22",
-    "event": "Tool Schema Hallucination (unexpected keyword argument 'filepath')",
-    "description": "During a Level 1 stabilization, the AI called map_directory using 'filepath' instead of 'directory', causing a bridge crash.",
-    "outcome": "Implemented Parameter Resilience in bridge.py. The bridge now automatically maps mismatched parameters (filepath vs directory) to ensure tool execution success despite minor LLM schema hallucinations.",
-    "confidence": "High",
-    "ambiguity_level": "Low"
-  },
-  {
-    "date": "2025-05-22",
     "event": "Tortoise vs. Cheetah Behavioral Shift",
     "description": "The Lead identified a discrepancy in the local Iron Officer's performance—hallucinating state and reporting 'Done' without verification. Requested a shift to a slower, more analytical 'Tortoise' approach.",
     "outcome": "Implemented 'Ambiguity Reduction Protocol' and 'Verification Prerequisite' in KnightCommand_SOP and AGENTS.md. Analytical depth now supersedes response speed.",
@@ -132,6 +116,30 @@
     "event": "Hierarchical Prefix Caching Implementation (AD-006)",
     "description": "Implemented a deterministic prompt-stacking system to exploit Automatic Prefix Caching (APC). Refactored system prompts into immutable Levels 0-2.",
     "outcome": "Upgraded bridge.py and run_bridge.bat. Established 0ms prefill latency potential on the RTX 5090 by ensuring Lower-tier prompt strings are byte-for-byte identical across sessions.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Architectural Resolution: Tag-to-Asset Bridge",
+    "description": "The AI hit a wall trying to serialize C++ class paths in JSON while also using UDataAssets. This created a 'redundancy drift' conflict.",
+    "outcome": "Deprecated JSON class serialization in data_driven_spawning_analysis.md. Enforced SSoT: JSON holds the Tag, DataAsset holds the Class. Aligns the framework with Unreal standards and the 12-year project vision.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Tool Schema Hallucination (unexpected keyword argument 'filepath')",
+    "description": "During a Level 1 stabilization, the AI called map_directory using 'filepath' instead of 'directory', causing a bridge crash.",
+    "outcome": "Implemented Parameter Resilience in bridge.py. The bridge now automatically maps mismatched parameters (filepath vs directory) to ensure tool execution success despite minor LLM schema hallucinations.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Autonomous Writing Incident (v0.37.1 Testing)",
+    "description": "During a '/read all' task, the AI attempted to create 'AI_Nexus/STATUS.md' autonomously. This led to repository clutter and iteration depth issues.",
+    "outcome": "Implemented the 'NO AUTONOMOUS WRITING' directive in bridge.py and AGENTS.md. All reporting must be via chat response unless explicitly commanded to write a file.",
     "confidence": "High",
     "ambiguity_level": "Low"
   }
