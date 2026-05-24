@@ -54,5 +54,13 @@
     "outcome": "Stabilized v0.37.1 with an Anti-Ghosting Protocol in bridge.py. Increased context window to 32k and added a system-level force-report trigger if the AI goes silent after tools. Increased HMI timeout to 900s.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Visual Status Pulse Implementation (v0.37.1-Knight)",
+    "description": "Implemented a real-time 'Status Pulse' to prevent the Lead from feeling the AI is stuck during long deep-ingestion tasks.",
+    "outcome": "The HMI now displays the specific tool and target (e.g., 'Knight Task: read_file -> AI_Nexus/INDEX.md') in real-time. Provides transparency for Temple Calculations.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

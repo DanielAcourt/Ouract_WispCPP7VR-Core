@@ -9,11 +9,14 @@ import sys
 import json
 import requests
 import datetime
+import threading
+import time
 from typing import List, Dict
 
 # --- Configuration ---
-VESSEL_VERSION = "0.37.0-Knight"
+VESSEL_VERSION = "0.37.1-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
+PULSE_PATH = os.path.join(REPORT_DIR, "status_pulse.json")
 
 # Handle PyInstaller paths
 if getattr(sys, 'frozen', False):
@@ -30,6 +33,20 @@ class ChatVessel:
         self.show_tools = True
         self.bridge_version = "Unknown"
         self.fetch_bridge_info()
+
+    def poll_status_pulse(self, stop_event: threading.Event):
+        """Polls the status_pulse.json file to show real-time progress."""
+        last_pulse = 0
+        while not stop_event.is_set():
+            if os.path.exists(PULSE_PATH):
+                try:
+                    with open(PULSE_PATH, "r") as f:
+                        data = json.load(f)
+                        if data["timestamp"] > last_pulse:
+                            last_pulse = data["timestamp"]
+                            print(f"[07] Knight Task: {data['tool']} -> {data['target']}          ", end="\r")
+                except: pass
+            time.sleep(0.5)
 
     def fetch_bridge_info(self):
         """Syncs with the bridge and checks version compatibility."""
@@ -122,11 +139,19 @@ class ChatVessel:
 
                 self.history.append({"role": "user", "content": user_input})
 
-                # Show a thinking indicator
+                # Show a thinking indicator with Pulse
+                stop_event = threading.Event()
+                pulse_thread = None
+
                 if is_audit or is_ingestion:
-                    print("[07] Consulting Nexus and Hardware (Temple Calculations active)...", end="\r")
+                    print("[07] Consulting Nexus and Hardware (Temple Calculations active)...")
+                    if os.path.exists(PULSE_PATH): os.remove(PULSE_PATH)
+                    pulse_thread = threading.Thread(target=self.poll_status_pulse, args=(stop_event,), daemon=True)
+                    pulse_thread.start()
 
                 response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=900) # Maximum timeout for deep ingestion
+                stop_event.set()
+                if pulse_thread: pulse_thread.join(timeout=1)
 
                 if response.status_code == 200:
                     data = response.json()
@@ -146,6 +171,11 @@ class ChatVessel:
 
                     ai_msg = result.get("message", {})
                     content = ai_msg.get("content", "...")
+                    iterations = data.get("iterations", 0)
+
+                    if iterations > 1:
+                        print(f"\n[07] Temple Depth: {iterations} Calculations performed.")
+
                     print(f"\n{self.identity}> {content}\n")
                     self.history.append({"role": "assistant", "content": content})
                 else:

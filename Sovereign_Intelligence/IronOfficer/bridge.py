@@ -19,7 +19,7 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-VERSION = "0.37.0-Knight"
+VERSION = "0.37.1-Knight"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
@@ -311,54 +311,74 @@ async def chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
 
+def write_status_pulse(tool_name: str, arguments: Dict[str, Any]):
+    """Writes a real-time status pulse for the HMI to display during long tasks."""
+    pulse_path = os.path.join(BASE_DIR, "Environment", "status_pulse.json")
+    try:
+        pulse = {
+            "timestamp": time.time(),
+            "tool": tool_name,
+            "target": arguments.get("filepath") or arguments.get("directory") or arguments.get("pattern") or "Calculating..."
+        }
+        with open(pulse_path, "w") as f:
+            json.dump(pulse, f)
+    except: pass
+
 async def process_chat_request(model: str, messages: List[Dict], tools: List[Dict], retry_count: int = 0) -> Dict:
     # --- Tortoise Configuration: Increase context window for deep ingestion ---
     options = {"num_ctx": 32768, "temperature": 0.2}
 
-    response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options})
-    response.raise_for_status()
-    result = response.json()
-
     tool_chain = []
     tool_outputs = []
     tools_executed = set()
+    iteration = 0
+    max_iterations = 50 # Hard cap to prevent runaway costs/recursion
 
-    while result.get("message", {}).get("tool_calls"):
-        tool_calls = result["message"]["tool_calls"]
-        messages.append(result["message"])
-        for call in tool_calls:
-            name = call["function"]["name"]
-            tool_chain.append(call)
-            tools_executed.add(name)
-            tool_result = execute_tool(name, call["function"]["arguments"])
-            tool_outputs.append(tool_result)
-            messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"[07 DEBUG] Temple Calculation Iteration: {iteration}")
 
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools, "options": options})
         response.raise_for_status()
         result = response.json()
+        ai_msg = result.get("message", {})
 
-    # --- Anti-Ghosting Protocol ---
-    if not result.get("message", {}).get("content") and not result.get("message", {}).get("tool_calls"):
-        # If the model went silent after tool execution, force a final report
-        messages.append({"role": "system", "content": "[ANTI-GHOSTING] Tool execution complete. Deliver your final report based on the ingested data now."})
-        return await process_chat_request(model, messages, tools, retry_count)
+        if ai_msg.get("tool_calls"):
+            messages.append(ai_msg)
+            for call in ai_msg["tool_calls"]:
+                name = call["function"]["name"]
+                args = call["function"]["arguments"]
+                write_status_pulse(name, args)
+                tool_chain.append(call)
+                tools_executed.add(name)
+                tool_result = execute_tool(name, args)
+                tool_outputs.append(tool_result)
+                messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
+            continue # Run next iteration to process tool results
 
-    # --- Symmetrical Guard (v2.2) ---
-    ai_content = result.get("message", {}).get("content", "").upper()
-    violations = []
-    if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
-         violations.append("Reported Technical Status without Engineer tool.")
-    if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
-         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content:
-            violations.append("Described environment state without Librarian/Scout tools.")
+        # --- Anti-Ghosting Protocol ---
+        if not ai_msg.get("content"):
+            messages.append({"role": "system", "content": "[ANTI-GHOSTING] Tool execution complete. Deliver your final report based on the ingested data now."})
+            continue # Prompt for report and try again
 
-    if violations and retry_count < 1:
-        reprimand = f"[07 SECURITY VIOLATION] Hallucination detected: {'; '.join(violations)}. You must execute the relevant tools and report ACTUAL DATA only. Physical Truth is required."
-        messages.append({"role": "system", "content": reprimand})
-        return await process_chat_request(model, messages, tools, retry_count + 1)
+        # --- Symmetrical Guard (v2.2) ---
+        ai_content = ai_msg.get("content", "").upper()
+        violations = []
+        if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
+             violations.append("Reported Technical Status without Engineer tool.")
+        if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
+             if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content:
+                violations.append("Described environment state without Librarian/Scout tools.")
 
-    return {"result": result, "tool_chain": tool_chain, "tool_outputs": tool_outputs}
+        if violations and iteration < 5: # Limit reprimands
+            reprimand = f"[07 SECURITY VIOLATION] Hallucination detected: {'; '.join(violations)}. You must execute the relevant tools and report ACTUAL DATA only. Physical Truth is required."
+            messages.append({"role": "system", "content": reprimand})
+            continue # Try again with reprimand
+
+        # If we reach here, we have a valid content response and no more tool calls
+        return {"result": result, "tool_chain": tool_chain, "tool_outputs": tool_outputs, "iterations": iteration}
+
+    raise HTTPException(status_code=500, detail="Maximum iteration depth exceeded in Temple Calculations.")
 
 def get_installed_models() -> List[str]:
     try:
