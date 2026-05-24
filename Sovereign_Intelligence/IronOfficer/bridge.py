@@ -218,7 +218,16 @@ def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
         status = "NOMINAL"
         if temp_val > 80: status = "CRITICAL"
         elif temp_val > 70: status = "WARNING"
-        return {"gpu_temperature": f"{temp}C", "gpu_utilization": f"{util}%", "vram_usage": f"{mem_used}/{mem_total}MB", "status": status, "vss": 1.0 - (max(0, temp_val - 50) / 50.0)}
+        models = get_installed_models()
+        model_vss = 1.0 if models else 0.0
+        return {
+            "gpu_temperature": f"{temp}C",
+            "gpu_utilization": f"{util}%",
+            "vram_usage": f"{mem_used}/{mem_total}MB",
+            "status": status,
+            "vss": min(model_vss, 1.0 - (max(0, temp_val - 50) / 50.0)),
+            "model_presence": "ACTIVE" if models else "ABSENT"
+        }
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
@@ -259,7 +268,18 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 @app.get("/")
 async def root():
-    return {"status": "online", "version": VERSION, "identity": "Iron Officer", "hardware": HARDWARE_ID, "user": USER_NAME, "read_zones": READ_ZONES, "write_zones": WRITE_ZONES}
+    models = get_installed_models()
+    return {
+        "status": "online",
+        "version": VERSION,
+        "identity": "Iron Officer",
+        "hardware": HARDWARE_ID,
+        "user": USER_NAME,
+        "read_zones": READ_ZONES,
+        "write_zones": WRITE_ZONES,
+        "model_count": len(models),
+        "available_models": models
+    }
 
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
@@ -273,6 +293,9 @@ async def get_ollama_status():
 @app.post("/v1/safety/evaluate")
 async def evaluate_safety(request: VSSRequest):
     current_model = get_best_available_model()
+    if current_model == "MODEL_NOT_FOUND":
+        raise HTTPException(status_code=503, detail=f"[07 ERROR] No models found in Ollama. Please run 'ollama pull {TARGET_MODEL}' on your host machine.")
+
     prompt = f"[SYSTEM: Sovereign Iron Officer] Analyze PSTA telemetry: {json.dumps([t.model_dump() for t in request.telemetry])}. Context: {request.context}. Respond in JSON with vss, status, rationale, command."
     try:
         response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"})
@@ -346,6 +369,8 @@ def get_stacked_prompt(level: int = 2) -> str:
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
+    if current_model == "MODEL_NOT_FOUND":
+        raise HTTPException(status_code=531, detail=f"[07 ERROR] Iron Officer cannot converse. No models found in Ollama. Action: 'ollama pull {TARGET_MODEL}'")
 
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
@@ -491,8 +516,8 @@ def get_installed_models() -> List[str]:
 def get_best_available_model() -> str:
     models = get_installed_models()
     if not models:
-        print(f"[07 WARNING] No models detected via API. Defaulting to: {TARGET_MODEL}")
-        return TARGET_MODEL
+        print(f"[07 WARNING] No models detected via API. Returning MODEL_NOT_FOUND")
+        return "MODEL_NOT_FOUND"
 
     if TARGET_MODEL in models:
         return TARGET_MODEL
