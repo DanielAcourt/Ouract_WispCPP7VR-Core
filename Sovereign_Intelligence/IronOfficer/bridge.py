@@ -82,15 +82,11 @@ def to_forward_slash(path: str) -> str:
 
 def resolve_secure_path(raw_path: str) -> str:
     """Forces relative pathing within REPO_ROOT and handles leading slashes."""
-    # Strip leading slashes to prevent drive-root traversal (e.g., /AI_Nexus -> AI_Nexus)
+    # Strip leading slashes and drive letters to prevent drive-root traversal
     clean_path = raw_path.lstrip("/").lstrip("\\")
+    if ":" in clean_path:
+        clean_path = clean_path.split(":", 1)[-1].lstrip("/").lstrip("\\")
 
-    # If it's already an absolute path and starts with REPO_ROOT, keep it
-    if os.path.isabs(clean_path):
-        if clean_path.startswith(REPO_ROOT):
-            return os.path.abspath(clean_path)
-
-    # Otherwise, force it to be relative to REPO_ROOT
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
@@ -108,7 +104,7 @@ def tool_list_files(directory: str = "."):
     """Lists files in a directory if authorized."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Sovereign Security Breach: '{directory}' is outside your authorized READ Fiefdom."}
+        return {"error": f"Sovereign Security Breach: '{directory}' is outside your authorized READ Fiefdom. Request permission from {USER_NAME} to expand."}
     try:
         files = os.listdir(target_dir)
         return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
@@ -121,7 +117,7 @@ def tool_read_file(filepath: str):
     if not is_path_authorized(target_path, "read"):
         return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized READ Fiefdom."}
     try:
-        with open(target_path, "r", encoding="utf-8") as f:
+        with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
             return {"content": f.read()}
     except Exception as e:
         return {"error": str(e)}
@@ -130,7 +126,7 @@ def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom. Request permission from Dan to expand."}
+        return {"error": f"Sovereign Security Breach: '{filepath}' is outside your authorized WRITE Fiefdom. Request permission from {USER_NAME} to expand."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
@@ -183,13 +179,20 @@ def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
     except Exception as e:
         return {"error": str(e)}
 
-def tool_map_directory(directory: str = ".", depth: int = 2):
+def tool_map_directory(directory: str = ".", depth: Any = 2):
     """The Librarian: Provides a recursive map of the directory structure."""
     target_dir = resolve_secure_path(directory)
     if not is_path_authorized(target_dir, "read"):
         return {"error": f"Sovereign Security Breach: '{directory}' is unauthorized."}
+
+    # Cast depth to int to avoid comparison errors with model-provided strings
+    try:
+        depth_val = int(depth)
+    except:
+        depth_val = 2
+
     def get_tree(path, current_depth):
-        if current_depth > depth: return "..."
+        if current_depth > depth_val: return "..."
         tree = {}
         try:
             items = os.listdir(path)
@@ -285,6 +288,28 @@ async def root():
         "write_zones": WRITE_ZONES
     }
 
+@app.get("/v1/ollama/status")
+async def get_ollama_status():
+    try:
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
+
+@app.post("/v1/safety/evaluate")
+async def evaluate_safety(request: VSSRequest):
+    current_model = get_best_available_model()
+    prompt = f"[SYSTEM: Sovereign Iron Officer] Analyze PSTA telemetry: {json.dumps([t.model_dump() for t in request.telemetry])}. Context: {request.context}. Respond in JSON with vss, status, rationale, command."
+    try:
+        response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"})
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+        result = response.json()
+        return {"analysis": json.loads(result['response']), "model_used": current_model}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
@@ -314,27 +339,23 @@ async def chat(request: ChatRequest):
 
     KNIGHT-COMMAND SOP: Follow the structured engagement rules. Be concise and architectural.
     """
-
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
-        {"type": "function", "function": {"name": "read_file", "description": "Read content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "read_file", "description": "Read file content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "write_file", "description": "Write/create.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "delete_file", "description": "Delete target.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "search_files", "description": "Recursive search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}}, "required": ["pattern"]}}},
-        {"type": "function", "function": {"name": "map_directory", "description": "Map structure.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "search_files", "description": "Search for a pattern (Scout).", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
+        {"type": "function", "function": {"name": "map_directory", "description": "Map directory (Librarian).", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "Get GPU stats (Engineer).", "parameters": {"type": "object", "properties": {}}}}
     ]
-
     ollama_messages = [{"role": "system", "content": system_prompt}]
     for msg in request.messages:
         ollama_messages.append(msg.model_dump(exclude_none=True))
-
     try:
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
         response.raise_for_status()
         result = response.json()
         tool_chain = []
-
         while result.get("message", {}).get("tool_calls"):
             tool_calls = result["message"]["tool_calls"]
             ollama_messages.append(result["message"])
@@ -342,11 +363,9 @@ async def chat(request: ChatRequest):
                 tool_chain.append(call)
                 tool_result = execute_tool(call["function"]["name"], call["function"]["arguments"])
                 ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": call["function"]["name"]})
-
             response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
             response.raise_for_status()
             result = response.json()
-
         return {"result": result, "tool_chain": tool_chain}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
