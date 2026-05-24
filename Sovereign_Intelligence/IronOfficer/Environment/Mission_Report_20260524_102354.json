@@ -1,0 +1,13 @@
+{
+    "mission_id": "20260524_102354",
+    "timestamp": "2026-05-24T10:23:54.732116",
+    "commander": "Iron Officer",
+    "lead": "Dan",
+    "transcript": [
+        {
+            "role": "user",
+            "content": "Hello Iron Officer, this is a test."
+        }
+    ],
+    "status": "COMPLETED"
+}

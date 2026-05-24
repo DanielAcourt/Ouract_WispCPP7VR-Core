@@ -1,6 +1,6 @@
 # Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
-Sovereign Framework: Iron Officer Bridge (AD-001)
+Sovereign Framework: Iron Officer Bridge (AD-001/AD-002)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
 """
 
@@ -16,22 +16,29 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+BASE_DIR = os.path.dirname(__file__)
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 OLLAMA_HOST = "http://127.0.0.1:11434"
-TARGET_MODEL = "llama3:70b"
+TARGET_MODEL = "llama3.1:latest"
 BRIDGE_PORT = 8000
+USER_NAME = "Dan"
+SAFE_ZONES = []
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, SAFE_ZONES
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
                 cfg = json.load(f)
                 ollama_cfg = cfg.get("ollama", {})
                 bridge_cfg = cfg.get("bridge", {})
+                pref_cfg = cfg.get("user_preference", {})
+
                 OLLAMA_HOST = f"http://{ollama_cfg.get('host', '127.0.0.1')}:{ollama_cfg.get('port', 11434)}"
-                TARGET_MODEL = ollama_cfg.get("target_model", "llama3:70b")
+                TARGET_MODEL = ollama_cfg.get("target_model", "llama3.1:latest")
                 BRIDGE_PORT = bridge_cfg.get("port", 8000)
+                SAFE_ZONES = [os.path.abspath(os.path.join(BASE_DIR, "..", "..", p)) for p in bridge_cfg.get("safe_zones", [])]
+                USER_NAME = pref_cfg.get("name", "Dan")
         except Exception as e:
             print(f"[07 WARNING] Failed to load config.json: {e}")
 
@@ -52,7 +59,23 @@ class VSSRequest(BaseModel):
     telemetry: List[PSTATelemetry]
     context: str = ""
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    context: Optional[str] = ""
+
 # --- Helper Functions ---
+
+def is_path_safe(filepath: str) -> bool:
+    """Verifies if a path is within the allowed safe zones."""
+    abs_path = os.path.abspath(filepath)
+    for zone in SAFE_ZONES:
+        if abs_path.startswith(zone):
+            return True
+    return False
 
 def get_installed_models() -> List[str]:
     """Queries Ollama for installed models."""
@@ -149,7 +172,8 @@ async def root():
         "identity": "Iron Officer",
         "hardware": HARDWARE_ID,
         "nexus": NEXUS_PATH,
-        "models": DETECTED_MODELS
+        "models": DETECTED_MODELS,
+        "user": USER_NAME
     }
 
 @app.get("/v1/ollama/status")
@@ -194,6 +218,40 @@ async def evaluate_safety(request: VSSRequest):
 
         result = response.json()
         return {"analysis": json.loads(result['response']), "model_used": current_model}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+
+@app.post("/v1/chat")
+async def chat(request: ChatRequest):
+    current_model = get_best_available_model()
+
+    system_prompt = f"""
+    [SYSTEM: Sovereign AI Commander]
+    You are the Iron Officer, the primary AI Commander of the Sovereign Framework.
+    Your personality is disciplined, architectural, and highly precise.
+    You are communicating with your Lead, {USER_NAME}.
+
+    Your goal is to assist {USER_NAME} in managing the Sovereign Framework, monitoring PSTA telemetry, and maintaining the local hardware (GTX 5090).
+    Address {USER_NAME} directly. Be concise and professional.
+
+    Current Environment: {NEXUS_PATH}
+    Hardware Status: {HARDWARE_ID}
+    """
+
+    # Prepare messages for Ollama /api/chat
+    ollama_messages = [{"role": "system", "content": system_prompt}]
+    for msg in request.messages:
+        ollama_messages.append(msg.model_dump())
+
+    try:
+        response = requests.post(
+            f"{OLLAMA_HOST}/api/chat",
+            json={"model": current_model, "messages": ollama_messages, "stream": False}
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+
+        return response.json()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
