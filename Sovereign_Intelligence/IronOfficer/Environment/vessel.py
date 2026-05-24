@@ -114,13 +114,17 @@ class ChatVessel:
                 if response.status_code == 200:
                     data = response.json()
                     tool_chain = data.get("tool_chain", [])
+                    tool_outputs = data.get("tool_outputs", []) # We'll add this to bridge.py
                     result = data.get("result", {})
 
                     if self.show_tools and tool_chain:
                         print("\n[KNIGHT TOOL LOG]")
-                        for tool in tool_chain:
+                        for i, tool in enumerate(tool_chain):
                             name = tool.get("function", {}).get("name", "unknown")
-                            print(f" -> EXECUTING: {name}")
+                            args = tool.get("function", {}).get("arguments", {})
+                            output = tool_outputs[i] if i < len(tool_outputs) else "No data"
+                            print(f" -> EXECUTING: {name}({args})")
+                            print(f" -> RESULT: {str(output)[:200]}...") # Cap output length for display
                         print("-" * 20)
 
                     ai_msg = result.get("message", {})

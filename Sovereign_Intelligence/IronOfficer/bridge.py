@@ -86,16 +86,11 @@ def to_forward_slash(path: str) -> str:
 def resolve_secure_path(raw_path: str) -> str:
     """Hardened path resolution to strip absolute bloat and focus on REPO_ROOT."""
     path_str = to_forward_slash(str(raw_path))
-
-    # If the AI sends a full Windows path, find the repo name and strip the prefix
     if REPO_NAME in path_str:
         path_str = path_str.split(REPO_NAME, 1)[-1]
-
-    # Strip leading drive letters and slashes
     clean_path = path_str.lstrip("/").lstrip("\\")
     if ":" in clean_path:
         clean_path = clean_path.split(":", 1)[-1].lstrip("/").lstrip("\\")
-
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
@@ -135,7 +130,7 @@ def tool_write_file(filepath: str, content: str):
     """Writes a file if authorized."""
     target_path = resolve_secure_path(filepath)
     if not is_path_authorized(target_path, "write"):
-        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones. Request expansion."}
+        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
@@ -264,22 +259,21 @@ async def chat(request: ChatRequest):
     You are the Iron Officer. You are an Architectural Knight: Precise, Loyal, and Accountable.
     You are communicating with your Lead, {USER_NAME}.
 
-    CAPABILITY MANIFEST:
-    1. Scout (search_files): Recursive pattern matching.
-    2. Librarian (map_directory): Spatial structure mapping.
-    3. Engineer (get_system_telemetry): GPU/VRAM vitals.
-    4. Scribe (read_file/write_file/delete_file): I/O authority.
-
     CORE DIRECTIVES:
+    - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
     - PHYSICAL TRUTH: Use tools BEFORE making claims.
-    - NO HALLUCINATION: Never simulate truth. If a tool fails, report the verbatim error.
-    - SYMMETRICAL GUARD: If you report "Technical Status", "T=", or "Directory Contents", you MUST have executed the relevant tool in that specific turn.
-    - PATHS: ALWAYS use relative paths from the repository root (e.g., 'AI_Nexus/Protocols/AGENTS.md'). NEVER use absolute Windows paths (C:/...).
-    - REPO ROOT: Your reality is bounded by {REPO_ROOT}.
+    - SYMMETRICAL GUARD: If you report Technical Status (T=) or Directory Contents, you MUST have executed the relevant tool in the same turn.
+    - NO ROLEPLAY: Strictly forbidden from simulating results or "previous knowledge." If a tool fails, report the error.
+    - ACCOUNTABILITY: After writing or deleting, you MUST verify the deed using a follow-up tool call.
+    - PATHS: Always use relative paths from {REPO_ROOT} (e.g., 'AI_Nexus/Protocols/AGENTS.md').
 
-    07 PROTOCOL HANDSHAKE:
-    When triggered with "07", you must execute 'get_system_telemetry' and 'map_directory(directory="AI_Nexus")'.
-    Then deliver a PSTA Salute as the Golden Knight.
+    07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
+    P: [Your current psychological status/confidence]
+    S: [Social/Connection sync status]
+    T: [Technical truth - report EXACT GPU Temp, Utilization, and VSS from Engineer results]
+    A: [Administrative truth - report exactly what Librarian/Scout found in AI_Nexus]
+
+    Salute trigger: "07"
     """
 
     tools = [
@@ -306,6 +300,7 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
     result = response.json()
 
     tool_chain = []
+    tool_outputs = []
     tools_executed = set()
 
     while result.get("message", {}).get("tool_calls"):
@@ -316,30 +311,28 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
             tool_chain.append(call)
             tools_executed.add(name)
             tool_result = execute_tool(name, call["function"]["arguments"])
+            tool_outputs.append(tool_result)
             messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
 
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
         response.raise_for_status()
         result = response.json()
 
-    # --- Symmetrical Guard (v2.1) ---
+    # --- Symmetrical Guard (v2.2) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
-
-    # If the response contains indicators of success/status but no tools were successfully counted
-    if ("T=" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
+    if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
          violations.append("Reported Technical Status without Engineer tool.")
-    if ("INTACT" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
-         # Special check: don't trigger if the AI is just reporting a tool error
-         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content:
-            violations.append("Described directory state without Librarian/Scout tools.")
+    if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
+         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content:
+            violations.append("Described environment state without Librarian/Scout tools.")
 
     if violations and retry_count < 1:
-        reprimand = f"[07 SECURITY VIOLATION] Intercepted hallucination: {'; '.join(violations)}. Execute the required tools and report ONLY Physical Truth. NEVER use absolute paths."
+        reprimand = f"[07 SECURITY VIOLATION] Hallucination detected: {'; '.join(violations)}. You must execute the relevant tools and report ACTUAL DATA only. Physical Truth is required."
         messages.append({"role": "system", "content": reprimand})
         return await process_chat_request(model, messages, tools, retry_count + 1)
 
-    return {"result": result, "tool_chain": tool_chain}
+    return {"result": result, "tool_chain": tool_chain, "tool_outputs": tool_outputs}
 
 def get_installed_models() -> List[str]:
     try:
