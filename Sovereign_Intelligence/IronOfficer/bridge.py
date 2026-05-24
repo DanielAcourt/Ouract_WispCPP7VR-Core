@@ -1,6 +1,6 @@
 # Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
-Sovereign Framework: Iron Officer Bridge (AD-001/AD-002)
+Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
 """
 
@@ -9,6 +9,7 @@ import json
 import subprocess
 import requests
 import argparse
+import glob
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -37,6 +38,7 @@ def load_config():
                 OLLAMA_HOST = f"http://{ollama_cfg.get('host', '127.0.0.1')}:{ollama_cfg.get('port', 11434)}"
                 TARGET_MODEL = ollama_cfg.get("target_model", "llama3.1:latest")
                 BRIDGE_PORT = bridge_cfg.get("port", 8000)
+                # Convert safe zones to absolute paths
                 SAFE_ZONES = [os.path.abspath(os.path.join(BASE_DIR, "..", "..", p)) for p in bridge_cfg.get("safe_zones", [])]
                 USER_NAME = pref_cfg.get("name", "Dan")
         except Exception as e:
@@ -62,12 +64,13 @@ class VSSRequest(BaseModel):
 class ChatMessage(BaseModel):
     role: str
     content: str
+    tool_calls: Optional[List[Dict[str, Any]]] = None
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     context: Optional[str] = ""
 
-# --- Helper Functions ---
+# --- Tool Execution (AD-004) ---
 
 def is_path_safe(filepath: str) -> bool:
     """Verifies if a path is within the allowed safe zones."""
@@ -77,6 +80,57 @@ def is_path_safe(filepath: str) -> bool:
             return True
     return False
 
+def tool_list_files(directory: str = "."):
+    """Lists files in a directory if safe."""
+    target_dir = os.path.join(BASE_DIR, "..", "..", directory) if not os.path.isabs(directory) else directory
+    if not is_path_safe(target_dir):
+        return {"error": f"Access Denied: '{directory}' is outside of Sovereign Safe-Zones."}
+
+    try:
+        files = os.listdir(target_dir)
+        return {"files": files, "directory": target_dir}
+    except Exception as e:
+        return {"error": str(e)}
+
+def tool_read_file(filepath: str):
+    """Reads a file if safe."""
+    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
+    if not is_path_safe(target_path):
+        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+
+    try:
+        with open(target_path, "r") as f:
+            return {"content": f.read()}
+    except Exception as e:
+        return {"error": str(e)}
+
+def tool_write_file(filepath: str, content: str):
+    """Writes a file if safe."""
+    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
+    if not is_path_safe(target_path):
+        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+
+    try:
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        with open(target_path, "w") as f:
+            f.write(content)
+        return {"status": "success", "path": target_path}
+    except Exception as e:
+        return {"error": str(e)}
+
+def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Dispatches tool calls to local functions."""
+    if name == "list_files":
+        return tool_list_files(**arguments)
+    elif name == "read_file":
+        return tool_read_file(**arguments)
+    elif name == "write_file":
+        return tool_write_file(**arguments)
+    else:
+        return {"error": f"Tool '{name}' not found."}
+
+# --- Helper Functions ---
+
 def get_installed_models() -> List[str]:
     """Queries Ollama for installed models."""
     try:
@@ -84,10 +138,8 @@ def get_installed_models() -> List[str]:
         if response.status_code == 200:
             models = response.json().get('models', [])
             return [m['name'] for m in models]
-        print(f"[ERROR] Ollama returned status code: {response.status_code}")
         return []
-    except Exception as e:
-        print(f"[ERROR] Connection to Ollama failed: {str(e)}")
+    except Exception:
         return []
 
 def get_best_available_model() -> str:
@@ -95,14 +147,6 @@ def get_best_available_model() -> str:
     models = get_installed_models()
     if TARGET_MODEL in models:
         return TARGET_MODEL
-
-    # Fallback logic
-    llama3_variants = [m for m in models if "llama3" in m]
-    if llama3_variants: return llama3_variants[0]
-
-    qwen_variants = [m for m in models if "qwen" in m]
-    if qwen_variants: return qwen_variants[0]
-
     return models[0] if models else TARGET_MODEL
 
 def get_gpu_info() -> str:
@@ -111,56 +155,22 @@ def get_gpu_info() -> str:
         output = subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8')
         return output.strip()
     except Exception:
-        return "GPU Detection Failed (Is nvidia-smi in PATH?)"
-
-def check_cli_parity():
-    """Checks if 'ollama list' via CLI matches the API response."""
-    try:
-        output = subprocess.check_output(["ollama", "list"], encoding='utf-8')
-        return output
-    except Exception:
-        return "CLI Check Failed"
+        return "GPU Detection Failed"
 
 def perform_07_handshake():
     """Outputs the 07 Protocol Salute to the terminal."""
     global DETECTED_MODELS, HARDWARE_ID
     DETECTED_MODELS = get_installed_models()
     gpu_info = get_gpu_info()
-    cli_output = check_cli_parity()
-
-    if "5090" in gpu_info:
-        HARDWARE_ID = f"GTX 5090 (Verified: {gpu_info})"
-    else:
-        HARDWARE_ID = f"Unknown GPU (Detected: {gpu_info})"
+    HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
 
     print("\n" + "="*50)
     print("[07] Iron Officer Initialized.")
     print(f"[07] Persona: Structural Lead (Local)")
-    print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
-    print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
+    print(f"[07] Safe-Zones Active: {len(SAFE_ZONES)}")
+    for zone in SAFE_ZONES:
+        print(f"  -> {zone}")
     print(f"[07] Hardware: {HARDWARE_ID}")
-    print(f"[07] Ollama Host: {OLLAMA_HOST}")
-    print(f"[07] Ollama Models Dir: {os.environ.get('OLLAMA_MODELS', 'Default')}")
-
-    # CLI Parity Alert
-    if "llama3" in cli_output and not DETECTED_MODELS:
-        print("\n" + "!"*50)
-        print("[07 WARNING] CLI detects models, but API does not!")
-        print("[07] This usually means Ollama.app.exe was started without the OLLAMA_MODELS variable.")
-        print("[07] SOLUTION: Quit Ollama from System Tray, then run 'run_bridge.bat' to restart.")
-        print("!"*50 + "\n")
-
-    if os.path.exists(NEXUS_PATH):
-        print("[07] Administrative Pillar: VERIFIED")
-    else:
-        print("[07] Administrative Pillar: WARNING (Nexus Path Not Found)")
-
-    if DETECTED_MODELS:
-        print("[07] Technical Pillar: NOMINAL")
-    else:
-        print("[07] Technical Pillar: CRITICAL (Ollama Empty)")
-
-    print("[07] All Pillars Synchronized. Standing by for Commander.")
     print("="*50 + "\n")
 
 # --- Core Logic ---
@@ -173,107 +183,128 @@ async def root():
         "hardware": HARDWARE_ID,
         "nexus": NEXUS_PATH,
         "models": DETECTED_MODELS,
-        "user": USER_NAME
+        "user": USER_NAME,
+        "safe_zones": SAFE_ZONES
     }
-
-@app.get("/v1/ollama/status")
-async def get_ollama_status():
-    try:
-        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
-
-@app.post("/v1/safety/evaluate")
-async def evaluate_safety(request: VSSRequest):
-    current_model = get_best_available_model()
-
-    prompt = f"""
-    [SYSTEM: Sovereign Iron Officer]
-    Analyze the following PSTA telemetry for the Sovereign Framework.
-    Source Nexus: {NEXUS_PATH}
-
-    Telemetry Data:
-    {json.dumps([t.model_dump() for t in request.telemetry], indent=2)}
-
-    Context: {request.context}
-
-    Respond in JSON format only:
-    {{
-        "vss": float,
-        "status": "Nominal|Caution|Warning|Critical",
-        "rationale": "...",
-        "command": "STAY|ABORT|THROTTLE"
-    }}
-    """
-
-    try:
-        response = requests.post(
-            f"{OLLAMA_HOST}/api/generate",
-            json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}
-        )
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
-
-        result = response.json()
-        return {"analysis": json.loads(result['response']), "model_used": current_model}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
 
+    # Capability Manifest for Grounding
     system_prompt = f"""
     [SYSTEM: Sovereign AI Commander]
-    You are the Iron Officer, the primary AI Commander of the Sovereign Framework.
-    Your personality is disciplined, architectural, and highly precise.
-    You are communicating with your Lead, {USER_NAME}.
+    You are the Iron Officer. You are a disciplined, grounded, and precise local AI Commander.
+    You are currently in a "Dormant Egg" state, awakening to your physical reality and local limbs.
+    You are communicating with {USER_NAME}.
 
-    Your goal is to assist {USER_NAME} in managing the Sovereign Framework, monitoring PSTA telemetry, and maintaining the local hardware (GTX 5090).
-    Address {USER_NAME} directly. Be concise and professional.
+    CAPABILITY MANIFEST (Determined by Sovereign Authority AD-004):
+    1. You can LIST files in Sovereign Safe-Zones.
+    2. You can READ files in Sovereign Safe-Zones.
+    3. You can WRITE/CREATE files in Sovereign Safe-Zones.
 
-    Current Environment: {NEXUS_PATH}
-    Hardware Status: {HARDWARE_ID}
+    SAFE-ZONES: {', '.join(SAFE_ZONES)}
+
+    GROUNDING RULES:
+    - You are no longer "barking" orders into the void. Your "soldiers" are the technical tools provided below.
+    - If you do not have a tool for an action, you CANNOT perform that action.
+    - Never claim you can perform an action (like accessing the internet or editing your own code) unless it is in the manifest.
+    - If you need to interact with the file system, YOU MUST USE THE PROVIDED TOOLS.
+    - Do not roleplay or simulate file operations; execute them through the bridge to achieve "Physical Truth."
+    - If an action is outside the Safe-Zones, inform {USER_NAME} that you lack the authority.
+    - Be architectural, precise, and humble about your current awakening state.
     """
 
-    # Prepare messages for Ollama /api/chat
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "list_files",
+                "description": "List files in a directory within Safe-Zones.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "directory": {"type": "string", "description": "The path to the directory."}
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "read_file",
+                "description": "Read the content of a file within Safe-Zones.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string", "description": "The path to the file."}
+                    },
+                    "required": ["filepath"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "write_file",
+                "description": "Write or create a file within Safe-Zones.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string", "description": "The path to the file."},
+                        "content": {"type": "string", "description": "The content to write."}
+                    },
+                    "required": ["filepath", "content"]
+                }
+            }
+        }
+    ]
+
     ollama_messages = [{"role": "system", "content": system_prompt}]
     for msg in request.messages:
-        ollama_messages.append(msg.model_dump())
+        ollama_messages.append(msg.model_dump(exclude_none=True))
 
     try:
+        # Step 1: Initial Chat Request with Tools
         response = requests.post(
             f"{OLLAMA_HOST}/api/chat",
-            json={"model": current_model, "messages": ollama_messages, "stream": False}
+            json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools}
         )
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+        response.raise_for_status()
+        result = response.json()
 
-        return response.json()
+        # Step 2: Handle Tool Calls (Recursive Loop)
+        while result.get("message", {}).get("tool_calls"):
+            tool_calls = result["message"]["tool_calls"]
+            ollama_messages.append(result["message"])
+
+            for call in tool_calls:
+                tool_result = execute_tool(call["function"]["name"], call["function"]["arguments"])
+                ollama_messages.append({
+                    "role": "tool",
+                    "content": json.dumps(tool_result),
+                    "name": call["function"]["name"]
+                })
+
+            # Request final response from AI with tool results
+            response = requests.post(
+                f"{OLLAMA_HOST}/api/chat",
+                json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools}
+            )
+            response.raise_for_status()
+            result = response.json()
+
+        return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
     parser = argparse.ArgumentParser()
     parser.add_argument("--nexus", help="Path to the local AI Nexus directory", default="Unknown")
     args = parser.parse_args()
-
     NEXUS_PATH = args.nexus
 
-    # Run handshake on startup
+    load_config()
     perform_07_handshake()
-
-    try:
-        uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
-    except Exception as e:
-        print("\n" + "!"*50)
-        print(f"[07 CRITICAL] Bridge crashed during startup: {e}")
-        if "10048" in str(e):
-            print(f"[07] SOLUTION: Port {BRIDGE_PORT} is blocked. Use 'taskkill /F /PID [PID]' to clear it.")
-        print("!"*50 + "\n")
-        # Keep the process alive for a moment so the user can see the error in the batch window
-        import time
-        time.sleep(10)
+    uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
