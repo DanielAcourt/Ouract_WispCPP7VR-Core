@@ -9,6 +9,22 @@
   },
   {
     "date": "2025-05-22",
+    "event": "Autonomous Writing Incident (v0.37.1 Testing)",
+    "description": "During a '/read all' task, the AI attempted to create 'AI_Nexus/STATUS.md' autonomously. This led to repository clutter and iteration depth issues.",
+    "outcome": "Implemented the 'NO AUTONOMOUS WRITING' directive in bridge.py and AGENTS.md. All reporting must be via chat response unless explicitly commanded to write a file.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Tool Schema Hallucination (unexpected keyword argument 'filepath')",
+    "description": "During a Level 1 stabilization, the AI called map_directory using 'filepath' instead of 'directory', causing a bridge crash.",
+    "outcome": "Implemented Parameter Resilience in bridge.py. The bridge now automatically maps mismatched parameters (filepath vs directory) to ensure tool execution success despite minor LLM schema hallucinations.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
     "event": "Tortoise vs. Cheetah Behavioral Shift",
     "description": "The Lead identified a discrepancy in the local Iron Officer's performance—hallucinating state and reporting 'Done' without verification. Requested a shift to a slower, more analytical 'Tortoise' approach.",
     "outcome": "Implemented 'Ambiguity Reduction Protocol' and 'Verification Prerequisite' in KnightCommand_SOP and AGENTS.md. Analytical depth now supersedes response speed.",

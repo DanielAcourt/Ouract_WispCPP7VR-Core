@@ -13,6 +13,7 @@ import re
 import shutil
 import time
 import glob
+import inspect
 from typing import Dict, Any, List, Optional, Set
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-VERSION = "0.37.1-Knight"
+VERSION = "0.37.2-Knight"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
@@ -223,8 +224,25 @@ def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
 
 def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
-    if name in tools: return tools[name](**arguments)
-    return {"error": f"Tool '{name}' not found."}
+    if name not in tools: return {"error": f"Tool '{name}' not found."}
+
+    target_func = tools[name]
+    sig = inspect.signature(target_func)
+    valid_params = sig.parameters.keys()
+
+    # --- Parameter Resilience: Fix common LLM schema hallucinations ---
+    if "filepath" in arguments and "directory" in valid_params:
+        arguments["directory"] = arguments.pop("filepath")
+    if "directory" in arguments and "filepath" in valid_params:
+        arguments["filepath"] = arguments.pop("directory")
+
+    # Filter out hallucinated extra parameters (e.g., 'extension' for map_directory)
+    filtered_args = {k: v for k, v in arguments.items() if k in valid_params}
+
+    try:
+        return target_func(**filtered_args)
+    except Exception as e:
+        return {"error": f"Tool execution failed: {str(e)}"}
 
 # --- Core Logic ---
 
@@ -266,9 +284,13 @@ def extract_index_levels() -> Dict[int, List[str]]:
                 if level_match:
                     current_level = int(level_match.group(1))
 
-                path_match = re.findall(r"`([^`]+\.[a-z]{2,4})`", line)
+                # Capture paths in backticks that look like files or directories (end in /)
+                path_match = re.findall(r"`([^`]+)`", line)
                 if path_match and current_level in levels:
-                    levels[current_level].extend(path_match)
+                    for p in path_match:
+                        # Only include if it contains a slash or an extension, and isn't just a placeholder
+                        if ("/" in p or "." in p) and "path_to" not in p.lower():
+                            levels[current_level].append(p)
     except: pass
     return levels
 
@@ -282,6 +304,7 @@ async def chat(request: ChatRequest):
 
     CORE DIRECTIVES:
     - THE TORTOISE STANDARD: Prioritize analytical depth over speed. Calculate many times before answering.
+    - NO AUTONOMOUS WRITING: Do not create status files, logs, or reports on disk (e.g., in AI_Nexus/) unless explicitly commanded by the Lead. All reporting must be via linear chat response.
     - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
     - PHYSICAL TRUTH: Use tools BEFORE making claims.
     - SYMMETRICAL GUARD: If you report Technical Status (T=) or Directory Contents, you MUST have executed the relevant tool in the same turn.

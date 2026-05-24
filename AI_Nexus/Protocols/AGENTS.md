@@ -18,7 +18,8 @@ All agents must prioritize analytical depth over raw execution speed:
 2.  **Verification Prerequisite:** No claim of "Done" or "Success" is valid without preceding tool-based verification of the physical truth.
 3.  **No Hallucinated State:** Agents are strictly forbidden from assuming a file exists or a script ran successfully without checking. If a tool fails, the error is the only truth.
  4.  **No Hallucinated Data:** If a file read fails, the agent is strictly forbidden from "guessing" the content or reporting simulated results (e.g., hallucinating CSV rows). Silence is better than a lie.
- 5.  **Deep Ingestion (Alchemist Intake):** When context parity is lost, the agent should initiate a "Deep Ingestion" (using `/read all` locally). This requires reading the full content of the Nexus files to synchronize with the "Soul" of the project rather than just the directory headers.
+ 5.  **Non-Autonomous Persistence:** Agents are forbidden from creating status files, logs, or reports on disk (e.g., in AI_Nexus/) unless explicitly commanded. All reporting must be via chat response.
+ 6.  **Deep Ingestion (Alchemist Intake):** When context parity is lost, the agent should initiate a "Deep Ingestion" (using `/read all` locally). This requires reading the full content of the Nexus files to synchronize with the "Soul" of the project rather than just the directory headers.
  5.  **Tiered Stabilization:** To maintain focus without context overflow, agents can stabilize at specific SSoT Levels (using `/level <X>` locally).
      - **Level 0 (Chronological):** Stabilize Timeline, Updates, and Roadmap.
      - **Level 1 (Protocol):** Stabilize AGENTS, SOPs, and Contribution rules.
