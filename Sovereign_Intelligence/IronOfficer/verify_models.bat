@@ -10,11 +10,15 @@ ollama list
 echo.
 
 echo --- 2. API PERSPECTIVE (bridge connection) ---
-curl -s http://127.0.0.1:11434/api/tags | python -c "import sys, json; print('\n'.join([m['name'] for m in json.load(sys.stdin)['models']]))"
+curl -s http://127.0.0.1:11434/api/tags | python -c "import sys, json; data = json.load(sys.stdin); models = [m['name'] for m in data.get('models', [])]; print('\n'.join(models) if models else '[07] No models found via API.')"
 echo.
 
 echo --- 3. ENVIRONMENT CHECK ---
-echo OLLAMA_MODELS = %OLLAMA_MODELS%
+if "%OLLAMA_MODELS%"=="" (
+    echo [07 WARNING] OLLAMA_MODELS is not set. Using default: %USERPROFILE%\.ollama\models
+) else (
+    echo OLLAMA_MODELS = %OLLAMA_MODELS%
+)
 echo.
 
 echo [07] If lists 1 and 2 do not match:
