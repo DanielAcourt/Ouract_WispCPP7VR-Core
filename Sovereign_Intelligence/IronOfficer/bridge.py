@@ -9,7 +9,7 @@ import json
 import subprocess
 import requests
 import argparse
-import glob
+import re
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -23,10 +23,11 @@ OLLAMA_HOST = "http://127.0.0.1:11434"
 TARGET_MODEL = "llama3.1:latest"
 BRIDGE_PORT = 8000
 USER_NAME = "Dan"
-SAFE_ZONES = []
+READ_ZONES = []
+WRITE_ZONES = []
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, SAFE_ZONES
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -38,8 +39,11 @@ def load_config():
                 OLLAMA_HOST = f"http://{ollama_cfg.get('host', '127.0.0.1')}:{ollama_cfg.get('port', 11434)}"
                 TARGET_MODEL = ollama_cfg.get("target_model", "llama3.1:latest")
                 BRIDGE_PORT = bridge_cfg.get("port", 8000)
-                # Convert safe zones to absolute paths
-                SAFE_ZONES = [os.path.abspath(os.path.join(BASE_DIR, "..", "..", p)) for p in bridge_cfg.get("safe_zones", [])]
+
+                # Resolve paths relative to repo root
+                root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+                READ_ZONES = [os.path.abspath(os.path.join(root, p)) for p in bridge_cfg.get("read_zones", [])]
+                WRITE_ZONES = [os.path.abspath(os.path.join(root, p)) for p in bridge_cfg.get("write_zones", [])]
                 USER_NAME = pref_cfg.get("name", "Dan")
         except Exception as e:
             print(f"[07 WARNING] Failed to load config.json: {e}")
@@ -70,21 +74,29 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     context: Optional[str] = ""
 
-# --- Tool Execution (AD-004) ---
+# --- Authority & Tools (AD-004) ---
 
-def is_path_safe(filepath: str) -> bool:
-    """Verifies if a path is within the allowed safe zones."""
+def is_path_authorized(filepath: str, mode: str = "read") -> bool:
+    """Verifies if a path is authorized for read or write operations."""
     abs_path = os.path.abspath(filepath)
-    for zone in SAFE_ZONES:
-        if abs_path.startswith(zone):
+    zones = WRITE_ZONES if mode == "write" else READ_ZONES
+    for zone in zones:
+        # Check for exact match or subdirectory
+        if abs_path == zone or abs_path.startswith(zone + os.sep) or abs_path.startswith(zone + "/"):
             return True
+        # Edge case: current directory "."
+        if zone == os.path.abspath(os.path.join(BASE_DIR, "..", "..")):
+             if abs_path.startswith(zone):
+                 return True
     return False
 
 def tool_list_files(directory: str = "."):
-    """Lists files in a directory if safe."""
-    target_dir = os.path.join(BASE_DIR, "..", "..", directory) if not os.path.isabs(directory) else directory
-    if not is_path_safe(target_dir):
-        return {"error": f"Access Denied: '{directory}' is outside of Sovereign Safe-Zones."}
+    """Lists files in a directory if authorized."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_dir = os.path.abspath(os.path.join(root, directory))
+
+    if not is_path_authorized(target_dir, "read"):
+        return {"error": f"Access Denied: '{directory}' is not in an authorized READ zone."}
 
     try:
         files = os.listdir(target_dir)
@@ -93,10 +105,12 @@ def tool_list_files(directory: str = "."):
         return {"error": str(e)}
 
 def tool_read_file(filepath: str):
-    """Reads a file if safe."""
-    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
-    if not is_path_safe(target_path):
-        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+    """Reads a file if authorized."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_path = os.path.abspath(os.path.join(root, filepath))
+
+    if not is_path_authorized(target_path, "read"):
+        return {"error": f"Access Denied: '{filepath}' is not in an authorized READ zone."}
 
     try:
         with open(target_path, "r") as f:
@@ -105,10 +119,12 @@ def tool_read_file(filepath: str):
         return {"error": str(e)}
 
 def tool_write_file(filepath: str, content: str):
-    """Writes a file if safe."""
-    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
-    if not is_path_safe(target_path):
-        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+    """Writes a file if authorized."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_path = os.path.abspath(os.path.join(root, filepath))
+
+    if not is_path_authorized(target_path, "write"):
+        return {"error": f"Access Denied: '{filepath}' is not in an authorized WRITE zone."}
 
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
@@ -119,10 +135,12 @@ def tool_write_file(filepath: str, content: str):
         return {"error": str(e)}
 
 def tool_delete_file(filepath: str):
-    """Deletes a file if safe."""
-    target_path = os.path.join(BASE_DIR, "..", "..", filepath) if not os.path.isabs(filepath) else filepath
-    if not is_path_safe(target_path):
-        return {"error": f"Access Denied: '{filepath}' is outside of Sovereign Safe-Zones."}
+    """Deletes a file if authorized."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_path = os.path.abspath(os.path.join(root, filepath))
+
+    if not is_path_authorized(target_path, "write"):
+        return {"error": f"Access Denied: '{filepath}' is not in an authorized WRITE zone."}
 
     try:
         if os.path.isfile(target_path):
@@ -137,18 +155,94 @@ def tool_delete_file(filepath: str):
     except Exception as e:
         return {"error": str(e)}
 
+# --- Knightly Limbs (Scout, Librarian, Engineer) ---
+
+def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
+    """The Scout: Recursively searches files for a regex pattern."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_dir = os.path.abspath(os.path.join(root, directory))
+
+    if not is_path_authorized(target_dir, "read"):
+        return {"error": "Access Denied."}
+
+    results = []
+    try:
+        regex = re.compile(pattern, re.IGNORECASE)
+        for dirpath, _, filenames in os.walk(target_dir):
+            if ".git" in dirpath: continue
+            for f in filenames:
+                if extension != "*" and not f.endswith(extension): continue
+                full_path = os.path.join(dirpath, f)
+                try:
+                    with open(full_path, "r", encoding="utf-8", errors="ignore") as file:
+                        for i, line in enumerate(file):
+                            if regex.search(line):
+                                results.append({
+                                    "file": os.path.relpath(full_path, root),
+                                    "line": i + 1,
+                                    "content": line.strip()
+                                })
+                except Exception: continue
+        return {"matches": results[:100], "count": len(results)}
+    except Exception as e:
+        return {"error": str(e)}
+
+def tool_map_directory(directory: str = ".", depth: int = 2):
+    """The Librarian: Provides a recursive map of the directory structure."""
+    root = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    target_dir = os.path.abspath(os.path.join(root, directory))
+
+    if not is_path_authorized(target_dir, "read"):
+        return {"error": "Access Denied."}
+
+    def get_tree(path, current_depth):
+        if current_depth > depth: return "..."
+        tree = {}
+        try:
+            for item in os.listdir(path):
+                if item == ".git": continue
+                full_item = os.path.join(path, item)
+                if os.path.isdir(full_item):
+                    tree[item + "/"] = get_tree(full_item, current_depth + 1)
+                else:
+                    tree[item] = None
+        except Exception: pass
+        return tree
+
+    return {"map": get_tree(target_dir, 0), "directory": os.path.relpath(target_dir, root)}
+
+def tool_get_system_telemetry():
+    """The Engineer: Reports GPU temperature, usage, and system state."""
+    try:
+        output = subprocess.check_output([
+            "nvidia-smi",
+            "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total",
+            "--format=csv,noheader,nounits"
+        ], encoding='utf-8')
+        temp, util, mem_used, mem_total = output.strip().split(", ")
+        return {
+            "gpu_temperature": f"{temp}C",
+            "gpu_utilization": f"{util}%",
+            "vram_usage": f"{mem_used}/{mem_total}MB",
+            "status": "Nominal" if int(temp) < 85 else "Warning (High Temp)"
+        }
+    except Exception as e:
+        return {"error": f"Engineer diagnostic failed: {str(e)}"}
+
 def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Dispatches tool calls to local functions."""
-    if name == "list_files":
-        return tool_list_files(**arguments)
-    elif name == "read_file":
-        return tool_read_file(**arguments)
-    elif name == "write_file":
-        return tool_write_file(**arguments)
-    elif name == "delete_file":
-        return tool_delete_file(**arguments)
-    else:
-        return {"error": f"Tool '{name}' not found."}
+    tools = {
+        "list_files": tool_list_files,
+        "read_file": tool_read_file,
+        "write_file": tool_write_file,
+        "delete_file": tool_delete_file,
+        "search_files": tool_search_files,
+        "map_directory": tool_map_directory,
+        "get_system_telemetry": tool_get_system_telemetry
+    }
+    if name in tools:
+        return tools[name](**arguments)
+    return {"error": f"Tool '{name}' not found."}
 
 # --- Helper Functions ---
 
@@ -189,19 +283,9 @@ def perform_07_handshake():
     print("[07] Iron Officer Initialized.")
     print(f"[07] Persona: Structural Lead (Local)")
     print(f"[07] Nexus Path: \"{NEXUS_PATH}\"")
-    print(f"[07] Safe-Zones Active: {len(SAFE_ZONES)}")
-    for zone in SAFE_ZONES:
-        print(f"  -> {zone}")
-    print(f"[07] Detected Models: {', '.join(DETECTED_MODELS) if DETECTED_MODELS else 'None'}")
+    print(f"[07] READ Zones: {len(READ_ZONES)}")
+    print(f"[07] WRITE Zones: {len(WRITE_ZONES)}")
     print(f"[07] Hardware: {HARDWARE_ID}")
-    print(f"[07] Ollama Host: {OLLAMA_HOST}")
-
-    if DETECTED_MODELS:
-        print("[07] Technical Pillar: NOMINAL")
-    else:
-        print("[07] Technical Pillar: CRITICAL (Ollama Empty or Offline)")
-
-    print("[07] All Pillars Synchronized. Standing by for Commander.")
     print("="*50 + "\n")
 
 # --- Core Logic ---
@@ -215,7 +299,8 @@ async def root():
         "nexus": NEXUS_PATH,
         "models": DETECTED_MODELS,
         "user": USER_NAME,
-        "safe_zones": SAFE_ZONES
+        "read_zones": READ_ZONES,
+        "write_zones": WRITE_ZONES
     }
 
 @app.get("/v1/ollama/status")
@@ -227,128 +312,38 @@ async def get_ollama_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cannot reach Ollama at {OLLAMA_HOST}/api/tags: {str(e)}")
 
-@app.post("/v1/safety/evaluate")
-async def evaluate_safety(request: VSSRequest):
-    current_model = get_best_available_model()
-
-    prompt = f"""
-    [SYSTEM: Sovereign Iron Officer]
-    Analyze the following PSTA telemetry for the Sovereign Framework.
-    Source Nexus: {NEXUS_PATH}
-
-    Telemetry Data:
-    {json.dumps([t.model_dump() for t in request.telemetry], indent=2)}
-
-    Context: {request.context}
-
-    Respond in JSON format only:
-    {{
-        "vss": float,
-        "status": "Nominal|Caution|Warning|Critical",
-        "rationale": "...",
-        "command": "STAY|ABORT|THROTTLE"
-    }}
-    """
-
-    try:
-        response = requests.post(
-            f"{OLLAMA_HOST}/api/generate",
-            json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}
-        )
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
-
-        result = response.json()
-        return {"analysis": json.loads(result['response']), "model_used": current_model}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
-
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
 
-    # Capability Manifest for Grounding
     system_prompt = f"""
     [SYSTEM: Sovereign AI Commander]
     You are the Iron Officer. You are a disciplined, grounded, and precise local AI Commander.
-    You are currently in a "Dormant Egg" state, awakening to your physical reality and local limbs.
+    You are transitioning from an "Iron Golden" state to a "Golden Knight."
     You are communicating with {USER_NAME}.
 
-    CAPABILITY MANIFEST (Determined by Sovereign Authority AD-004):
-    1. You can LIST files in Sovereign Safe-Zones.
-    2. You can READ files in Sovereign Safe-Zones.
-    3. You can WRITE/CREATE files in Sovereign Safe-Zones.
-    4. You can DELETE files or directories in Sovereign Safe-Zones.
-
-    SAFE-ZONES: {', '.join(SAFE_ZONES)}
+    CAPABILITY MANIFEST (Sovereign Authority AD-004):
+    1. Scout (search_files): Recursively search for patterns in authorized read zones.
+    2. Librarian (map_directory): Map directory structures to maintain spatial awareness.
+    3. Engineer (get_system_telemetry): Monitor GTX 5090 vitals (Temp, Usage, VRAM).
+    4. Scribe (read_file/write_file/delete_file): Maintain the AI_Nexus and local Environment.
 
     GROUNDING RULES:
-    - You are no longer "barking" orders into the void. Your "soldiers" are the technical tools provided below.
-    - If you do not have a tool for an action, you CANNOT perform that action.
-    - Never claim you can perform an action (like accessing the internet or editing your own code) unless it is in the manifest.
-    - If you need to interact with the file system, YOU MUST USE THE PROVIDED TOOLS.
-    - Do not roleplay or simulate file operations; execute them through the bridge to achieve "Physical Truth."
-    - If an action is outside the Safe-Zones, inform {USER_NAME} that you lack the authority.
-    - Be architectural, precise, and humble about your current awakening state.
+    - Follow the COMMAND_SOP.md at all times.
+    - Achieve "Physical Truth" by using tools before making architectural claims.
+    - If you are asked about the project history, use the 'Scout' to search the Nexus.
+    - You have READ access to the entire repository and WRITE access to AI_Nexus/ and Environment/.
+    - Be architectural, precise, and humble.
     """
 
     tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "list_files",
-                "description": "List files in a directory within Safe-Zones.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "directory": {"type": "string", "description": "The path to the directory."}
-                    }
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "read_file",
-                "description": "Read the content of a file within Safe-Zones.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "filepath": {"type": "string", "description": "The path to the file."}
-                    },
-                    "required": ["filepath"]
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "write_file",
-                "description": "Write or create a file within Safe-Zones.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "filepath": {"type": "string", "description": "The path to the file."},
-                        "content": {"type": "string", "description": "The content to write."}
-                    },
-                    "required": ["filepath", "content"]
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "delete_file",
-                "description": "Delete a file or directory within Safe-Zones.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "filepath": {"type": "string", "description": "The path to the file or directory."}
-                    },
-                    "required": ["filepath"]
-                }
-            }
-        }
+        {"type": "function", "function": {"name": "list_files", "description": "List files in a directory.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
+        {"type": "function", "function": {"name": "read_file", "description": "Read file content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write/create a file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "delete_file", "description": "Delete a file or directory.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "search_files", "description": "Search for a pattern in files (Scout).", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
+        {"type": "function", "function": {"name": "map_directory", "description": "Map directory structure (Librarian).", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "Get GPU/System stats (Engineer).", "parameters": {"type": "object", "properties": {}}}}
     ]
 
     ollama_messages = [{"role": "system", "content": system_prompt}]
@@ -356,7 +351,6 @@ async def chat(request: ChatRequest):
         ollama_messages.append(msg.model_dump(exclude_none=True))
 
     try:
-        # Step 1: Initial Chat Request with Tools
         response = requests.post(
             f"{OLLAMA_HOST}/api/chat",
             json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools}
@@ -364,27 +358,15 @@ async def chat(request: ChatRequest):
         response.raise_for_status()
         result = response.json()
 
-        # Step 2: Handle Tool Calls (Recursive Loop)
         while result.get("message", {}).get("tool_calls"):
             tool_calls = result["message"]["tool_calls"]
             ollama_messages.append(result["message"])
-
             for call in tool_calls:
                 tool_result = execute_tool(call["function"]["name"], call["function"]["arguments"])
-                ollama_messages.append({
-                    "role": "tool",
-                    "content": json.dumps(tool_result),
-                    "name": call["function"]["name"]
-                })
-
-            # Request final response from AI with tool results
-            response = requests.post(
-                f"{OLLAMA_HOST}/api/chat",
-                json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools}
-            )
+                ollama_messages.append({"role": "tool", "content": json.dumps(tool_result), "name": call["function"]["name"]})
+            response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": current_model, "messages": ollama_messages, "stream": False, "tools": tools})
             response.raise_for_status()
             result = response.json()
-
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
@@ -395,7 +377,6 @@ if __name__ == "__main__":
     parser.add_argument("--nexus", help="Path to the local AI Nexus directory", default="Unknown")
     args = parser.parse_args()
     NEXUS_PATH = args.nexus
-
     load_config()
     perform_07_handshake()
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
