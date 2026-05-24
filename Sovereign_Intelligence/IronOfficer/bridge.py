@@ -231,13 +231,24 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     valid_params = sig.parameters.keys()
 
     # --- Parameter Resilience: Fix common LLM schema hallucinations ---
-    if "filepath" in arguments and "directory" in valid_params:
-        arguments["directory"] = arguments.pop("filepath")
-    if "directory" in arguments and "filepath" in valid_params:
-        arguments["filepath"] = arguments.pop("directory")
+    # 1. Map synonyms to the correct positional keys
+    hallucination_map = {
+        "filepath": ["path", "file", "target", "filename"],
+        "directory": ["path", "folder", "dir"]
+    }
 
-    # Filter out hallucinated extra parameters (e.g., 'extension' for map_directory)
+    for target, aliases in hallucination_map.items():
+        if target in valid_params and target not in arguments:
+            for alias in aliases:
+                if alias in arguments:
+                    arguments[target] = arguments.pop(alias)
+                    break
+
+    # 2. Filter out hallucinated extra parameters (e.g., 'extension' for map_directory)
     filtered_args = {k: v for k, v in arguments.items() if k in valid_params}
+
+    # 3. Ensure mandatory positional arguments are present if possible
+    # (If missing after mapping, the tool call will still fail gracefully)
 
     try:
         return target_func(**filtered_args)
@@ -412,6 +423,15 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
             for call in ai_msg["tool_calls"]:
                 name = call["function"]["name"]
                 args = call["function"]["arguments"]
+                # --- Anti-Hallucination: Block autonomous status writing ---
+                if name == "write_file":
+                    target_file = str(args.get("filepath", "")).upper()
+                    if "STATUS.MD" in target_file or "LOGS.TXT" in target_file or "MEMORY.JSON" in target_file:
+                         if "STABILIZE" not in ai_msg.get("content", "").upper(): # Allow if explicitly commanded
+                            reprimand = "[07 SECURITY VIOLATION] NO AUTONOMOUS WRITING: You attempted to create a status/log file without explicit command. All reporting must be via chat response. Action blocked."
+                            messages.append({"role": "system", "content": reprimand})
+                            continue
+
                 write_status_pulse(name, args)
                 tool_chain.append(call)
                 tools_executed.add(name)

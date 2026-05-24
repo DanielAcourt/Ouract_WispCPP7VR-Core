@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # Hardware Source of Truth (Inventory)
 
 ## 👑 1. Primary Authority
@@ -50,14 +50,37 @@ If the 07 Handshake fails or Ollama is "Refusing Connection":
 
 ---
 
-## 🍓 3. Edge Node: "Key Species Monitor"
+## 🖥️ 3. Advanced Compute Optimization (KV Cache)
+To maximize the 32GB VRAM of the **RTX 5090** and the **64GB System RAM** reservoir during Deep Ingestion:
+
+### 3.1 KV Cache Quantization
+- **Goal:** Double the context window for repository-wide ingestion.
+- **Implementation:** Compressing the KV Cache to **FP8** or **INT4**. Cuts the memory footprint in half without significant accuracy loss.
+- **Vessel Logic:** Allows for ~64k context support on the 5090.
+
+### 3.2 Dynamic RAM Offloading
+- **Goal:** Utilize the 64GB System RAM for overflow parking lot.
+- **Mechanism:** Large models (70B+) can offload their KV cache layers to system RAM over the high-speed interconnect.
+- **Trade-off:** Decelerates the "decode" phase but prevents OOM errors during `/read all`.
+
+### 3.3 Smart Prefix Caching (PagedAttention)
+- **Goal:** Instant responses for repeated codebase queries.
+- **Mechanism:** The engine hashes and locks file structures into VRAM. Subsequent turns skip recalculation if files are unchanged.
+
+### 3.4 Allocation Pool Management
+- **num_ctx:** Explicitly set to `32768` in `config.json` to pre-allocate context blocks.
+- **num_gpu:** If context window is insufficient, lower the GPU layer count (e.g., to 72 layers) to force model weights into system RAM, freeing VRAM exclusively for the tracking cache.
+
+---
+
+## 🍓 4. Edge Node: "Key Species Monitor"
 *   **Hardware:** Raspberry Pi 4
 *   **Role:** Headless safety node (PSTA) monitoring physical Key Species (Vessel: Fish Tank/Plant).
 *   **Interface:** GPIO-linked physical sensors (IoT Truth).
 
 ---
 
-## 🔭 4. Future Expansion & Principles
+## 🔭 5. Future Expansion & Principles
 The Iron Officer architecture is designed to be machine-agnostic and scalable.
 - **Node Discovery:** New machines (Vessels) will be registered in this manifest before being permitted into the Sovereign Cluster.
 - **Decentralization:** While the 5090 is the current "Administrative Brain," the PSTA logic is distributed to the edge (Pi 4) to ensure safety even if the primary bridge is severed.

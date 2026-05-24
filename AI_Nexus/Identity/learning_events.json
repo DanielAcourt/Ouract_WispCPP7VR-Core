@@ -110,5 +110,21 @@
     "outcome": "Implemented 'Bridge Authority' extraction in bridge.py. The bridge now parses INDEX.md and injects verified literal paths into the system message. Forbade 'guessing' of data or contents in AGENTS.md. Symmetrical Guard now audits for data hallucinations.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "Temple Loop Failure (Max Iteration Exceeded)",
+    "description": "During Level 1 stabilization, the AI attempted to create 'STATUS.md' autonomously, leading to an infinite loop of 'calculations' that hit the hard cap of 50 iterations.",
+    "outcome": "Implemented an 'Anti-Hallucination Guard' in bridge.py to block autonomous file creation. Reinforced the 'No Autonomous Writing' rule in protocols. Iteration depth is now protected by active reprimands.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
+  },
+  {
+    "date": "2025-05-22",
+    "event": "GTX 5090 KV Cache Optimization Discovery",
+    "description": "The Lead identified advanced techniques for maximizing local hardware (5090/64GB RAM) for deep ingestion, including FP8 quantization and RAM offloading.",
+    "outcome": "Updated Hardware.md with sections 3.1-3.4 covering KV Cache quantization, Dynamic RAM Offloading, Smart Prefix Caching, and Allocation Pool management. Optimized the bridge context for 32k support.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]
