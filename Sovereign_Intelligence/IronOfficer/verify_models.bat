@@ -14,14 +14,19 @@ curl -s http://127.0.0.1:11434/api/tags | python -c "import sys, json; data = js
 echo.
 
 echo --- 3. ENVIRONMENT CHECK ---
+echo User Profile: %USERPROFILE%
 if "%OLLAMA_MODELS%"=="" (
-    echo [07 WARNING] OLLAMA_MODELS is not set. Using default: %USERPROFILE%\.ollama\models
+    echo [07 WARNING] OLLAMA_MODELS is not set. Default path: %USERPROFILE%\.ollama\models
+    echo --- 4. PHYSICAL TRUTH (FileSystem) ---
+    dir "%USERPROFILE%\.ollama\models" /B 2>nul || echo [07 ERROR] Path not found.
 ) else (
     echo OLLAMA_MODELS = %OLLAMA_MODELS%
+    echo --- 4. PHYSICAL TRUTH (FileSystem) ---
+    dir "%OLLAMA_MODELS%" /B 2>nul || echo [07 ERROR] Path not found.
 )
 echo.
 
-echo [07] If lists 1 and 2 do not match:
+echo [07] If lists 1 and 2 and 4 do not match:
 echo 1. Right-click Ollama in System Tray -> Quit.
 echo 2. Run 'run_bridge.bat'.
 echo 3. Verify parity again.

@@ -75,16 +75,27 @@ if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
 tasklist /FI "IMAGENAME eq Ollama.app.exe" 2>NUL | find /I /N "Ollama.app.exe">NUL
 if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
 
-if "%OLLAMA_RUNNING%" NEQ "1" (
-    echo [07 CRITICAL] Ollama is not running.
-    echo [07] Please start Ollama from your System Tray or Start Menu.
-    :: We pause here because the bridge will definitely fail without Ollama
-    pause
+if "%OLLAMA_RUNNING%" EQU "1" (
+    set /p restart_ollama="[07] Ollama is already running. Force restart with custom env? (y/n): "
+    if /i "%restart_ollama%"=="y" (
+        echo [07] Terminating Ollama...
+        taskkill /F /IM ollama.exe /T >nul 2>&1
+        taskkill /F /IM "ollama app.exe" /T >nul 2>&1
+        set "OLLAMA_RUNNING=0"
+        timeout /t 2 >nul
+    )
 )
 
-:: Set Ollama Environment Overrides if needed
+:: Set Ollama Environment Overrides
 :: (Defaults to standard locations if not set in config)
 set "OLLAMA_MODELS=%USERPROFILE%\.ollama\models"
+
+if "%OLLAMA_RUNNING%" NEQ "1" (
+    echo [07] Starting Ollama with custom models path...
+    start "" "ollama" serve
+    echo [07] Waiting for Ollama to initialize...
+    timeout /t 5 >nul
+)
 
 :: AD-006: Optimization for Hierarchical Prefix Caching
 :: Force single-session stability to prevent cache thrashing

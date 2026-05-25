@@ -174,5 +174,13 @@
     "outcome": "Synchronized all version strings to v0.37.2-Knight. Verified the stability of the 07 Salute protocol across the full local stack.",
     "confidence": "High",
     "ambiguity_level": "Low"
+  },
+  {
+    "date": "2026-02-20",
+    "event": "Ollama Environment Inheritance Hardening (AD-010)",
+    "description": "Detected that Ollama instances running as background services ignore environment variables set in localized batch files, leading to 'Empty Model Library' errors even when models exist on disk.",
+    "outcome": "Enhanced run_bridge.bat with an optional 'Force Restart' for Ollama. Exposed environment variables in the bridge root endpoint for transparency. This ensures Ollama is explicitly started within the hardened environment.",
+    "confidence": "High",
+    "ambiguity_level": "Low"
   }
 ]

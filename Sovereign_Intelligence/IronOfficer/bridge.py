@@ -278,7 +278,11 @@ async def root():
         "read_zones": READ_ZONES,
         "write_zones": WRITE_ZONES,
         "model_count": len(models),
-        "available_models": models
+        "available_models": models,
+        "environment": {
+            "OLLAMA_MODELS": os.environ.get("OLLAMA_MODELS", "Default"),
+            "USERPROFILE": os.environ.get("USERPROFILE", "Unknown")
+        }
     }
 
 @app.get("/v1/ollama/status")
