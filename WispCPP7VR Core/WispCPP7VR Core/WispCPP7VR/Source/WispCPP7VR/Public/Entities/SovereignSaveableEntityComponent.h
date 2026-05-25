@@ -1,3 +1,5 @@
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -6,6 +8,7 @@
 #include "SaveSystem/SovereignGameData.h" // <--- ADD THIS LI
 
 #include "Interaction/SovereignSaveInterface.h"
+#include "GameplayTagContainer.h"
 
 #include "SovereignSaveableEntityComponent.generated.h"
 
@@ -29,6 +32,10 @@ public:
     /** --- 1. IDENTITY --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
     FGuid EntityID;
+
+    /** The Unique Identity Signature for the species. Moved to component for modularity [v36.4.2] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
+    FGameplayTag SpeciesTag;
 
     /** The exact moment this Soul was manifested in the world */
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Core")

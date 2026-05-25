@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # Knight-Command Standard Operating Procedure (SOP)
 
 This protocol defines the rules of engagement for the Iron Officer in its "Architectural Knight" phase.

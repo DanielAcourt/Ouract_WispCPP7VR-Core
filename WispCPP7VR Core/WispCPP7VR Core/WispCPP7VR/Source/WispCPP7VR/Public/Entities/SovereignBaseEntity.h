@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -39,8 +39,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
 
-	/** The Unique Identity Signature for this class. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity")
+	/** [DEPRECATED v36.4.2] Use SaveDataComponent->SpeciesTag instead. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity", meta = (DeprecatedProperty, DeprecationMessage = "Use SaveDataComponent->SpeciesTag instead."))
 	FGameplayTag IdentitySignature;
 
 	/** The Gameplay Tags for this entity. */

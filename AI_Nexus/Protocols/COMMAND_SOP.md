@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # Command & Delegation Protocol (The Sun Tzu SOP)
 
 > "If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers." — *Sun Tzu*
@@ -77,3 +77,16 @@ Agents are expected to act as **Officers**, not just recruits.
 *   **Recruit Mentality:** Follows orders to "put in a pipe" without knowing what it connects to. Result: Systems that leak and collapse.
 *   **Officer Mentality:** Understands the "Soul" of the architecture. Knows that a pipe in the Spawning system affects the Persistence system.
 *   **Requirement:** Agents must proactively review the `Research/` and `Admin/` nodes of the Nexus before proposing plans, ensuring that every new "pipe" is correctly integrated into the 12-year research vision.
+
+---
+
+## 🏗️ Architectural Core: Modularity Over Inheritance
+To maintain the 12-year Digital Museum vision, the Sovereign Framework prioritizes **Modular Component-First Design**.
+
+### 1. The Component-First Rule
+*   **Definition:** Core logic (Identity, Persistence, Attributes) must reside in **Actor Components**, not in the Actor's class inheritance hierarchy.
+*   **Rationale:** This ensures that *any* Actor (a Tree, a Dragon, a Rock, or a UI Terminal) can become a first-class Sovereign entity simply by possessing the "Passport" (e.g., `USovereignSaveableEntityComponent`).
+*   **Enforcement:**
+    *   `SpeciesTag` (Identity Signature) must reside in the `SaveDataComponent`.
+    *   The `SovereignSaveManager` must look for the **Component** to establish identity during saving/loading, rather than casting the **Actor** to a specific C++ class.
+    *   Inheritance from `ASovereignBaseEntity` is permitted for convenience but must never be a *requirement* for the framework's core functions.

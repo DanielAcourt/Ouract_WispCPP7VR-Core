@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call

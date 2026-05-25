@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
 Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
@@ -221,36 +221,36 @@ def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
-def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_arguments(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Applies Parameter Resilience to fix LLM schema hallucinations [v36.4.2]"""
     tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
-    if name not in tools: return {"error": f"Tool '{name}' not found."}
+    if tool_name not in tools: return arguments
 
-    target_func = tools[name]
-    sig = inspect.signature(target_func)
+    sig = inspect.signature(tools[tool_name])
     valid_params = sig.parameters.keys()
 
-    # --- Parameter Resilience: Fix common LLM schema hallucinations ---
-    # 1. Map synonyms to the correct positional keys
     hallucination_map = {
         "filepath": ["path", "file", "target", "filename"],
         "directory": ["path", "folder", "dir"]
     }
 
+    new_args = arguments.copy()
     for target, aliases in hallucination_map.items():
-        if target in valid_params and target not in arguments:
+        if target in valid_params and target not in new_args:
             for alias in aliases:
-                if alias in arguments:
-                    arguments[target] = arguments.pop(alias)
+                if alias in new_args:
+                    new_args[target] = new_args.pop(alias)
                     break
 
-    # 2. Filter out hallucinated extra parameters (e.g., 'extension' for map_directory)
-    filtered_args = {k: v for k, v in arguments.items() if k in valid_params}
+    return {k: v for k, v in new_args.items() if k in valid_params}
 
-    # 3. Ensure mandatory positional arguments are present if possible
-    # (If missing after mapping, the tool call will still fail gracefully)
+def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
+    if name not in tools: return {"error": f"Tool '{name}' not found."}
 
+    target_func = tools[name]
     try:
-        return target_func(**filtered_args)
+        return target_func(**arguments)
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
 
@@ -418,8 +418,12 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
             messages.append(ai_msg)
             for call in ai_msg["tool_calls"]:
                 name = call["function"]["name"]
-                args = call["function"]["arguments"]
-                # --- Anti-Hallucination: Block autonomous status writing ---
+                raw_args = call["function"]["arguments"]
+
+                # --- Parameter Resilience & Anti-Hallucination Guard [v36.4.2] ---
+                # Normalize arguments BEFORE checking the guard to prevent bypass via aliases (e.g. 'path')
+                args = normalize_arguments(name, raw_args)
+
                 if name == "write_file":
                     target_file = str(args.get("filepath", "")).upper()
                     if "STATUS.MD" in target_file or "LOGS.TXT" in target_file or "MEMORY.JSON" in target_file:

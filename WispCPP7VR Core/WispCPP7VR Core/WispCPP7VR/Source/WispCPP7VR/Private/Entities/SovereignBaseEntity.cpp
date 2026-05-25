@@ -1,4 +1,4 @@
-//SovereignBaseEntity.ccp
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
@@ -455,6 +455,12 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 
 	if (SaveDataComponent)
 	{
+		// Sync Tag from the Actor's deprecated IdentitySignature if not already set [v36.4.2]
+		if (!SaveDataComponent->SpeciesTag.IsValid() && IdentitySignature.IsValid())
+		{
+			SaveDataComponent->SpeciesTag = IdentitySignature;
+		}
+
 		SaveDataComponent->EntityID = FGuid::NewGuid();
 		SaveDataComponent->MotherID = InMotherID;
 		SaveDataComponent->FatherID = InFatherID;

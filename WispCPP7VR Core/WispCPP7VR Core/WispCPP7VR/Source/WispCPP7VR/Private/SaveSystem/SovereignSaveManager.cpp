@@ -1,5 +1,5 @@
 
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "SaveSystem/SovereignSaveManager.h"
 #include "SaveSystem/SovereignSaveGame.h"
@@ -94,11 +94,8 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 Data.WorldTransform = TargetActor->GetActorTransform();
                 Data.ClassPath = TargetActor->GetClass()->GetPathName();
 
-                // Capture Species Identity if available [v36.4.1]
-                if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(TargetActor))
-                {
-                    Data.SpeciesTag = MyEntity->IdentitySignature;
-                }
+                // Capture Species Identity from the Component [v36.4.2]
+                Data.SpeciesTag = SaveComp->SpeciesTag;
 
                 // 4. THE SOVEREIGN BRIDGE : The Master Scrape
                 Data.UnknownMetaTags = SaveComp->CaptureFullEntityState();

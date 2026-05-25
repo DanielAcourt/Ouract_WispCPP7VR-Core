@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
 Iron Officer: Chat Vessel (AD-002)
 A terminal-based HMI for communicating with the local AI bridge.
@@ -15,7 +15,7 @@ import re
 from typing import List, Dict
 
 # --- Configuration ---
-VESSEL_VERSION = "0.37.1-Knight"
+VESSEL_VERSION = "0.37.2-Knight"
 BRIDGE_URL = "http://127.0.0.1:8000"
 
 # Handle PyInstaller paths
