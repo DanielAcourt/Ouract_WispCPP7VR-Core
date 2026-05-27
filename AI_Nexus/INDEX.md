@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 # AI_Nexus Master Index (The Map of Truth)
 
 This index serves as the definitive map for the **Sovereign Intelligence Hierarchy (SSoT)** and multi-agent coordination. It ensures that both Jules and Claude can navigate the Nexus with absolute precision.

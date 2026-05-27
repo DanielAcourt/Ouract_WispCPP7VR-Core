@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 """
 Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
@@ -20,7 +20,7 @@ from pydantic import BaseModel
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-VERSION = "0.37.2-Knight"
+VERSION = "0.37.3-Knight"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
