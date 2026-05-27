@@ -1,5 +1,5 @@
 
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "SaveSystem/SovereignSaveManager.h"
 #include "SaveSystem/SovereignSaveGame.h"
@@ -94,7 +94,7 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 Data.WorldTransform = TargetActor->GetActorTransform();
                 Data.ClassPath = TargetActor->GetClass()->GetPathName();
 
-                // Capture Species Identity from the Component [v36.4.2]
+                // Capture Species Identity from the Component [v36.4.3]
                 Data.SpeciesTag = SaveComp->SpeciesTag;
 
                 // 4. THE SOVEREIGN BRIDGE : The Master Scrape
@@ -155,7 +155,7 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
         {
             UClass* ActorClass = nullptr;
 
-            // Tier 1: Tag-to-Asset Bridge (The Alchemist's Resolution) [v36.4.1]
+            // Tier 1: Tag-to-Asset Bridge (The Alchemist's Resolution) [v36.4.3]
             if (Data.SpeciesTag.IsValid())
             {
                 if (AWispsGameModeBase* GameMode = Cast<AWispsGameModeBase>(World->GetAuthGameMode()))
@@ -257,7 +257,7 @@ USovereignSaveGame* USaveManager::ConvertJsonToSuitcase(const FString& JsonConte
                     FGuid::Parse(Obj->GetStringField(TEXT("ParentID")), Data.ParentID);
                 }
 
-                // Tiered Identity Lookup [v36.4.1]
+                // Tiered Identity Lookup [v36.4.3]
                 if (Obj->HasField(TEXT("SpeciesTag")))
                 {
                     Data.SpeciesTag = FGameplayTag::RequestGameplayTag(FName(*Obj->GetStringField(TEXT("SpeciesTag"))));

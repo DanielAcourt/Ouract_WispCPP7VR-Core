@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #pragma once
 
@@ -33,7 +33,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Core")
     FGuid EntityID;
 
-    /** The Unique Identity Signature for the species. Moved to component for modularity [v36.4.2] */
+    /** The Unique Identity Signature for the species. Moved to component for modularity [v36.4.2] [Stability Update v36.4.3] */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
     FGameplayTag SpeciesTag;
 

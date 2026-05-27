@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
@@ -93,6 +93,13 @@ void ASovereignBaseEntity::BeginPlay()
     // 1. Manifest the Soul's History (The March 23, 2017 logic)
     if (SaveDataComponent)
     {
+        // Graceful Sync: Sync Tag from the Actor's deprecated IdentitySignature if not already set [v36.4.3]
+        if (!SaveDataComponent->SpeciesTag.IsValid() && IdentitySignature.IsValid())
+        {
+            SaveDataComponent->SpeciesTag = IdentitySignature;
+            UE_LOG(LogTemp, Warning, TEXT("[%s] Graceful Sync: Migrated IdentitySignature to SaveDataComponent->SpeciesTag."), *GetName());
+        }
+
         SaveDataComponent->InitializeSoul();
     }
 
@@ -363,6 +370,12 @@ void ASovereignBaseEntity::GetOwnedGameplayTags(FGameplayTagContainer& TagContai
 {
     TagContainer = GameplayTags;
 
+    // REDUNDANCY: Always include the SpeciesTag in the MetaTags "Sandwich" [v36.4.3]
+    if (SaveDataComponent && SaveDataComponent->SpeciesTag.IsValid())
+    {
+        TagContainer.AddTag(SaveDataComponent->SpeciesTag);
+    }
+
     // Optional: If you want the IdentitySignature to always be included in the save
     if (IdentitySignature.IsValid())
     {
@@ -455,7 +468,7 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 
 	if (SaveDataComponent)
 	{
-		// Sync Tag from the Actor's deprecated IdentitySignature if not already set [v36.4.2]
+		// Sync Tag from the Actor's deprecated IdentitySignature if not already set [v36.4.3]
 		if (!SaveDataComponent->SpeciesTag.IsValid() && IdentitySignature.IsValid())
 		{
 			SaveDataComponent->SpeciesTag = IdentitySignature;
