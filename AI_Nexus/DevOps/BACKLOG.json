@@ -277,5 +277,32 @@
     "Node": "DevOps",
     "Why": "Optimize inference speeds and reduce LLM context prefill times to 0ms during repetitive deep sweeps.",
     "What": "Strict tiered prompt stacking system (Level 0->1->2) exploiting local engine Automatic Prefix Caching (APC)."
+  },
+  {
+    "ID": "B-018",
+    "Task": "Biology Modularization (Life vs. Data)",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Decouple genetic/lineage data from the core SaveableEntityComponent to support non-living objects (Digital Twins).",
+    "What": "Migrate MotherID, FatherID, MatingHistory, etc., to a new USovereignBioComponent. Update save/load logic."
+  },
+  {
+    "ID": "B-019",
+    "Task": "Interaction: Object Ejection Lifecycle",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Protocols",
+    "Why": "Possession of non-Character actors (AActor) currently lacks a \"Manifest/Unpossess\" exit path.",
+    "What": "Implement a \"Force Eject\" protocol that detaches the Wisp and remanifests it for all AActor types."
+  },
+  {
+    "ID": "B-020",
+    "Task": "Modular Architecture: Component Sovereignty",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Transition from \"God Components\" to a modular \"Mix-and-Match\" system for Digital Twins.",
+    "What": "Audit and separate Telemetry, Biology, and Magic logic into distinct, optional components."
   }
 ]

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 # Sovereign Framework: BACKLOG
 
 This backlog uses Fibonacci scoring to estimate task complexity. It is designed to be "KISS" compliant and easily exportable to CSV/JSON for Lead tracking.
