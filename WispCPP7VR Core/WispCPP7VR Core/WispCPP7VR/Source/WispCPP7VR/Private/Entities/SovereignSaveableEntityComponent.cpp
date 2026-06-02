@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
@@ -35,21 +35,6 @@ void USovereignSaveableEntityComponent::BeginPlay()
 	if (!BirthTimestamp.GetTicks())
 	{
 		BirthTimestamp = FDateTime::Now(); // Only set if this is a brand new soul
-	}
-
-	// --- GRACEFUL MIGRATION SYNC [v36.4.3] ---
-	// If the component's modular SpeciesTag is empty, try to inherit from the legacy Actor class if applicable.
-	// This ensures existing Blueprints auto-migrate to the new Component-First standard on spawn.
-	if (!SpeciesTag.IsValid())
-	{
-		if (ASovereignBaseEntity* ParentEntity = Cast<ASovereignBaseEntity>(GetOwner()))
-		{
-			if (ParentEntity->IdentitySignature.IsValid())
-			{
-				SpeciesTag = ParentEntity->IdentitySignature;
-				UE_LOG(LogTemp, Log, TEXT("Sovereign: Graceful Migration - Inherited SpeciesTag '%s' from Actor IdentitySignature."), *SpeciesTag.ToString());
-			}
-		}
 	}
 }
 

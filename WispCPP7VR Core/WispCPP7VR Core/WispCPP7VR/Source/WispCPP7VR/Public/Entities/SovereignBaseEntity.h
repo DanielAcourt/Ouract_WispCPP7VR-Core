@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #pragma once
 
@@ -124,6 +124,14 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
 	virtual void InitializeFromSovereignData(USovereignSpeciesData* InData);
 
+
+public:
+	/**
+	 * [v36.4.3] Graceful Sync: Migrates legacy IdentitySignature or Actor Tags to the SaveDataComponent.
+	 * This ensures the SpeciesTag is valid for the Tag-to-Asset save system.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
+	void SyncIdentityToComponent();
 
 protected:
 	void VerifySymmetryLevel();

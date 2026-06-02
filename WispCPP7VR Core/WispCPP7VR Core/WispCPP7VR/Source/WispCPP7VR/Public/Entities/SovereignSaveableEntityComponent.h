@@ -1,11 +1,11 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 
-#include "SaveSystem/SovereignGameData.h" // <--- ADD THIS LINE
+#include "SaveSystem/SovereignGameData.h" // <--- ADD THIS LI
 
 #include "Interaction/SovereignSaveInterface.h"
 #include "GameplayTagContainer.h"

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages
@@ -93,12 +93,8 @@ void ASovereignBaseEntity::BeginPlay()
     // 1. Manifest the Soul's History (The March 23, 2017 logic)
     if (SaveDataComponent)
     {
-        // Graceful Sync: Sync Tag from the Actor's deprecated IdentitySignature if not already set [v36.4.3]
-        if (!SaveDataComponent->SpeciesTag.IsValid() && IdentitySignature.IsValid())
-        {
-            SaveDataComponent->SpeciesTag = IdentitySignature;
-            UE_LOG(LogTemp, Warning, TEXT("[%s] Graceful Sync: Migrated IdentitySignature to SaveDataComponent->SpeciesTag."), *GetName());
-        }
+        // Graceful Sync: Migrates legacy tags before initialization [v36.4.3]
+        SyncIdentityToComponent();
 
         SaveDataComponent->InitializeSoul();
     }
@@ -596,4 +592,49 @@ void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)
         }
     }
     Super::EndPlay(EndPlayReason);
+}
+
+void ASovereignBaseEntity::SyncIdentityToComponent()
+{
+    if (!SaveDataComponent) return;
+
+    // Phase 1: Already valid? Exit early.
+    if (SaveDataComponent->SpeciesTag.IsValid()) return;
+
+    // Phase 2: Deprecated IdentitySignature
+    if (IdentitySignature.IsValid())
+    {
+        SaveDataComponent->SpeciesTag = IdentitySignature;
+        UE_LOG(LogTemp, Warning, TEXT("[%s] Graceful Sync: Migrated IdentitySignature (%s) to SaveDataComponent."), *GetName(), *IdentitySignature.ToString());
+        return;
+    }
+
+    // Phase 3: Actor Tags Scraper
+    // We look for tags that follow the "Identity.Species" or "Species." hierarchy
+    for (const FName& Tag : Tags)
+    {
+        FString TagStr = Tag.ToString();
+        if (TagStr.StartsWith(TEXT("Identity.Species.")) || TagStr.StartsWith(TEXT("Species.")))
+        {
+            FGameplayTag FoundTag = FGameplayTag::RequestGameplayTag(Tag, false);
+            if (FoundTag.IsValid())
+            {
+                SaveDataComponent->SpeciesTag = FoundTag;
+                UE_LOG(LogTemp, Warning, TEXT("[%s] Graceful Sync: Migrated Actor Tag (%s) to SaveDataComponent."), *GetName(), *TagStr);
+                return;
+            }
+        }
+    }
+
+    // Phase 4: Last Resort - Any valid gameplay tag in the Actor Tags?
+    for (const FName& Tag : Tags)
+    {
+        FGameplayTag FoundTag = FGameplayTag::RequestGameplayTag(Tag, false);
+        if (FoundTag.IsValid())
+        {
+            SaveDataComponent->SpeciesTag = FoundTag;
+            UE_LOG(LogTemp, Warning, TEXT("[%s] Graceful Sync: Last Resort Migration of Actor Tag (%s) to SaveDataComponent."), *GetName(), *Tag.ToString());
+            return;
+        }
+    }
 }
