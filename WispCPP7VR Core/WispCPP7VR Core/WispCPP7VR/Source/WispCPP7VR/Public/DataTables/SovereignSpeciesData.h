@@ -69,11 +69,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Evolution")
     TArray<FSovereignGrowthStage> MaxGrowthStages;
 
-    //Identity
-    /** The Unique Identity Signature for this species. */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity")
-    FGameplayTag IdentitySignature;
-
 
     //Movement
 

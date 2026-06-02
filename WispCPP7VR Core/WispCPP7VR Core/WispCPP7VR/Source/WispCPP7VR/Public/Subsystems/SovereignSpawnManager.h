@@ -85,7 +85,7 @@ private:
 	int32 NextRequestID = 0;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sovereign|Spawning")
-	TSubclassOf<ASovereignBaseEntity> FallbackUnknownClass;
+	TSubclassOf<AActor> FallbackUnknownClass;
 
 	void OnClassLoaded(int32 RequestID);
 };

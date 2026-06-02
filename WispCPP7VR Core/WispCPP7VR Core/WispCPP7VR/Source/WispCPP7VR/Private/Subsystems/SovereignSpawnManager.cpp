@@ -51,15 +51,23 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		return;
 	}
 
-	TSubclassOf<ASovereignBaseEntity> ClassToSpawn = FallbackUnknownClass;
-	TSubclassOf<ASovereignBaseEntity> LoadedClass = SpeciesData->ActorClass.Get();
+	TSubclassOf<AActor> ClassToSpawn = FallbackUnknownClass;
+	TSubclassOf<AActor> LoadedClass = SpeciesData->ActorClass.Get();
 
 	if (LoadedClass)
 	{
-		const ASovereignBaseEntity* CDO = LoadedClass->GetDefaultObject<ASovereignBaseEntity>();
-		if (CDO && CDO->IdentitySignature == SpeciesData->IdentitySignature)
+		const AActor* CDO = LoadedClass->GetDefaultObject<AActor>();
+		if (CDO)
 		{
-			ClassToSpawn = LoadedClass;
+			// We look for the "Soul" (SaveDataComponent) on the CDO to verify identity.
+			// This allows the system to remain decoupled from ASovereignBaseEntity.
+			if (USovereignSaveableEntityComponent* Soul = CDO->FindComponentByClass<USovereignSaveableEntityComponent>())
+			{
+				if (Soul->SpeciesTag == SpeciesData->SpeciesTag)
+				{
+					ClassToSpawn = LoadedClass;
+				}
+			}
 		}
 	}
 
@@ -88,25 +96,47 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		}
 	}
 
-	ASovereignBaseEntity* NewEntity = World->SpawnActor<ASovereignBaseEntity>(ClassToSpawn, Request->Transform);
+	AActor* NewActor = World->SpawnActor<AActor>(ClassToSpawn, Request->Transform);
 
-	if (NewEntity)
+	if (NewActor)
 	{
-		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
+		// 1. Initialize the entity if it supports the Sovereign system
+		if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
+		{
+			NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
+		}
+		else if (USovereignSaveableEntityComponent* Soul = NewActor->FindComponentByClass<USovereignSaveableEntityComponent>())
+		{
+			// For generic actors carrying the Soul component, we still perform basic initialization
+			Soul->SpeciesTag = SpeciesData->SpeciesTag;
+			Soul->EntityID = FGuid::NewGuid();
+			Soul->MotherID = Request->MotherID;
+			Soul->FatherID = Request->FatherID;
+		}
+
+		// 2. Apply penalties if applicable
 		if (bHasParentFailure)
 		{
 			FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
 			if (PenaltyTag.IsValid())
 			{
-				NewEntity->GameplayTags.AddTag(PenaltyTag);
+				if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
+				{
+					NewEntity->GameplayTags.AddTag(PenaltyTag);
+				}
 			}
 		}
+
+		// 3. Flag unknown fallback entities
 		if (ClassToSpawn == FallbackUnknownClass)
 		{
 			FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
 			if (UnknownTag.IsValid())
 			{
-				NewEntity->GameplayTags.AddTag(UnknownTag);
+				if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
+				{
+					NewEntity->GameplayTags.AddTag(UnknownTag);
+				}
 			}
 		}
 	}

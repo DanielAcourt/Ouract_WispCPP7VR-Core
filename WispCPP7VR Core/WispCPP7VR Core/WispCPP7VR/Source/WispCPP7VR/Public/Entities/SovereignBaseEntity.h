@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -38,10 +38,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
-
-	/** [DEPRECATED v36.4.2] Use SaveDataComponent->SpeciesTag instead. [Graceful Sync Active v36.4.3] */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity", meta = (DeprecatedProperty, DeprecationMessage = "Use SaveDataComponent->SpeciesTag instead."))
-	FGameplayTag IdentitySignature;
 
 	/** The Gameplay Tags for this entity. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")

@@ -91,9 +91,7 @@ To maintain the 12-year Digital Museum vision, the Sovereign Framework prioritiz
     *   The `SovereignSaveManager` must look for the **Component** to establish identity during saving/loading, rather than casting the **Actor** to a specific C++ class.
     *   Inheritance from `ASovereignBaseEntity` is permitted for convenience but must never be a *requirement* for the framework's core functions.
 
-### 2. Migration Stability (Graceful Sync)
-*   **Context:** During the transition from v36.4.1 to v36.4.2+, existing Blueprints may have their `IdentitySignature` set on the Actor but not on the new modular component.
-*   **Directive:** To prevent data loss during this transition, the C++ core implements a **Graceful Sync**.
-    *   **Runtime:** On `BeginPlay`, the component will pull the tag from the Actor if the component's own tag is empty.
-    *   **Save-time:** If a component is found with an empty tag during save, the Manager will attempt a legacy cast as a final fallback.
-*   **Outcome:** All entities will eventually "auto-migrate" to the Component-First standard simply by being spawned or saved in the simulation.
+### 2. SSoT Enforcement (Surgical Cleanup Complete)
+*   **Context:** As of v36.4.4, the transition to the Component-First standard is complete. The legacy `IdentitySignature` fields on Actors and DataAssets have been removed.
+*   **Directive:** All identity logic must utilize the `SpeciesTag` within the `USovereignSaveableEntityComponent`.
+*   **Outcome:** The system is now fully decoupled, allowing for runtime API-driven asset ingestion (Digital Museum) without rigid C++ inheritance requirements.

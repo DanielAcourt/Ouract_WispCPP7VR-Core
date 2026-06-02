@@ -33,15 +33,15 @@ This document summarizes the major architectural refactors and improvements impl
 -   **Data-Driven:** The system now operates on `USovereignSpeciesData` assets. A `TSoftClassPtr<ASovereignBaseEntity>` was added to the data asset, allowing designers to specify the exact Blueprint class to spawn for each species directly in the editor.
 -   **Asynchronous:** The manager uses an internal queue and the `FStreamableManager` to handle all spawn requests asynchronously. A call to `RequestSpawn` returns instantly, and the class loading and actor spawning occur in the background without blocking the game.
 
-## 4. Identity Guarding & Fallback System
+## 4. Identity Guarding (Component-First Enforcement)
 
-**Conclusion:** A purely data-driven system risks mismatches where a data asset could be configured to spawn an incorrect or incompatible actor class.
+**Conclusion:** v36.4.3 introduced a "Graceful Sync" for the transition from Actor-based to Component-based identity. v36.4.4 completes this by enforcing the Component-First standard.
 
 **Upgrade:**
--   A new `IdentitySignature` (`FGameplayTag`) property was added to both `USovereignSpeciesData` and `ASovereignBaseEntity`.
--   The `USovereignSpawnManager` now performs an **Identity-Class Bridge Check**. After a class is loaded, it compares the `IdentitySignature` on the data asset with the `IdentitySignature` in the Class Default Object (CDO) of the loaded class.
--   **Fallback:** If the signatures do not match, or if the class pointer is null, the system does not crash. Instead, it spawns a default fallback actor and assigns it a `Transient.Unknown` tag, ensuring the simulation continues and the invalid state is tracked.
--   **Result:** This "Logic Gate" provides a critical layer of security, ensuring that the physical representation (the actor class) always matches its logical identity (the species data).
+-   **Surgical Cleanup:** Removed `IdentitySignature` from `ASovereignBaseEntity` and `USovereignSpeciesData`.
+-   **Component Authority:** The `USovereignSpawnManager` now performs an **Identity-Class Bridge Check** using the `SpeciesTag` inside the `USovereignSaveableEntityComponent` (The Soul).
+-   **Decoupling:** This refactor allows for "External Soul" attachment—the ability to add a Sovereign identity to *any* actor class, which is vital for the Digital Museum and runtime API asset ingestion.
+-   **Result:** The framework is now fully composition-based for identity, eliminating legacy inheritance bottlenecks.
 
 ## 5. Digital Twin Telemetry Bridge (B-001)
 
