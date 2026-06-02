@@ -1,8 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
+
 #include "Subsystems/SovereignSpawnManager.h"
 #include "Entities/SovereignBaseEntity.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
@@ -51,15 +54,30 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		return;
 	}
 
-	TSubclassOf<ASovereignBaseEntity> ClassToSpawn = FallbackUnknownClass;
-	TSubclassOf<ASovereignBaseEntity> LoadedClass = SpeciesData->ActorClass.Get();
+	TSubclassOf<AActor> ClassToSpawn = (TSubclassOf<AActor>)FallbackUnknownClass;
+	TSubclassOf<AActor> LoadedClass = SpeciesData->ActorClass.Get();
 
 	if (LoadedClass)
 	{
-		const ASovereignBaseEntity* CDO = LoadedClass->GetDefaultObject<ASovereignBaseEntity>();
-		if (CDO && CDO->IdentitySignature == SpeciesData->IdentitySignature)
+		// Tier 1: Component-based Identity Verification [v36.4.3]
+		// We check the CDO for the Sovereign Soul and verify the SpeciesTag matches.
+		if (const AActor* CDO = LoadedClass->GetDefaultObject<AActor>())
 		{
-			ClassToSpawn = LoadedClass;
+			if (const auto* SaveComp = CDO->FindComponentByClass<USovereignSaveableEntityComponent>())
+			{
+				if (SaveComp->SpeciesTag == SpeciesData->SpeciesTag || SaveComp->SpeciesTag == SpeciesData->IdentitySignature)
+				{
+					ClassToSpawn = LoadedClass;
+				}
+			}
+			// Legacy Fallback: Still check the Actor's deprecated IdentitySignature
+			else if (const ASovereignBaseEntity* BaseCDO = Cast<ASovereignBaseEntity>(CDO))
+			{
+				if (BaseCDO->IdentitySignature == SpeciesData->IdentitySignature)
+				{
+					ClassToSpawn = LoadedClass;
+				}
+			}
 		}
 	}
 
@@ -88,25 +106,39 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		}
 	}
 
-	ASovereignBaseEntity* NewEntity = World->SpawnActor<ASovereignBaseEntity>(ClassToSpawn, Request->Transform);
+	AActor* NewActor = World->SpawnActor<AActor>(ClassToSpawn, Request->Transform);
 
-	if (NewEntity)
+	if (NewActor)
 	{
-		NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
-		if (bHasParentFailure)
+		// 1. Core Identity Stamping [v36.4.3]
+		if (auto* SaveComp = NewActor->FindComponentByClass<USovereignSaveableEntityComponent>())
 		{
-			FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
-			if (PenaltyTag.IsValid())
+			SaveComp->SpeciesTag = SpeciesData->SpeciesTag;
+		}
+
+		// 2. Interface-based Initialization
+		if (ASovereignBaseEntity* BaseEntity = Cast<ASovereignBaseEntity>(NewActor))
+		{
+			BaseEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
+
+			if (bHasParentFailure)
 			{
-				NewEntity->GameplayTags.AddTag(PenaltyTag);
+				FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
+				if (PenaltyTag.IsValid())
+				{
+					BaseEntity->GameplayTags.AddTag(PenaltyTag);
+				}
 			}
 		}
-		if (ClassToSpawn == FallbackUnknownClass)
+		if (ClassToSpawn == (TSubclassOf<AActor>)FallbackUnknownClass)
 		{
-			FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
-			if (UnknownTag.IsValid())
+			if (ASovereignBaseEntity* BaseEntity = Cast<ASovereignBaseEntity>(NewActor))
 			{
-				NewEntity->GameplayTags.AddTag(UnknownTag);
+				FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
+				if (UnknownTag.IsValid())
+				{
+					BaseEntity->GameplayTags.AddTag(UnknownTag);
+				}
 			}
 		}
 	}

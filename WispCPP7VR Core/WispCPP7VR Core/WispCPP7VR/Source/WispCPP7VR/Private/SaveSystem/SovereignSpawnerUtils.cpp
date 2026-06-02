@@ -25,10 +25,10 @@ void USovereignSpawnerUtils::SpawnEarnedEntity(UObject* WorldContextObject, cons
 void USovereignSpawnerUtils::SpawnEarnedEntityInherited(UObject* WorldContextObject, const USovereignSpeciesData* SpeciesData, FTransform SpawnTransform, AActor* ParentActor)
 {
     if (!ParentActor) return;
-    auto* ParentComp = ParentActor->FindComponentByClass<USovereignSaveableEntityComponent>();
-    if (!ParentComp) return;
+    auto* ParentSoul = ParentActor->FindComponentByClass<USovereignSaveableEntityComponent>();
+    if (!ParentSoul) return;
 
-    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, ParentComp->EntityID);
+    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, ParentSoul->EntityID);
 }
 
 // --- 3. HYBRID BIRTH (Dual Parent) ---
@@ -36,18 +36,24 @@ void USovereignSpawnerUtils::SpawnHybridEntity(UObject* WorldContextObject, cons
 {
     if (!Mother || !Father) return;
 
-    auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
-    auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
-    if (!MomComp || !DadComp) return;
+    auto* MomSoul = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
+    auto* DadSoul = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
+    auto* MomBio = Mother->FindComponentByClass<USovereignBioComponent>();
+    auto* DadBio = Father->FindComponentByClass<USovereignBioComponent>();
+
+    if (!MomSoul || !DadSoul) return;
 
     // 1. Record the union in their histories
-    MomComp->MatingHistory.AddUnique(DadComp->EntityID);
-    DadComp->MatingHistory.AddUnique(MomComp->EntityID);
-    MomComp->OffspringCount++;
-    DadComp->OffspringCount++;
+    if (MomBio && DadBio)
+    {
+        MomBio->MatingHistory.AddUnique(DadSoul->EntityID);
+        DadBio->MatingHistory.AddUnique(MomSoul->EntityID);
+        MomBio->OffspringCount++;
+        DadBio->OffspringCount++;
+    }
 
     // 3. Physical Birth (Using Mother as primary ParentID for the registry)
-    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, MomComp->EntityID);
+    SpawnEarnedEntity(WorldContextObject, SpeciesData, SpawnTransform, MomSoul->EntityID);
 }
 
 // --- 4. GENETIC ENGINE ---
@@ -107,7 +113,11 @@ FString USovereignSpawnerUtils::GetEntityAncestry(AActor* TargetActor)
     if (!SaveComp || !Registry) return "No Data";
 
     FString Tree = TargetActor->GetName();
-    FGuid CurrentID = SaveComp->ParentID;
+    FGuid CurrentID = FGuid();
+    if (auto* Bio = TargetActor->FindComponentByClass<USovereignBioComponent>())
+    {
+        CurrentID = Bio->ParentID;
+    }
 
     // Max 5 levels to prevent loops or excessive recursion
     for (int32 i = 0; i < 5; ++i)
@@ -117,7 +127,7 @@ FString USovereignSpawnerUtils::GetEntityAncestry(AActor* TargetActor)
         if (P)
         {
             Tree += " -> " + P->GetName();
-            if (auto* Next = P->FindComponentByClass<USovereignSaveableEntityComponent>())
+            if (auto* Next = P->FindComponentByClass<USovereignBioComponent>())
                 CurrentID = Next->ParentID;
             else break;
         }
@@ -160,19 +170,21 @@ bool USovereignSpawnerUtils::CanBreed(AActor* ParentA, AActor* ParentB)
 {
     if (!ParentA || !ParentB || (ParentA == ParentB)) return false;
 
-    auto* CompA = ParentA->FindComponentByClass<USovereignSaveableEntityComponent>();
-    auto* CompB = ParentB->FindComponentByClass<USovereignSaveableEntityComponent>();
+    auto* SoulA = ParentA->FindComponentByClass<USovereignSaveableEntityComponent>();
+    auto* SoulB = ParentB->FindComponentByClass<USovereignSaveableEntityComponent>();
+    auto* BioA = ParentA->FindComponentByClass<USovereignBioComponent>();
+    auto* BioB = ParentB->FindComponentByClass<USovereignBioComponent>();
 
-    if (CompA && CompB)
+    if (SoulA && SoulB && BioA && BioB)
     {
         // 1. Maturity Check (Flowers must bloom, Bees must be adults)
-        if (CompA->MaturityProgress < 1.0f || CompB->MaturityProgress < 1.0f) return false;
+        if (SoulA->MaturityProgress < 1.0f || SoulB->MaturityProgress < 1.0f) return false;
 
         // 2. Class Match (Bees mate with Bees, Flowers with Flowers)
         if (ParentA->GetClass() != ParentB->GetClass()) return false;
 
         // 3. Gender Check (Still applies to biologicals)
-        return CompA->bIsFemale != CompB->bIsFemale;
+        return BioA->bIsFemale != BioB->bIsFemale;
     }
     return false;
 }

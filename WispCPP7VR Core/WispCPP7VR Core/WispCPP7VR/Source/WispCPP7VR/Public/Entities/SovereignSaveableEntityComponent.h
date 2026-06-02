@@ -51,34 +51,6 @@ public:
 
     /*Add these constants to your logic for a balanced simulation:Sovereign Hour: 1 Real Minute Sovereign Day: 24 Real Minutes Sovereign Week: 2.8 Real Hours Sovereign Month: 11.2 Real Hours Sovereign Year: 5.6 Real Days */
 
-    /** --- 2. LINEAGE & BREEDING --- */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    bool bIsFemale;
-
-    //Base idea , Important acts as a seed root to a class
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid ParentID;
-
-    //Optional if we want to store its mother code compared to its fathers so we can do pokemon like upgrading/breeding
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid MotherID;
-
-    //Core now, We can combine the 2 stats in the near future when maing a baby
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    FGuid FatherID;
-
-    // Can be useful as if they hit a limit they can break if item or just store a known log for Parents
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    int32 OffspringCount = 0;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    TArray<FGuid> MatingHistory;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Biology")
-    float LastMatingTimestamp = -100.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
-    float MatingCooldownDuration = 60.0f;
 
     /** --- 3. THE TRIPLE-AXIS SYSTEM (The Soul, Body, and Spark) --- */
 

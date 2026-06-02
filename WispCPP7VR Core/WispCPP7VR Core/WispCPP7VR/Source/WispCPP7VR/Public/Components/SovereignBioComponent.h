@@ -1,5 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -82,6 +84,35 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Nature Cycle")
     float Entropy; // Biological age
+
+    /** --- 1. LINEAGE & BREEDING --- */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    bool bIsFemale;
+
+    //Base idea , Important acts as a seed root to a class
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    FGuid ParentID;
+
+    //Optional if we want to store its mother code compared to its fathers so we can do pokemon like upgrading/breeding
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    FGuid MotherID;
+
+    //Core now, We can combine the 2 stats in the near future when maing a baby
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    FGuid FatherID;
+
+    // Can be useful as if they hit a limit they can break if item or just store a known log for Parents
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    int32 OffspringCount = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    TArray<FGuid> MatingHistory;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Biology")
+    float LastMatingTimestamp = -100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Biology")
+    float MatingCooldownDuration = 60.0f;
 
     // --- ENGINE FUNCTIONS ---
     void UpdateMetabolism(float DeltaTime);

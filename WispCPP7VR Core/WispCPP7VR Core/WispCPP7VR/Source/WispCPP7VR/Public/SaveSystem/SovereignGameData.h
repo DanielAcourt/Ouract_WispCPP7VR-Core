@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.2. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 /*1. The Data Structs (GardenData.h)
 Class Type: "None" (Header Only)
@@ -118,11 +118,6 @@ struct FEntitySaveData
 
     FEntitySaveData()
         : MyGUID(FGuid::NewGuid())
-        , ParentID(FGuid())
-        , MotherID(FGuid())
-        , FatherID(FGuid())
-        , bIsFemale(false)
-        , OffspringCount(0)
         , SavedGrowthStage(ESovereignGrowthStage::Inception)
         , WorldTransform(FTransform::Identity)
         , ClassPath(TEXT(""))
@@ -131,26 +126,6 @@ struct FEntitySaveData
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (IgnoreForMemberInitializationTest))
     FGuid MyGUID;
-
-    /** The GUID of the entity (Wisp, Plant, or Tool) that created this object. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Lineage")
-    FGuid ParentID;
-
-    // --- Optinial i might rethink this approach as a Seperate component to "living things" DO WE ADD THESE so early on?? ---
-    UPROPERTY()
-    FGuid MotherID;
-
-    UPROPERTY()
-    FGuid FatherID;
-
-    UPROPERTY()
-    bool bIsFemale;
-
-    UPROPERTY()
-    int32 OffspringCount;
-
-    UPROPERTY()
-    TArray<FGuid> MatingHistory;
 
     // Inside SovereignGameData.h
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|SaveData")

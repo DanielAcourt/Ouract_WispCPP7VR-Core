@@ -347,12 +347,16 @@ void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
 
 bool ASovereignBaseEntity::IsReadyForMating() const
 {
-    if (!SaveDataComponent || !GetWorld()) return false;
+    if (!GetWorld()) return false;
 
-    float CurrentTime = GetWorld()->GetTimeSeconds();
-    float TimeSinceLastMating = CurrentTime - SaveDataComponent->LastMatingTimestamp;
+    if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
+    {
+        float CurrentTime = GetWorld()->GetTimeSeconds();
+        float TimeSinceLastMating = CurrentTime - Bio->LastMatingTimestamp;
 
-    return TimeSinceLastMating >= SaveDataComponent->MatingCooldownDuration;
+        return TimeSinceLastMating >= Bio->MatingCooldownDuration;
+    }
+    return false;
 }
 
 
@@ -471,8 +475,12 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 		}
 
 		SaveDataComponent->EntityID = FGuid::NewGuid();
-		SaveDataComponent->MotherID = InMotherID;
-		SaveDataComponent->FatherID = InFatherID;
+
+		if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
+		{
+			Bio->MotherID = InMotherID;
+			Bio->FatherID = InFatherID;
+		}
 
 		if (UWorld* World = GetWorld())
 		{
@@ -493,16 +501,19 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 					AActor* Father = Registry->FindActor(InFatherID);
 					if (Mother && Father)
 					{
-						auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
-						auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
-						if (MomComp && DadComp)
+						auto* MomSoul = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
+						auto* DadSoul = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
+						auto* MomBio = Mother->FindComponentByClass<USovereignBioComponent>();
+						auto* DadBio = Father->FindComponentByClass<USovereignBioComponent>();
+
+						if (MomSoul && DadSoul)
 						{
-							TMap<FString, FString> ChildDNA = USovereignSpawnerUtils::RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
+							TMap<FString, FString> ChildDNA = USovereignSpawnerUtils::RecombineDNA(MomSoul->GetUnknownMetaTags(), DadSoul->GetUnknownMetaTags(), 0.05f);
 							SaveDataComponent->ApplyMetaTags(ChildDNA);
 
 							float CurrentTime = World->GetTimeSeconds();
-							MomComp->LastMatingTimestamp = CurrentTime;
-							DadComp->LastMatingTimestamp = CurrentTime;
+							if (MomBio) MomBio->LastMatingTimestamp = CurrentTime;
+							if (DadBio) DadBio->LastMatingTimestamp = CurrentTime;
 
 							UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *Mother->GetName(), *Father->GetName());
 						}

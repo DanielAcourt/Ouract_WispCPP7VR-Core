@@ -1,3 +1,5 @@
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
+
 #include "Components/SovereignBioComponent.h"
 #include "Entities/SovereignBaseEntity.h"
 
@@ -16,6 +18,14 @@ USovereignBioComponent::USovereignBioComponent()
 
     Mass = 1;
     MassExperience = 1.0;
+
+    bIsFemale = FMath::RandBool();
+    ParentID = FGuid();
+    MotherID = FGuid();
+    FatherID = FGuid();
+    OffspringCount = 0;
+    LastMatingTimestamp = -100.0f;
+    MatingCooldownDuration = 60.0f;
 }
 
 void USovereignBioComponent::UpdateMetabolism(float DeltaTime)
@@ -81,6 +91,21 @@ TMap<FString, FString> USovereignBioComponent::GetSaveData()
     Data.Add(P + TEXT("ENT"), FString::SanitizeFloat(Entropy));
     Data.Add(P + TEXT("MSXP"), FString::Printf(TEXT("%f"), MassExperience));
 
+    // --- Lineage ---
+    Data.Add(P + TEXT("IsFemale"), bIsFemale ? TEXT("True") : TEXT("False"));
+    Data.Add(P + TEXT("ParentID"), ParentID.ToString());
+    Data.Add(P + TEXT("MotherID"), MotherID.ToString());
+    Data.Add(P + TEXT("FatherID"), FatherID.ToString());
+    Data.Add(P + TEXT("OffspringCount"), FString::FromInt(OffspringCount));
+    Data.Add(P + TEXT("LastMating"), FString::SanitizeFloat(LastMatingTimestamp));
+
+    FString HistoryStr;
+    for (const FGuid& ID : MatingHistory)
+    {
+        HistoryStr += ID.ToString() + TEXT(",");
+    }
+    Data.Add(P + TEXT("MatingHistory"), HistoryStr);
+
     // Nutrient TMap Serialization
     for (uint8 i = 0; i < (uint8)ESovereignNutrient::MAX; ++i)
     {
@@ -110,6 +135,26 @@ void USovereignBioComponent::RestoreSaveData(const TMap<FString, FString>& Data)
     {
         MassExperience = FCString::Atod(*Data[P + TEXT("MSXP")]);
         Mass = FMath::FloorToInt(MassExperience);
+    }
+
+    // --- Lineage Restore ---
+    if (Data.Contains(P + TEXT("IsFemale"))) bIsFemale = Data[P + TEXT("IsFemale")].Equals(TEXT("True"), ESearchCase::IgnoreCase);
+    if (Data.Contains(P + TEXT("ParentID"))) FGuid::Parse(Data[P + TEXT("ParentID")], ParentID);
+    if (Data.Contains(P + TEXT("MotherID"))) FGuid::Parse(Data[P + TEXT("MotherID")], MotherID);
+    if (Data.Contains(P + TEXT("FatherID"))) FGuid::Parse(Data[P + TEXT("FatherID")], FatherID);
+    if (Data.Contains(P + TEXT("OffspringCount"))) OffspringCount = FCString::Atoi(*Data[P + TEXT("OffspringCount")]);
+    GetFlt(TEXT("LastMating"), LastMatingTimestamp);
+
+    if (Data.Contains(P + TEXT("MatingHistory")))
+    {
+        TArray<FString> IDStrings;
+        Data[P + TEXT("MatingHistory")].ParseIntoArray(IDStrings, TEXT(","), true);
+        MatingHistory.Empty();
+        for (const FString& S : IDStrings)
+        {
+            FGuid ID;
+            if (FGuid::Parse(S, ID)) MatingHistory.Add(ID);
+        }
     }
 
     for (uint8 i = 0; i < (uint8)ESovereignNutrient::MAX; ++i)

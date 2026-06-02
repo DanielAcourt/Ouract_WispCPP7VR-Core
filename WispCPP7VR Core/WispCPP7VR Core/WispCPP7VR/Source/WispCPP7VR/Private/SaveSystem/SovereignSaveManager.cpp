@@ -88,14 +88,6 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 // 1. IDENTITY: Who am I?
                 Data.MyGUID = Elem.Key;
 
-                // 2. LINEAGE: Who is my parent? (The Genetic Link)
-                Data.ParentID = SaveComp->ParentID;
-                Data.MotherID = SaveComp->MotherID;
-                Data.FatherID = SaveComp->FatherID;
-                Data.bIsFemale = SaveComp->bIsFemale;
-                Data.OffspringCount = SaveComp->OffspringCount;
-                Data.MatingHistory = SaveComp->MatingHistory;
-
                 // 3. PHYSICALITY: Where am I and what am I?
                 Data.WorldTransform = TargetActor->GetActorTransform();
                 Data.ClassPath = TargetActor->GetClass()->GetPathName();
@@ -189,9 +181,8 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
                 {
                     if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
                     {
-                        // Restore Identity & Lineage immediately upon birth
+                        // Restore Identity immediately upon birth
                         SaveComp->EntityID = Data.MyGUID;
-                        SaveComp->ParentID = Data.ParentID; // The Genetic Link
                         Registry->RegisterActor(Data.MyGUID, TargetActor);
                     }
                 }
@@ -203,9 +194,6 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
             TargetActor->SetActorTransform(Data.WorldTransform);
             if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
             {
-                // Ensure ParentID is set even for existing actors to maintain symmetry
-                SaveComp->ParentID = Data.ParentID;
-
                 // Restore [2025-12-20] Unknown Tags (Mutations, Qi levels, etc.)
                 if (Data.UnknownMetaTags.IsValid())
                 {
@@ -257,12 +245,6 @@ USovereignSaveGame* USaveManager::ConvertJsonToSuitcase(const FString& JsonConte
                 FEntitySaveData Data;
                 FGuid::Parse(Obj->GetStringField(TEXT("GUID")), Data.MyGUID);
 
-                // --- ADDED: Parse ParentID if it exists ---
-                if (Obj->HasField(TEXT("ParentID")))
-                {
-                    FGuid::Parse(Obj->GetStringField(TEXT("ParentID")), Data.ParentID);
-                }
-
                 // Tiered Identity Lookup [v36.4.3]
                 if (Obj->HasField(TEXT("SpeciesTag")))
                 {
@@ -303,9 +285,6 @@ FString USaveManager::ConvertSuitcaseToJson(USovereignSaveGame* Suitcase)
 
         // 1. Identity
         Writer->WriteValue(TEXT("GUID"), Data.MyGUID.ToString());
-
-        // 2. Lineage (The Genetic Link)
-        Writer->WriteValue(TEXT("ParentID"), Data.ParentID.ToString());
 
         // 3. Identity (The Soul)
         if (Data.SpeciesTag.IsValid())
