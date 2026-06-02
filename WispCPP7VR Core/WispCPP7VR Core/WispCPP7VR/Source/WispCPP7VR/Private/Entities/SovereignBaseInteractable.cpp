@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+
 /*
 The "Sovereign" Inheritance Chain
 Think of it like a family tree where each generation adds a new capability:
@@ -154,6 +155,21 @@ void ASovereignBaseInteractable::RequestPossession_Implementation(AController* R
             UE_LOG(LogTemp, Warning, TEXT("Input Bridge established for non-pawn actor: %s"), *GetName());
         }
     }
+}
+
+void ASovereignBaseInteractable::RequestSoulEject_Implementation()
+{
+    // 1. SEVER THE INPUT BRIDGE
+    // When the spirit leaves, the rock must stop listening to the player.
+    this->DisableInput(GetWorld()->GetFirstPlayerController());
+
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange,
+            FString::Printf(TEXT("Input Bridge: Severed for %s"), *GetName()));
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] Input Bridge: Severed."), *GetName());
 }
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {

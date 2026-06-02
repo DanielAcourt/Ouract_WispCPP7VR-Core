@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -71,6 +71,9 @@ public:
 
 	/** Overridden to handle 'AttemptPossession' or 'Eject' based on state */
 	virtual void HandlePossessionLifecycle() override;
+
+	/** Interface implementation to identify as a Spirit */
+	virtual bool IsSpiritEntity_Implementation() override { return true; }
 
 protected:
 	/** * INTERACTION LOGIC

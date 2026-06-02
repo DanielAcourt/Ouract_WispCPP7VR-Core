@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -57,6 +57,9 @@ public:
 
 	/** Implementation of the Sovereign Interface to find the wisp currently inside us */
 	virtual AActor* GetInhabitingSpirit_Implementation() override;
+
+	/** Cleanup when a soul leaves the vessel */
+	virtual void RequestSoulEject_Implementation() override {}
 
 	/** Handles the 'F' key logic: Possession if a Wisp, Ejection if a Vessel */
 	virtual void HandlePossessionLifecycle();

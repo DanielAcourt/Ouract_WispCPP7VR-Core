@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
@@ -306,7 +305,6 @@ bool ASovereignPlayerWisp::IsPossessing()
 
 void ASovereignPlayerWisp::EjectFromHost()
 {
-
 	// 1. ARCHITECT CHECK: Safety first
 	if (!bIsPossessing || !CurrentHost)
 	{
@@ -314,45 +312,53 @@ void ASovereignPlayerWisp::EjectFromHost()
 		return;
 	}
 
-	// 1. Unhide and Enable Physics FIRST
-	SetActorHiddenInGame(false);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SetActorTickEnabled(true);
+	UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected."));
 
-	// 2. IDENTITY: Cache the host before we break the bond
-	APawn* HostPawn = Cast<APawn>(CurrentHost);
+	// 2. IDENTITY: Resolve the Controller
 	APlayerController* PC = nullptr;
 
-	if (HostPawn)
+	// Priority 1: Check the Host (if it's a Pawn)
+	if (APawn* HostPawn = Cast<APawn>(CurrentHost))
 	{
 		PC = Cast<APlayerController>(HostPawn->GetController());
 	}
 
-	// 3. THE GREAT DETACHMENT
-	// Break physical parent-child link while keeping the Wisp's current world coordinates.
+	// Priority 2: Fallback to the Wisp's internal controller (common for non-pawn vessels)
+	if (!PC)
+	{
+		PC = Cast<APlayerController>(this->GetController());
+	}
 
+	// 3. VESSEL CLEANUP: Tell the host to release resources (like Input)
+	if (CurrentHost->Implements<UInteractionInterface>())
+	{
+		IInteractionInterface::Execute_RequestSoulEject(CurrentHost);
+	}
+
+	// 4. SPIRIT RESTORATION: Unhide and Enable Physics
+	SetActorHiddenInGame(false);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SetActorTickEnabled(true);
+
+	// 5. THE GREAT DETACHMENT
+	// Break physical parent-child link while keeping the Wisp's current world coordinates.
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-	// 4. Force the Handover
+	// 6. SOUL RE-POSSESSION
 	if (PC)
 	{
 		// Move the Wisp to a safe spot so it's not inside the character's collision
 		AddActorWorldOffset(FVector(0, 0, 80.f));
 
-		// This is the magic line that actually moves your camera/controls
+		// This is the magic line that actually moves your camera/controls back to the ghost
 		PC->Possess(this);
-
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected."));
 	}
-
-	//4.a FallBack
-
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject failed - No Controller found on Host!"));
+		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject Error - No Controller found on Host or Spirit!"));
 	}
 
-	// 5. Cleanup
+	// 7. STATE RESET
 	bIsPossessing = false;
 	CurrentHost = nullptr;
 }

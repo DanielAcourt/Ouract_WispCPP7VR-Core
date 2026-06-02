@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #pragma once
 
@@ -104,6 +104,7 @@ public:
     /** Get the component to attach to */
     virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
 
-    // there is not Unpossessoin logic here?
+    /** Cleanup when a soul leaves the vessel */
+    virtual void RequestSoulEject_Implementation() override;
 
 };

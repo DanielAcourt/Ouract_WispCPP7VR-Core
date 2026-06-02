@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "CoreModules/WispsGameModeBase.h"
 #include "Entities/SovereignPlayerWisp.h"
@@ -15,8 +15,8 @@ AWispsGameModeBase::AWispsGameModeBase()
 {
 
     // 1. Point to the BLUEPRINT version of the Wisp
-        // Note the "_C" at the end of the path - this tells Unreal we want the GENERATED class
-    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PlayerWisp_C"));
+    // FClassFinder automatically appends _C and looks for the generated class.
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PlayerWisp"));
 
     if (PlayerPawnBPClass.Class != nullptr)
     {
