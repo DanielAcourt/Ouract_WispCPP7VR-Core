@@ -5,15 +5,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
-#include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
+#include "SaveSystem/SovereignGameData.h"
+#include "DataTables/SovereignSpeciesData.h"
 
-#include "GameplayTagContainer.h" //Lets us read Gameplay tags
+#include "GameplayTagContainer.h"
 #include "GameplayTagAssetInterface.h" 
 
 #include "Interaction/SovereignInterfaceMain.h"
+#include "InputActionValue.h"
 
-#include "SovereignBaseEntity.generated.h" //Must be last
+#include "SovereignBaseEntity.generated.h"
 
 // Forward declarations
 class USovereignSaveableEntityComponent;
@@ -22,19 +23,15 @@ class UStaticMeshComponent;
 class UInputMappingContext;
 class UInputAction;
 
-// Custom event for Blueprints
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEntitySensed, AActor*, SensedActor);
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public IInteractionInterface
+class WISPCPP7VR_API ASovereignBaseEntity : public AActor, public IGameplayTagAssetInterface, public IInteractionInterface
 {
 	GENERATED_BODY()
 
 public:
 	ASovereignBaseEntity();
-
-	// --- Input Setup ---
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
 	FOnEntitySensed OnActorSensed;
@@ -68,8 +65,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void PossessedBy(AController* NewController) override;
-	virtual void UnPossessed() override;
 
 	/** Primary logic for moving from one growth stage to the next */
 	virtual void Evolve();
@@ -104,30 +99,6 @@ protected:
 	/** Calculates the float delay based on the UpdateFrequency enum */
 	float GetHeartbeatInterval() const;
 
-	// --- Input Actions ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputMappingContext* DefaultMappingContext;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputAction* MoveAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputAction* LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputAction* InteractAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
-	UInputAction* PossessAction;
-
-	/** Master movement logic */
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
-	virtual void Interact(const FInputActionValue& Value);
-
-	/** Performs a sphere trace to find the actor the player is looking at */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
-	AActor* GetSensedActor();
 
 	// --- Components ---
 

@@ -29,18 +29,40 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor
  * The 'Master Vessel' for everything from Erisis to Dragons.
  */
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseCharacter : public ASovereignBaseEntity
+class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 	
 public:
     ASovereignBaseCharacter();
 
-	/** Use the inherited versions but keep the stats logic */
-	virtual void Evolve() override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
+	FOnEntitySensed OnActorSensed;
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
+	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
+
+	// --- IInteractionInterface Implementation ---
+	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
+	virtual void OnInteract_Implementation(AActor* Interactor) override;
+	virtual AActor* GetInhabitingSpirit_Implementation() override;
+	virtual void RequestSoulEject_Implementation() override {}
+	virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
+
+	virtual void HandlePossessionLifecycle();
+	virtual void Evolve();
 	virtual void Tick(float DeltaTime) override;
 
 protected: 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignSaveableEntityComponent* SaveDataComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	bool bCanBePossessed = true;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
 	USovereignAttributeComponent* AttributeComponent;
 
@@ -53,7 +75,35 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
 	USovereignControllerComponent* ControlComponent;
 
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
+	AActor* GetSensedActor();
+
+	virtual void Interact(const FInputActionValue& Value);
+
 	virtual void BeginPlay() override;
-	
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputMappingContext* DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* PossessAction;
+
+public:
+	// --- IGameplayTagAssetInterface ---
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 };
 

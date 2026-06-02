@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Entities/SovereignBaseCharacter.h"
 #include "InputActionValue.h"
+#include "Interaction/SovereignInterfaceMain.h"
 #include "SovereignPlayerWisp.generated.h"
 
 
@@ -73,7 +74,7 @@ public:
 	virtual void HandlePossessionLifecycle() override;
 
 	/** Interface implementation to identify as a Spirit */
-	virtual bool IsSpiritEntity_Implementation() override { return true; }
+	virtual bool IsSpiritEntity_Implementation() const override { return true; }
 
 protected:
 	/** * INTERACTION LOGIC

@@ -82,7 +82,7 @@ public:
 
 	// Inside IInteractionInterface.h
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign")
-	bool IsSpiritEntity();
+	bool IsSpiritEntity() const;
 
 	//Adding this so the interface can pass along wether it has been Possessed and therefore can release the wisp
 
