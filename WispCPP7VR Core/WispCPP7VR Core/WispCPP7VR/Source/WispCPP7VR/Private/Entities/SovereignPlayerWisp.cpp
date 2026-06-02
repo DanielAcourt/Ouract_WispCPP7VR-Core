@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.5. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
@@ -343,11 +343,14 @@ void ASovereignPlayerWisp::EjectFromHost()
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-	// 4. THE MANIFESTATION [v36.4.4]
+	// 4. THE MANIFESTATION [v36.4.5]
 	if (PC)
 	{
 		// 4.a: Restore Input for non-pawn hosts (cleanup the Input Bridge)
-		CurrentHost->DisableInput(PC);
+		if (CurrentHost)
+		{
+			CurrentHost->DisableInput(PC);
+		}
 
 		// 4.b: Move the Wisp to a safe spot so it's not inside the character's collision
 		AddActorWorldOffset(FVector(0, 0, 80.f));
@@ -355,7 +358,10 @@ void ASovereignPlayerWisp::EjectFromHost()
 		// 4.c: Re-possess the Wisp
 		PC->Possess(this);
 
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected from %s."), *CurrentHost->GetName());
+		if (CurrentHost)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected from %s."), *CurrentHost->GetName());
+		}
 	}
 	else
 	{

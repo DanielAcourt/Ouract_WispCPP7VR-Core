@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.5. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #pragma once
 
@@ -71,6 +71,9 @@ public:
 
 	/** Overridden to handle 'AttemptPossession' or 'Eject' based on state */
 	virtual void HandlePossessionLifecycle() override;
+
+	/** Identity Handshake: Tells the system this is a Spirit Entity [v36.4.5] */
+	virtual bool IsSpiritEntity_Implementation() override { return true; }
 
 protected:
 	/** * INTERACTION LOGIC
