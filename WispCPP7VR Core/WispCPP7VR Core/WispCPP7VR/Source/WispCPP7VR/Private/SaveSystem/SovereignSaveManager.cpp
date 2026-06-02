@@ -1,5 +1,5 @@
 
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
 
 #include "SaveSystem/SovereignSaveManager.h"
 #include "SaveSystem/SovereignSaveGame.h"
@@ -96,6 +96,16 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
 
                 // Capture Species Identity from the Component [v36.4.3]
                 Data.SpeciesTag = SaveComp->SpeciesTag;
+
+                // --- GRACEFUL SAVE-TIME FALLBACK [v36.4.3] ---
+                // If the component tag is still empty during save, try one last time to pull from the Actor class.
+                if (!Data.SpeciesTag.IsValid())
+                {
+                    if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(TargetActor))
+                    {
+                        Data.SpeciesTag = MyEntity->IdentitySignature;
+                    }
+                }
 
                 // 4. THE SOVEREIGN BRIDGE : The Master Scrape
                 Data.UnknownMetaTags = SaveComp->CaptureFullEntityState();
