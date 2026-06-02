@@ -12,6 +12,10 @@
 #include "Components/CapsuleComponent.h" // Add this include!
 #include "Components/StaticMeshComponent.h"
 #include "Components/SovereignBioComponent.h"
+#include "Components/SovereignControllerComponent.h"
+
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 
 #include "GameplayTagsManager.h"
 
@@ -22,55 +26,202 @@
 
 ASovereignBaseEntity::ASovereignBaseEntity()
 {
-    // 0. CHARACTER DEFAULTS
     PrimaryActorTick.bCanEverTick = true;
 
-    float Interval = GetHeartbeatInterval();
-    /*
-    if (Interval > 0.0f)
-    {
-        GetWorldTimerManager().SetTimer(HeartbeatTimerHandle, this, &ASovereignBaseEntity::OnSovereignHeartbeat, Interval, true);
-    }
-    */
-    //bCanAffectNavigationGeneration = true;
-
-    /*
-    // 1. CONFIGURE THE BUILT-IN CAPSULE
-        // We don't use CreateDefaultSubobject here because ACharacter already did it!
-    if (UCapsuleComponent* MyCapsule = GetCapsuleComponent())
-    {
-        MyCapsule->InitCapsuleSize(40.f, 90.f);
-        MyCapsule->SetCollisionProfileName(TEXT("Pawn"));
-    }
-    */
-    // 2. THE SOUL (SAVE SYSTEM)
-    // This component handles the GUID and the metadata tags (Isla's unknown tags)
+    // 1. THE SOUL (SAVE SYSTEM)
     SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
 
-    // 3. PHYSICAL MESH
-    // We create a StaticMeshComponent to visualize the 8 growth stages (Seed to Tree)
-    // Create the "Master" mesh slot
+    // 2. PHYSICAL MESH
     EntityMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EntityMesh"));
-
-    // Since we are an AActor now, the Mesh is our Physical Root
     RootComponent = EntityMesh;
 
-    // This allows the Wisp to possess the "Soul"
+    // 3. DEFAULTS
     bCanBePossessed = true;
-
-    // 3. Setup Default Collision for your Wisp's LineTrace
     EntityMesh->SetCollisionProfileName(TEXT("BlockAll"));
+}
 
+void ASovereignBaseEntity::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		if (MoveAction) EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASovereignBaseEntity::Move);
+		if (LookAction) EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASovereignBaseEntity::Look);
 
-    /*
-    if (RootComponent)
-    {
-        EntityMesh->SetupAttachment(RootComponent);
-    }
-    */
-    // Optional: Move the mesh down so it sits at the bottom of the capsule
-    //EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
+		if (InteractAction)
+		{
+			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ASovereignBaseEntity::Interact);
+		}
+
+		if (PossessAction)
+		{
+			EIC->BindAction(PossessAction, ETriggerEvent::Started, this, &ASovereignBaseEntity::HandlePossessionLifecycle);
+		}
+	}
+}
+
+void ASovereignBaseEntity::OnInteract_Implementation(AActor* Interactor)
+{
+	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Entity %s"), Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
+}
+
+AActor* ASovereignBaseEntity::GetInhabitingSpirit_Implementation()
+{
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors, true);
+
+	for (AActor* Actor : AttachedActors)
+	{
+		if (Actor && Actor->Implements<UInteractionInterface>())
+		{
+			if (IInteractionInterface::Execute_IsSpiritEntity(Actor))
+			{
+				return Actor;
+			}
+		}
+	}
+	return nullptr;
+}
+
+void ASovereignBaseEntity::RequestSoulEject_Implementation()
+{
+	// Pawns generally handle unpossession via Controller logic,
+	// but we can provide a hook for additional cleanup here if needed.
+}
+
+USceneComponent* ASovereignBaseEntity::GetPossessionAttachmentComponent_Implementation()
+{
+	return EntityMesh;
+}
+
+void ASovereignBaseEntity::HandlePossessionLifecycle()
+{
+	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+
+	if (Spirit)
+	{
+		if (ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
+			Wisp->EjectFromHost();
+			return;
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is not inhabited by a soul, but 'F' was pressed."), *GetName());
+}
+
+void ASovereignBaseEntity::Move(const FInputActionValue& Value)
+{
+	if (!Controller) return;
+
+	const FVector Input = Value.Get<FVector>();
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	const float Distance = 5.0f;
+
+	FVector MoveDelta = (Forward * Input.Y * Distance) +
+		(Right * Input.X * Distance) +
+		(FVector::UpVector * Input.Z * Distance);
+
+	AddActorWorldOffset(MoveDelta, true);
+}
+
+void ASovereignBaseEntity::Look(const FInputActionValue& Value)
+{
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void ASovereignBaseEntity::Interact(const FInputActionValue& Value)
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("VESSEL: INTERACT TRIGGERED"));
+
+	AActor* Target = GetSensedActor();
+	if (Target)
+	{
+		OnActorSensed.Broadcast(Target);
+		if (Target->Implements<UInteractionInterface>())
+		{
+			IInteractionInterface::Execute_OnInteract(Target, this);
+		}
+	}
+}
+
+AActor* ASovereignBaseEntity::GetSensedActor()
+{
+	if (!Controller) return nullptr;
+
+	FVector Start;
+	FRotator Rot;
+	Controller->GetPlayerViewPoint(Start, Rot);
+
+	const float Range = 500.0f;
+	const float Radius = 25.0f;
+	FVector End = Start + (Rot.Vector() * Range);
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params);
+
+	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
+
+	if (HitActor)
+	{
+		OnActorSensed.Broadcast(HitActor);
+	}
+
+	return HitActor;
+}
+
+void ASovereignBaseEntity::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (USovereignControllerComponent* ControlComp = FindComponentByClass<USovereignControllerComponent>())
+	{
+		ControlComp->OnPossessed(NewController);
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(NewController))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			Subsystem->ClearAllMappings();
+			if (DefaultMappingContext)
+			{
+				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				UE_LOG(LogTemp, Warning, TEXT("Sovereign: Input Context swapped to %s"), *GetName());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Sovereign: %s has NO DefaultMappingContext assigned!"), *GetName());
+			}
+		}
+	}
+}
+
+void ASovereignBaseEntity::UnPossessed()
+{
+	if (USovereignControllerComponent* ControlComp = FindComponentByClass<USovereignControllerComponent>())
+	{
+		ControlComp->OnUnpossessed();
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s is no longer possessed."), *GetName());
+
+	Super::UnPossessed();
 }
 
 void ASovereignBaseEntity::VerifySymmetryLevel()

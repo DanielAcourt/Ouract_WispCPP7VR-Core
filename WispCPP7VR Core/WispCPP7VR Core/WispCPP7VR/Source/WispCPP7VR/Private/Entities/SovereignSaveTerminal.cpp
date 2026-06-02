@@ -4,6 +4,7 @@
 #include "Entities/SovereignSaveTerminal.h"
 #include "SaveSystem/SovereignSaveManager.h" // Needed to talk to the Save Boss
 #include "Kismet/GameplayStatics.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 
 
 void ASovereignSaveTerminal::OnInteract_Implementation(AActor* Interactor)

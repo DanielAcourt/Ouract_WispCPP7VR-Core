@@ -136,16 +136,13 @@ bool ASovereignBaseInteractable::CanBePossessed_Implementation()
 
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
-    // 1. Cast the controller to a PlayerController
     if (APlayerController* PC = Cast<APlayerController>(RequestingController))
     {
         if (CanBePossessed_Implementation())
         {
-            // 2. THE BRIDGE: Instead of Possess(this), we enable input.
-            // This allows the player to "drive" the rock/actor.
+            // THE BRIDGE: Instead of Possess(this), we enable input for non-pawn actors.
             this->EnableInput(PC);
 
-            // 3. UI/Feedback Handshake
             if (GEngine)
             {
                 GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,

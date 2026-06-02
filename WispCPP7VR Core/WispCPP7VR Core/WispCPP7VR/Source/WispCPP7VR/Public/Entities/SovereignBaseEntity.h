@@ -11,33 +11,47 @@
 #include "GameplayTagContainer.h" //Lets us read Gameplay tags
 #include "GameplayTagAssetInterface.h" 
 
-#include "interaction/SovereignEntityInterface.h"
-
-//#include "Interaction/SovereignEntityInterface.h"
-//#include "Interaction/SovereignEntityInterface.h" // Add the Universal Interface
+#include "Interaction/SovereignInterfaceMain.h"
 
 #include "SovereignBaseEntity.generated.h" //Must be last
 
-// Forward declarations to keep compile times fast
+// Forward declarations
 class USovereignSaveableEntityComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
+class UInputMappingContext;
+class UInputAction;
 
-
-//The problem with this current approach is i start by inheriting from ACharacter,
-// what we reaslly need is a base which is AActor and APawn and has this interaction.
-// But not the mating and more Advance options
+// Custom event for Blueprints
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEntitySensed, AActor*, SensedActor);
 
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
+class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public IInteractionInterface
 {
 	GENERATED_BODY()
 
 public:
 	ASovereignBaseEntity();
 
+	// --- Input Setup ---
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
+	FOnEntitySensed OnActorSensed;
+
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
+
+	// --- IInteractionInterface Implementation ---
+	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
+	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
+	virtual void OnInteract_Implementation(AActor* Interactor) override;
+	virtual AActor* GetInhabitingSpirit_Implementation() override;
+	virtual void RequestSoulEject_Implementation() override;
+	virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
+
+	/** Handles the 'F' key logic: Possession if a Wisp, Ejection if a Vessel */
+	virtual void HandlePossessionLifecycle();
 
 	/** The Gameplay Tags for this entity. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
@@ -54,6 +68,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
 
 	/** Primary logic for moving from one growth stage to the next */
 	virtual void Evolve();
@@ -86,7 +102,32 @@ protected:
 	bool bCanBePossessed = true;
 
 	/** Calculates the float delay based on the UpdateFrequency enum */
-	float GetHeartbeatInterval() const; // Add this line!
+	float GetHeartbeatInterval() const;
+
+	// --- Input Actions ---
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputMappingContext* DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
+	UInputAction* PossessAction;
+
+	/** Master movement logic */
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	virtual void Interact(const FInputActionValue& Value);
+
+	/** Performs a sphere trace to find the actor the player is looking at */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
+	AActor* GetSensedActor();
 
 	// --- Components ---
 
