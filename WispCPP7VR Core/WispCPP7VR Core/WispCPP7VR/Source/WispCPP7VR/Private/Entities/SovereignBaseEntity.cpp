@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.3. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #include "Entities/SovereignBaseEntity.h"
 #include "DataTables/SovereignSpeciesData.h" // Essential for accessing GrowthStages

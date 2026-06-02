@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
@@ -306,7 +305,6 @@ bool ASovereignPlayerWisp::IsPossessing()
 
 void ASovereignPlayerWisp::EjectFromHost()
 {
-
 	// 1. ARCHITECT CHECK: Safety first
 	if (!bIsPossessing || !CurrentHost)
 	{
@@ -319,40 +317,52 @@ void ASovereignPlayerWisp::EjectFromHost()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	SetActorTickEnabled(true);
 
-	// 2. IDENTITY: Cache the host before we break the bond
-	APawn* HostPawn = Cast<APawn>(CurrentHost);
+	// 2. CONTROLLER RESOLUTION [v36.4.4]
+	// We need to find the PlayerController that is currently driving this experience.
 	APlayerController* PC = nullptr;
 
-	if (HostPawn)
+	// Tier 1: Check the Host (If it's a Pawn we possessed)
+	if (APawn* HostPawn = Cast<APawn>(CurrentHost))
 	{
 		PC = Cast<APlayerController>(HostPawn->GetController());
 	}
 
+	// Tier 2: Check the Wisp itself (In case of remote inhabitation)
+	if (!PC)
+	{
+		PC = Cast<APlayerController>(GetController());
+	}
+
+	// Tier 3: Global Fallback (Last resort for local play)
+	if (!PC && GetWorld())
+	{
+		PC = GetWorld()->GetFirstPlayerController();
+	}
+
 	// 3. THE GREAT DETACHMENT
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
-
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-	// 4. Force the Handover
+	// 4. THE MANIFESTATION [v36.4.4]
 	if (PC)
 	{
-		// Move the Wisp to a safe spot so it's not inside the character's collision
+		// 4.a: Restore Input for non-pawn hosts (cleanup the Input Bridge)
+		CurrentHost->DisableInput(PC);
+
+		// 4.b: Move the Wisp to a safe spot so it's not inside the character's collision
 		AddActorWorldOffset(FVector(0, 0, 80.f));
 
-		// This is the magic line that actually moves your camera/controls
+		// 4.c: Re-possess the Wisp
 		PC->Possess(this);
 
-		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected."));
+		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul successfully Ejected from %s."), *CurrentHost->GetName());
 	}
-
-	//4.a FallBack
-
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject failed - No Controller found on Host!"));
+		UE_LOG(LogTemp, Error, TEXT("Sovereign: Eject failed - No valid PlayerController found!"));
 	}
 
-	// 5. Cleanup
+	// 5. Cleanup State
 	bIsPossessing = false;
 	CurrentHost = nullptr;
 }
