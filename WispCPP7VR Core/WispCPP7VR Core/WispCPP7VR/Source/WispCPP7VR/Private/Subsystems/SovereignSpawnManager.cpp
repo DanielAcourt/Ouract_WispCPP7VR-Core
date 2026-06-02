@@ -60,14 +60,17 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		const AActor* CDO = LoadedClass->GetDefaultObject<AActor>();
 		if (CDO)
 		{
-			// We look for the "Soul" (SaveDataComponent) on the CDO to verify identity.
-			// This allows the system to remain decoupled from ASovereignBaseEntity.
-			if (USovereignSaveableEntityComponent* Soul = CDO->FindComponentByClass<USovereignSaveableEntityComponent>())
+			// RELAXED VALIDATION [v36.4.4]:
+			// We only verify that the class HAS a "Soul" (SaveDataComponent).
+			// We no longer require the CDO's tag to match the Data Asset.
+			// This allows one generic Blueprint vessel to be used for multiple Species.
+			if (CDO->FindComponentByClass<USovereignSaveableEntityComponent>())
 			{
-				if (Soul->SpeciesTag == SpeciesData->SpeciesTag)
-				{
-					ClassToSpawn = LoadedClass;
-				}
+				ClassToSpawn = LoadedClass;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("SpawnManager: Class %s has no SaveableEntityComponent!"), *LoadedClass->GetName());
 			}
 		}
 	}

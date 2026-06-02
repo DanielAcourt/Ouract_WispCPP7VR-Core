@@ -16,7 +16,7 @@ AWispsGameModeBase::AWispsGameModeBase()
 
     // 1. Point to the BLUEPRINT version of the Wisp
         // Note the "_C" at the end of the path - this tells Unreal we want the GENERATED class
-    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/Entities/BP_PlayerWisp_C"));
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PlayerWisp_C"));
 
     if (PlayerPawnBPClass.Class != nullptr)
     {
