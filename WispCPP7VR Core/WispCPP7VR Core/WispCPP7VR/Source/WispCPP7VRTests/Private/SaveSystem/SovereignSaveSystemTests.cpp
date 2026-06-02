@@ -33,8 +33,6 @@ bool FSovereignEntityDataInitializationTest::RunTest(const FString& Parameters)
     FEntitySaveData Entity;
 
     TestTrue(TEXT("Default GUID is initialized"), Entity.MyGUID.IsValid());
-    TestEqual(TEXT("Default bIsFemale is false"), Entity.bIsFemale, false);
-    TestEqual(TEXT("Default OffspringCount is 0"), Entity.OffspringCount, 0);
     TestEqual(TEXT("Default SavedGrowthStage is Inception"),
         static_cast<uint8>(Entity.SavedGrowthStage), 
         static_cast<uint8>(ESovereignGrowthStage::Inception)
@@ -98,8 +96,6 @@ bool FSovereignJsonSerializationTest::RunTest(const FString& Parameters)
 {
     FEntitySaveData OriginalEntity;
     OriginalEntity.MyGUID = FGuid::NewGuid();
-    OriginalEntity.bIsFemale = true;
-    OriginalEntity.OffspringCount = 5;
     OriginalEntity.SavedGrowthStage = ESovereignGrowthStage::Legendary;
     OriginalEntity.SavedFrequency = EUpdateFrequency::Slower;
     OriginalEntity.ClassPath = TEXT("/Game/Blueprints/Entities/BP_Test");
@@ -107,17 +103,12 @@ bool FSovereignJsonSerializationTest::RunTest(const FString& Parameters)
     // Simulate JSON serialization
     TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
     JsonObject->SetStringField(TEXT("MyGUID"), OriginalEntity.MyGUID.ToString());
-    JsonObject->SetBoolField(TEXT("bIsFemale"), OriginalEntity.bIsFemale);
-    JsonObject->SetNumberField(TEXT("OffspringCount"), OriginalEntity.OffspringCount);
     JsonObject->SetNumberField(TEXT("SavedGrowthStage"), static_cast<double>(OriginalEntity.SavedGrowthStage));
     JsonObject->SetStringField(TEXT("ClassPath"), OriginalEntity.ClassPath);
 
     // Verify serialization produced valid JSON
     TestTrue(TEXT("JSON object created successfully"), JsonObject.IsValid());
     TestTrue(TEXT("GUID field exists"), JsonObject->HasField(TEXT("MyGUID")));
-    TestTrue(TEXT("bIsFemale field exists"), JsonObject->HasField(TEXT("bIsFemale")));
-    TestEqual(TEXT("bIsFemale value correct"), JsonObject->GetBoolField(TEXT("bIsFemale")), true);
-    TestEqual(TEXT("OffspringCount value correct"), static_cast<int32>(JsonObject->GetNumberField(TEXT("OffspringCount"))), 5);
 
     return true;
 }
@@ -143,10 +134,6 @@ bool FSovereignSoftReferenceResilienceTest::RunTest(const FString& Parameters)
     Entity.ClassPath = TEXT("/InvalidGame/MissingBlueprint");
     TestTrue(TEXT("Invalid ClassPath doesn't break entity"), Entity.MyGUID.IsValid());
 
-    // Test null parent references
-    Entity.ParentID = FGuid();
-    TestTrue(TEXT("Null ParentID is valid FGuid"), Entity.ParentID == FGuid());
-
     return true;
 }
 
@@ -169,36 +156,6 @@ bool FSovereignItemDefaultsInitializationTest::RunTest(const FString& Parameters
     return true;
 }
 
-// ============================================================================
-// TEST 6: Lineage Data Consistency
-// ============================================================================
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-    FSovereignLineageDataTest,
-    "SaveSystem.Data.LineageConsistency",
-    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
-)
-
-bool FSovereignLineageDataTest::RunTest(const FString& Parameters)
-{
-    FEntitySaveData Parent;
-    FGuid ParentID = Parent.MyGUID;
-
-    FEntitySaveData Child;
-    Child.ParentID = ParentID;
-    Child.MotherID = ParentID;
-    Child.FatherID = FGuid::NewGuid();
-
-    TestEqual(TEXT("Child's ParentID matches Parent's GUID"), Child.ParentID, ParentID);
-    TestNotEqual(TEXT("Child's FatherID is different from MotherID"), Child.MotherID, Child.FatherID);
-
-    Child.OffspringCount = 0;
-    TestEqual(TEXT("Initial OffspringCount is 0"), Child.OffspringCount, 0);
-
-    Child.OffspringCount++;
-    TestEqual(TEXT("OffspringCount increments correctly"), Child.OffspringCount, 1);
-
-    return true;
-}
 
 // ============================================================================
 // TEST 7: Growth Stage Transitions
@@ -281,36 +238,6 @@ bool FSovereignTransformIntegrityTest::RunTest(const FString& Parameters)
     return true;
 }
 
-// ============================================================================
-// TEST 10: Mating History Array Operations
-// ============================================================================
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-    FSovereignMatingHistoryTest,
-    "SaveSystem.Lineage.MatingHistory",
-    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
-)
-
-bool FSovereignMatingHistoryTest::RunTest(const FString& Parameters)
-{
-    FEntitySaveData Entity;
-    FGuid Mate1 = FGuid::NewGuid();
-    FGuid Mate2 = FGuid::NewGuid();
-    FGuid Mate3 = FGuid::NewGuid();
-
-    Entity.MatingHistory.Add(Mate1);
-    Entity.MatingHistory.Add(Mate2);
-    Entity.MatingHistory.Add(Mate3);
-
-    TestEqual(TEXT("MatingHistory contains 3 entries"), Entity.MatingHistory.Num(), 3);
-    TestEqual(TEXT("First mate matches"), Entity.MatingHistory[0], Mate1);
-    TestEqual(TEXT("Second mate matches"), Entity.MatingHistory[1], Mate2);
-    TestEqual(TEXT("Third mate matches"), Entity.MatingHistory[2], Mate3);
-
-    Entity.MatingHistory.Remove(Mate2);
-    TestEqual(TEXT("MatingHistory contains 2 entries after removal"), Entity.MatingHistory.Num(), 2);
-
-    return true;
-}
 
 // ============================================================================
 // TEST 11: Elemental Affinities Map Management
@@ -409,22 +336,12 @@ bool FSovereignBatchEntityCreationTest::RunTest(const FString& Parameters)
     for (int32 i = 0; i < BatchSize; ++i)
     {
         FEntitySaveData Entity;
-        Entity.bIsFemale = (i % 2 == 0);
-        Entity.OffspringCount = i;
         Entities.Add(Entity);
     }
     double CreationTime = FPlatformTime::Seconds() - StartTime;
 
     TestEqual(TEXT("Batch creation generated correct number of entities"), Entities.Num(), BatchSize);
     TestTrue(TEXT("Batch creation completed in reasonable time"), CreationTime < 1.0);
-
-    int32 FemaleCount = 0;
-    for (const FEntitySaveData& E : Entities)
-    {
-        if (E.bIsFemale)
-            FemaleCount++;
-    }
-    TestTrue(TEXT("Approximate 50% female entities"), FemaleCount >= BatchSize / 2 - 10);
 
     return true;
 }
@@ -441,10 +358,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FSovereignEdgeCasesTest::RunTest(const FString& Parameters)
 {
     FEntitySaveData Entity;
-
-    // Max offspring count
-    Entity.OffspringCount = INT32_MAX;
-    TestEqual(TEXT("Max offspring count is handled"), Entity.OffspringCount, INT32_MAX);
 
     // Empty GUID
     Entity.MyGUID = FGuid();

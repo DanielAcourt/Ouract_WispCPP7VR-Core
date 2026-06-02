@@ -4,6 +4,7 @@
 #include "SaveSystem/SovereignSpawnerUtils.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Components/SovereignBioComponent.h"
 #include "Engine/World.h"
 #include "Math/UnrealMathUtility.h"
 #include "Subsystems/SovereignSpawnManager.h"
