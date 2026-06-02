@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.5. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.6. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #pragma once
 

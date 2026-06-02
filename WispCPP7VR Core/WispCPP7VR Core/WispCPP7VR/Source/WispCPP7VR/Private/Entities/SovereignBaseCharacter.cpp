@@ -249,8 +249,17 @@ void ASovereignBaseCharacter::HandlePossessionLifecycle()
 		ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
 		if (Wisp)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
+			UE_LOG(LogTemp, Warning, TEXT("[%s] Possession Lifecycle: Initiating Spirit Ejection."), *GetName());
 			Wisp->EjectFromHost();
+			return;
+		}
+	}
+	else
+	{
+		// FALLBACK: Are we a Wisp ourselves? (For cases where the key is pressed while already ejected)
+		if (ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(this))
+		{
+			Wisp->HandlePossessionLifecycle();
 			return;
 		}
 	}

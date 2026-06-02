@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.5. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.6. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-02
 
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
@@ -215,10 +215,22 @@ void ASovereignPlayerWisp::PerformAutoSensing()
 
 void ASovereignPlayerWisp::HandlePossessionLifecycle()
 {
-	// --- SOVEREIGN CHECK: THE TOGGLE LOGIC ---
+	// 1. GATEKEEPER [v36.4.6]
+	// If the Wisp is NOT the possessed pawn, it shouldn't be handling input for possession changes.
+	// This prevents the "Immediate Re-Possession" bug where the Wisp catches its own ejection button.
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (PC->GetPawn() != this)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Sovereign: Wisp ignored possession input because it is not the active pawn."));
+			return;
+		}
+	}
+
+	// 2. THE TOGGLE LOGIC
 	if (bIsPossessing)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Sovereign: Wisp detected active possession. Initiating Eject."));
+		UE_LOG(LogTemp, Warning, TEXT("Sovereign: Wisp initiating Eject from %s."), CurrentHost ? *CurrentHost->GetName() : TEXT("Unknown"));
 		EjectFromHost();
 	}
 	else
@@ -343,13 +355,14 @@ void ASovereignPlayerWisp::EjectFromHost()
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-	// 4. THE MANIFESTATION [v36.4.5]
+	// 4. THE MANIFESTATION [v36.4.6]
 	if (PC)
 	{
 		// 4.a: Restore Input for non-pawn hosts (cleanup the Input Bridge)
 		if (CurrentHost)
 		{
 			CurrentHost->DisableInput(PC);
+			UE_LOG(LogTemp, Log, TEXT("[%s] Input Bridge: Severed."), *CurrentHost->GetName());
 		}
 
 		// 4.b: Move the Wisp to a safe spot so it's not inside the character's collision

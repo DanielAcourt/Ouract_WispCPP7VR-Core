@@ -144,6 +144,14 @@ void ASovereignBaseInteractable::RequestPossession_Implementation(AController* R
             // This allows the player to "drive" the rock/actor.
             this->EnableInput(PC);
 
+            // 2.a: Bind the 'F' key (PossessAction) if assigned, so we can eject! [v36.4.6]
+            if (UInputComponent* IC = InputComponent)
+            {
+                // We find the Spirit's EjectAction through the interface if possible,
+                // but for now, we rely on the Vessel's mapping being active.
+                UE_LOG(LogTemp, Warning, TEXT("[%s] Input Bridge: Ready for Ejection Handshake."), *GetName());
+            }
+
             // 3. UI/Feedback Handshake
             if (GEngine)
             {
