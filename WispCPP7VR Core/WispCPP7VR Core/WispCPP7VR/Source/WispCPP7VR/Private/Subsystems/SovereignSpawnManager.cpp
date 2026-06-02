@@ -3,6 +3,7 @@
 
 #include "Subsystems/SovereignSpawnManager.h"
 #include "Entities/SovereignBaseEntity.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
 #include "SaveSystem/SovereignActorRegistry.h"
