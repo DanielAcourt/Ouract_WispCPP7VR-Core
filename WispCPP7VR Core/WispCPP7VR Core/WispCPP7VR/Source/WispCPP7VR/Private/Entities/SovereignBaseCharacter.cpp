@@ -1,60 +1,40 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Entities/SovereignBaseCharacter.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignPlayerWisp.h"
 #include "Components/SovereignAttributeComponent.h"
 #include "Components/SovereignQiComponent.h"
 #include "Components/SovereignElementComponent.h"
 #include "Components/SovereignControllerComponent.h"
-#include "Entities/SovereignSaveableEntityComponent.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Components/CapsuleComponent.h"
-
-#include "GameFramework/PlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
 ASovereignBaseCharacter::ASovereignBaseCharacter()
 {
-	// 2. THE SOUL (SAVE SYSTEM)
 	SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
-
-	// 3. PHYSICAL MESH
-	EntityMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EntityMesh"));
-	if (GetMesh())
-	{
-		EntityMesh->SetupAttachment(GetMesh());
-	}
-
-	bCanBePossessed = true;
-	EntityMesh->SetCollisionProfileName(TEXT("BlockAll"));
 
 	AttributeComponent = CreateDefaultSubobject<USovereignAttributeComponent>(TEXT("AttributeComponent"));
 	QiComponent = CreateDefaultSubobject<USovereignQiComponent>(TEXT("QiComponent"));
 	ElementComponent = CreateDefaultSubobject<USovereignElementComponent>(TEXT("ElementComponent"));
 	ControlComponent = CreateDefaultSubobject<USovereignControllerComponent>(TEXT("ControlComponent"));
+
+	bCanBePossessed = true;
 }
 
 void ASovereignBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	if (SaveDataComponent)
-	{
-		SaveDataComponent->InitializeSoul();
-	}
 }
 
 void ASovereignBaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	GetSensedActor();
-}
-
-void ASovereignBaseCharacter::Evolve()
-{
-	Super::Evolve();
-	UE_LOG(LogTemp, Log, TEXT("Base Character Evolving..."));
+	if (AActor* Target = GetSensedActor())
+	{
+		OnActorSensed.Broadcast(Target);
+	}
 }
 
 void ASovereignBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -78,52 +58,24 @@ void ASovereignBaseCharacter::Move(const FInputActionValue& Value)
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	const float Distance = 5.0f;
-	FVector MoveDelta = (Forward * Input.Y * Distance) + (Right * Input.X * Distance) + (FVector::UpVector * Input.Z * Distance);
-	AddActorWorldOffset(MoveDelta, true);
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->Velocity = FVector::ZeroVector;
-		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-	}
+
+	AddMovementInput(Forward, Input.Y);
+	AddMovementInput(Right, Input.X);
 }
 
 void ASovereignBaseCharacter::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-	if (Controller != nullptr)
-	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
 void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("VESSEL: INTERACT TRIGGERED"));
 	AActor* Target = GetSensedActor();
-	if (Target)
+	if (Target && Target->Implements<UInteractionInterface>())
 	{
-		OnActorSensed.Broadcast(Target);
-		if (Target->Implements<UInteractionInterface>())
-		{
-			IInteractionInterface::Execute_OnInteract(Target, this);
-		}
-	}
-}
-
-void ASovereignBaseCharacter::HandlePossessionLifecycle()
-{
-	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
-	if (Spirit)
-	{
-		ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit);
-		if (Wisp)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Soul Eject initiated by vessel %s"), *GetName());
-			Wisp->EjectFromHost();
-			return;
-		}
+		IInteractionInterface::Execute_OnInteract(Target, this);
 	}
 }
 
@@ -132,33 +84,46 @@ AActor* ASovereignBaseCharacter::GetSensedActor()
 	if (!Controller) return nullptr;
 	FVector Start; FRotator Rot;
 	Controller->GetPlayerViewPoint(Start, Rot);
-	const float Range = 500.0f; const float Radius = 25.0f;
-	FVector End = Start + (Rot.Vector() * Range);
-	FHitResult Hit; FCollisionQueryParams Params; Params.AddIgnoredActor(this);
-	bool bHit = GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(Radius), Params);
-	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
-	if (HitActor) { OnActorSensed.Broadcast(HitActor); }
-	return HitActor;
+	FHitResult Hit;
+	GetWorld()->SweepSingleByChannel(Hit, Start, Start + Rot.Vector() * 500.0f, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(25.0f), FCollisionQueryParams::DefaultQueryParam);
+	return Hit.GetActor();
+}
+
+void ASovereignBaseCharacter::HandlePossessionLifecycle()
+{
+	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+	if (Spirit)
+	{
+		if (ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit))
+		{
+			Wisp->EjectFromHost();
+		}
+	}
 }
 
 void ASovereignBaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	if (ControlComponent) { ControlComponent->OnPossessed(NewController); }
+	if (ControlComponent) ControlComponent->OnPossessed(NewController);
 	if (APlayerController* PC = Cast<APlayerController>(NewController))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 		{
 			Subsystem->ClearAllMappings();
-			if (DefaultMappingContext) { Subsystem->AddMappingContext(DefaultMappingContext, 0); }
+			if (DefaultMappingContext) Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
 }
 
 void ASovereignBaseCharacter::UnPossessed()
 {
-	if (ControlComponent) { ControlComponent->OnUnpossessed(); }
+	if (ControlComponent) ControlComponent->OnUnpossessed();
 	Super::UnPossessed();
+}
+
+void ASovereignBaseCharacter::Evolve()
+{
+	UE_LOG(LogTemp, Log, TEXT("Base Character Evolving..."));
 }
 
 USceneComponent* ASovereignBaseCharacter::GetPossessionAttachmentComponent_Implementation()
@@ -174,12 +139,8 @@ AActor* ASovereignBaseCharacter::GetInhabitingSpirit_Implementation()
 	{
 		if (Actor && Actor->Implements<UInteractionInterface>())
 		{
-			if (IInteractionInterface::Execute_IsSpiritEntity(Actor)) { return Actor; }
+			if (IInteractionInterface::Execute_IsSpiritEntity(Actor)) return Actor;
 		}
-	}
-	for (AActor* Actor : AttachedActors)
-	{
-		if (Actor && Actor->IsA(ASovereignPlayerWisp::StaticClass())) { return Actor; }
 	}
 	return nullptr;
 }
@@ -191,7 +152,7 @@ void ASovereignBaseCharacter::OnInteract_Implementation(AActor* Interactor)
 
 void ASovereignBaseCharacter::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
 {
-	TagContainer = FGameplayTagContainer(); // Initialize
+	TagContainer = FGameplayTagContainer();
 	if (SaveDataComponent && SaveDataComponent->SpeciesTag.IsValid())
 	{
 		TagContainer.AddTag(SaveDataComponent->SpeciesTag);

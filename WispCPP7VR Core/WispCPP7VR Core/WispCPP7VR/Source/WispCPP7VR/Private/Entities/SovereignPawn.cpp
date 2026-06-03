@@ -1,60 +1,85 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Entities/SovereignPawn.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
+#include "Entities/SovereignPlayerWisp.h"
+#include "GameFramework/FloatingPawnMovementComponent.h"
 
-// Sets default values
 ASovereignPawn::ASovereignPawn()
 {
+	SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
 
-	// Ensure this Pawn can be possessed by the Wisp
+	// Add a basic movement component so pawns can move when possessed
+	CreateDefaultSubobject<UFloatingPawnMovementComponent>(TEXT("MovementComponent"));
+
 	bCanBePossessed = true;
-
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 }
 
-// Called when the game starts or when spawned
 void ASovereignPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
-// Called every frame
-void ASovereignPawn::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-// Called to bind functionality to input
 void ASovereignPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	// This is where you bind the "Expanded Player Controls" you mentioned.
-	// Example: PlayerInputComponent->BindAxis("MoveForward", this, &ASovereignPawn::MoveForward);
-	/*
-	if (PlayerInputComponent)
-	{
-		// Bind Universal Sovereign Actions (Things every Pawn can do)
-		// Example: Interacting with the Silver Egg or opening the Master Manifest
-		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASovereignPawn::OnSovereignInteract);
-
-		// This is where the Controller-specific logic we wrote earlier lives.
-		// It allows the Architect to possess an Orc or a Tree and get different tools.
-	}
-	*/
+	
+	// Bind movement for possessed pawns
+	PlayerInputComponent->BindAxis("MoveForward", this, &ASovereignPawn::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ASovereignPawn::MoveRight);
 }
 
-/*
-void ASovereignPawn::OnSovereignInteract()
+void ASovereignPawn::MoveForward(float Value)
 {
-	// My 100 glass nodes pulse in acknowledgement of the interaction
-	UE_LOG(LogTemp, Log, TEXT("SovereignPawn: Interaction Triggered by Sovereign Soul."));
-
-	// Here we can eventually call the Interface to talk to the Silver Egg
+	if (Value != 0.0f) AddMovementInput(GetActorForwardVector(), Value);
 }
-*/
 
+void ASovereignPawn::MoveRight(float Value)
+{
+	if (Value != 0.0f) AddMovementInput(GetActorRightVector(), Value);
+}
+
+void ASovereignPawn::OnInteract_Implementation(AActor* Interactor)
+{
+	UE_LOG(LogTemp, Log, TEXT("%s interacted with Sovereign Pawn %s"), Interactor ? *Interactor->GetName() : TEXT("Unknown"), *GetName());
+}
+
+AActor* ASovereignPawn::GetInhabitingSpirit_Implementation()
+{
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors, true);
+	for (AActor* Actor : AttachedActors)
+	{
+		if (Actor && Actor->Implements<UInteractionInterface>())
+		{
+			if (IInteractionInterface::Execute_IsSpiritEntity(Actor)) return Actor;
+		}
+	}
+	return nullptr;
+}
+
+USceneComponent* ASovereignPawn::GetPossessionAttachmentComponent_Implementation()
+{
+	return GetRootComponent();
+}
+
+void ASovereignPawn::HandlePossessionLifecycle()
+{
+	AActor* Spirit = IInteractionInterface::Execute_GetInhabitingSpirit(this);
+	if (Spirit)
+	{
+		if (ASovereignPlayerWisp* Wisp = Cast<ASovereignPlayerWisp>(Spirit))
+		{
+			Wisp->EjectFromHost();
+		}
+	}
+}
+
+void ASovereignPawn::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
+{
+	TagContainer = FGameplayTagContainer();
+	if (SaveDataComponent && SaveDataComponent->SpeciesTag.IsValid())
+	{
+		TagContainer.AddTag(SaveDataComponent->SpeciesTag);
+	}
+}

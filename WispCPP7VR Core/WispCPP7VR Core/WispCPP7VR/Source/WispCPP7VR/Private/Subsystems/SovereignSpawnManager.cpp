@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "Subsystems/SovereignSpawnManager.h"
 #include "Entities/SovereignBaseEntity.h"
@@ -61,8 +61,6 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		{
 			// RELAXED VALIDATION [v36.4.4]:
 			// We only verify that the class HAS a "Soul" (SaveDataComponent).
-			// We no longer require the CDO's tag to match the Data Asset.
-			// This allows one generic Blueprint vessel to be used for multiple Species.
 			if (CDO->FindComponentByClass<USovereignSaveableEntityComponent>())
 			{
 				ClassToSpawn = LoadedClass;
@@ -74,73 +72,37 @@ void USovereignSpawnManager::OnClassLoaded(int32 RequestID)
 		}
 	}
 
-	if (!ClassToSpawn)
-	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnManager: ClassToSpawn is null and no fallback is set!"));
-		return;
-	}
-
 	UWorld* World = GetWorld();
-	if (!World)
+	if (!World || !ClassToSpawn)
 	{
 		return;
-	}
-
-	// "Drone-Laying Penalty" (Ontological Parent Check)
-	// If the parent ID is valid but the parent actor is not found in the registry,
-	// it is considered an ontological failure (e.g. the parent has died or been culled).
-	bool bHasParentFailure = false;
-	if (Request->MotherID.IsValid())
-	{
-		UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>();
-		if (Registry && !Registry->FindActor(Request->MotherID))
-		{
-			bHasParentFailure = true;
-		}
 	}
 
 	AActor* NewActor = World->SpawnActor<AActor>(ClassToSpawn, Request->Transform);
 
 	if (NewActor)
 	{
-		// 1. Initialize the entity if it supports the Sovereign system
+		USovereignSaveableEntityComponent* Soul = NewActor->FindComponentByClass<USovereignSaveableEntityComponent>();
+
+		// 1. Direct Soul Initialization
+		if (Soul)
+		{
+			Soul->InitializeFromSpecies(SpeciesData, Request->MotherID, Request->FatherID);
+		}
+
+		// 2. Register in Actor Registry for Persistence
+		if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
+		{
+			if (Soul)
+			{
+				Registry->RegisterActor(Soul->EntityID, NewActor);
+			}
+		}
+
+		// 3. Apply penalties or transient tags if needed
 		if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
 		{
-			NewEntity->PostSpawnInitialize(SpeciesData, Request->MotherID, Request->FatherID);
-		}
-		else if (USovereignSaveableEntityComponent* Soul = NewActor->FindComponentByClass<USovereignSaveableEntityComponent>())
-		{
-			// For generic actors carrying the Soul component, we still perform basic initialization
-			Soul->SpeciesTag = SpeciesData->SpeciesTag;
-			Soul->EntityID = FGuid::NewGuid();
-			Soul->MotherID = Request->MotherID;
-			Soul->FatherID = Request->FatherID;
-		}
-
-		// 2. Apply penalties if applicable
-		if (bHasParentFailure)
-		{
-			FGameplayTag PenaltyTag = FGameplayTag::RequestGameplayTag(FName("State.Biological.Penalty"), false);
-			if (PenaltyTag.IsValid())
-			{
-				if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
-				{
-					NewEntity->GameplayTags.AddTag(PenaltyTag);
-				}
-			}
-		}
-
-		// 3. Flag unknown fallback entities
-		if (ClassToSpawn == FallbackUnknownClass)
-		{
-			FGameplayTag UnknownTag = FGameplayTag::RequestGameplayTag(FName("Transient.Unknown"), false);
-			if (UnknownTag.IsValid())
-			{
-				if (ASovereignBaseEntity* NewEntity = Cast<ASovereignBaseEntity>(NewActor))
-				{
-					NewEntity->GameplayTags.AddTag(UnknownTag);
-				}
-			}
+			// Optional future logic
 		}
 	}
 

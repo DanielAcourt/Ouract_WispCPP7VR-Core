@@ -1,50 +1,36 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h" 
+#include "GameFramework/Character.h"
+#include "GameplayTagContainer.h"
+#include "GameplayTagAssetInterface.h"
 #include "Interaction/SovereignInterfaceMain.h"
-#include "Entities/SovereignBaseInteractable.h"
-
-
-//This means i need a Input SetupPlayerInputComponent
-#include "InputActionValue.h" // For FInputActionValue
+#include "InputActionValue.h"
 #include "SovereignBaseCharacter.generated.h"
 
-
-// 1. FORWARD DECLARATIONS (Tells the compiler: These classes exist, we'll define them later)
+class USovereignSaveableEntityComponent;
+class USovereignAttributeComponent;
+class USovereignQiComponent;
 class USovereignElementComponent;
 class USovereignControllerComponent;
-class USovereignAttributeComponent;
-class ASovereignPlayerWisp;
-class USovereignQiComponent; // Added this
-class AController ; // <--- MUST ADD THIS FOR POSSESSION
+class UInputMappingContext;
+class UInputAction;
 
-// This creates a custom event node for your Blueprints
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSensed, AActor*, SensedActor);
 
-/**
- * ASovereignBaseCharacter
- * The 'Master Vessel' for everything from Erisis to Dragons.
- */
 UCLASS()
-class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IGameplayTagAssetInterface
+class WISPCPP7VR_API ASovereignBaseCharacter : public ACharacter, public IGameplayTagAssetInterface, public IInteractionInterface
 {
 	GENERATED_BODY()
-	
+
 public:
-    ASovereignBaseCharacter();
+	ASovereignBaseCharacter();
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
-	FOnEntitySensed OnActorSensed;
-
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
-	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
-
-	// --- IInteractionInterface Implementation ---
+	// --- IInteractionInterface ---
 	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
 	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
@@ -54,9 +40,14 @@ public:
 
 	virtual void HandlePossessionLifecycle();
 	virtual void Evolve();
-	virtual void Tick(float DeltaTime) override;
 
-protected: 
+	// --- IGameplayTagAssetInterface ---
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
+
+	UPROPERTY(BlueprintAssignable, Category = "Sovereign|Senses")
+	FOnActorSensed OnActorSensed;
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
 	USovereignSaveableEntityComponent* SaveDataComponent;
 
@@ -75,18 +66,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
 	USovereignControllerComponent* ControlComponent;
 
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Senses")
-	AActor* GetSensedActor();
-
-	virtual void Interact(const FInputActionValue& Value);
-
-	virtual void BeginPlay() override;
-	virtual void PossessedBy(AController* NewController) override;
-	virtual void UnPossessed() override;
-
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	UInputMappingContext* DefaultMappingContext;
 
@@ -102,8 +81,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Input")
 	UInputAction* PossessAction;
 
-public:
-	// --- IGameplayTagAssetInterface ---
-	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
-};
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	virtual void Interact(const FInputActionValue& Value);
 
+	AActor* GetSensedActor();
+
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+};

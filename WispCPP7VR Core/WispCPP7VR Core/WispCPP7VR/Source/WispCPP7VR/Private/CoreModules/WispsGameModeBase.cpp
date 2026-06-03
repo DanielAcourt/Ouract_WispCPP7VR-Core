@@ -1,22 +1,16 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #include "CoreModules/WispsGameModeBase.h"
 #include "Entities/SovereignPlayerWisp.h"
 #include "UObject/ConstructorHelpers.h"
-// 1. Include the "Advanced" Species Data Asset definition
 #include "DataTables/SovereignSpeciesData.h" 
-// 2. Include the "Hard Data" Table Row definition (Matches your provided code)
 #include "DataTables/SovereignDataTypes.h" 
 #include "Engine/DataTable.h"
 
-
-// THIS IS THE CONSTRUCTOR THE LINKER IS MISSING Realy crucial we must make this before we do any logic
 AWispsGameModeBase::AWispsGameModeBase()
 {
-
-    // 1. Point to the BLUEPRINT version of the Wisp
-    // FClassFinder automatically appends _C and looks for the generated class.
-    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PlayerWisp"));
+    // Restored the _C suffix to ensure the class is correctly resolved
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C"));
 
     if (PlayerPawnBPClass.Class != nullptr)
     {
@@ -24,11 +18,10 @@ AWispsGameModeBase::AWispsGameModeBase()
     }
     else
     {
-        // If the BP isn't found, we fall back to C++, but we log a warning
         DefaultPawnClass = ASovereignPlayerWisp::StaticClass();
-        UE_LOG(LogTemp, Error, TEXT("GameMode: Could not find BP_PlayerWisp. Controls will be NULL!"));
+        UE_LOG(LogTemp, Error, TEXT("GameMode: Could not find BP_PlayerWisp. Falling back to C++ class."));
     }
-    // 2. Optional: Auto-load the Data Table if you know the path
+
     static ConstructorHelpers::FObjectFinder<UDataTable> TableObj(TEXT("/Game/Data/DT_SovereignItems"));
     if (TableObj.Succeeded())
     {
@@ -40,22 +33,18 @@ USovereignSpeciesData* AWispsGameModeBase::GetSpeciesDataByTag(FGameplayTag Spec
 {
     if (!ItemDataTable)
     {
-        UE_LOG(LogTemp, Error, TEXT("GameMode: ItemDataTable is NOT assigned in Blueprint!"));
+        UE_LOG(LogTemp, Error, TEXT("GameMode: ItemDataTable is NOT assigned!"));
         return nullptr;
     }
 
     static const FString ContextString(TEXT("Species Lookup"));
-
-    // Now uses your updated struct name: FSovereignItemRow
     TArray<FSovereignItemRow*> AllRows;
     ItemDataTable->GetAllRows<FSovereignItemRow>(ContextString, AllRows);
 
     for (FSovereignItemRow* Row : AllRows)
     {
-        // We check the "Hard Read Only" ItemTag first
         if (Row && Row->ItemTag.MatchesTagExact(SpeciesTag))
         {
-            // If it's biological (like an Oak or Isla), load the Advanced Species Data
             if (Row->bIsBiologicalOrigin && !Row->SpeciesVesselData.IsNull())
             {
                 return Row->SpeciesVesselData.LoadSynchronous();

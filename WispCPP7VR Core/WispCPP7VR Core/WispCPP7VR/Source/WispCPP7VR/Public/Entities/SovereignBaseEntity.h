@@ -1,30 +1,24 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2026 Daniel Acourt. Version 36.4.4. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-05-27
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-
-#include "SaveSystem/SovereignGameData.h"
-#include "DataTables/SovereignSpeciesData.h"
-
 #include "GameplayTagContainer.h"
-#include "GameplayTagAssetInterface.h" 
-
+#include "GameplayTagAssetInterface.h"
 #include "Interaction/SovereignInterfaceMain.h"
 #include "InputActionValue.h"
-
 #include "SovereignBaseEntity.generated.h"
 
-// Forward declarations
 class USovereignSaveableEntityComponent;
-class USovereignSpeciesData;
 class UStaticMeshComponent;
-class UInputMappingContext;
-class UInputAction;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEntitySensed, AActor*, SensedActor);
-
+/**
+ * ASovereignBaseEntity
+ * The root AActor for all Sovereign-aware objects in the world.
+ * Provides the "Soul" component and basic interface compliance.
+ * As of v36.4.4, mating/growth logic is handled by the SaveDataComponent (The Soul).
+ */
 UCLASS()
 class WISPCPP7VR_API ASovereignBaseEntity : public AActor, public IGameplayTagAssetInterface, public IInteractionInterface
 {
@@ -33,13 +27,7 @@ class WISPCPP7VR_API ASovereignBaseEntity : public AActor, public IGameplayTagAs
 public:
 	ASovereignBaseEntity();
 
-	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Sovereign|Senses")
-	FOnEntitySensed OnActorSensed;
-
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
-	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
-
-	// --- IInteractionInterface Implementation ---
+	// --- IInteractionInterface ---
 	virtual class USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return SaveDataComponent; }
 	virtual bool CanBePossessed_Implementation() override { return bCanBePossessed; }
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
@@ -47,133 +35,21 @@ public:
 	virtual void RequestSoulEject_Implementation() override;
 	virtual USceneComponent* GetPossessionAttachmentComponent_Implementation() override;
 
-	/** Handles the 'F' key logic: Possession if a Wisp, Ejection if a Vessel */
 	virtual void HandlePossessionLifecycle();
+	virtual void Evolve() {}
 
-	/** The Gameplay Tags for this entity. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
-	FGameplayTagContainer GameplayTags;
-
-	/** The Gameplay Tags that this Enity is checking against. */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Tags")
-	void IngestSovereignTag(FString IncomingTagString);
-
-	// --- IGameplayTagAssetInterface Implementation ---
+	// --- IGameplayTagAssetInterface ---
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 
-	// --- Lifecycle ---
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	/** Primary logic for moving from one growth stage to the next */
-	virtual void Evolve();
-
-	/** Returns the unique Save System ID for this specific entity */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
-	FGuid GetSovereignID() const;
-
-
-	/** * TRIGGER MATING: Checks compatibility and spawns a child if successful.
-	 * Can be called from VR Overlap events or Interaction buttons.
-	 */
-
-
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Gameplay")
-	virtual void AttemptMating(AActor* PotentialPartner);
-
-
-
-	/** Optional: Check if this entity is currently able to breed */
-	UFUNCTION(BlueprintPure, Category = "Sovereign|Gameplay")
-	bool IsReadyForMating() const;
-
-	/** Called by the Spawn Manager after the actor has been spawned. */
-	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);
-
 protected:
-	/** Can this entity be possessed by a Sovereign Spirit? */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
-	bool bCanBePossessed = true;
-
-	/** Calculates the float delay based on the UpdateFrequency enum */
-	float GetHeartbeatInterval() const;
-
-
-	// --- Components ---
-
-	/** The physical body of the entity (The Oak Tree, the Bee, etc.) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
-	UStaticMeshComponent* EntityMesh;
-
-	/** The Soul of the Actor: Contains the GUID and Metadata tags (Isla's unknown tags) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
 	USovereignSaveableEntityComponent* SaveDataComponent;
 
-	/** Array of 8 meshes representing the growth stages (0-7) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
-	TArray<UStaticMesh*> GrowthMeshes;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
+	UStaticMeshComponent* EntityMesh;
 
-	// Add the TrustSignature back here if you want to solve that C2039 error properly
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
-	int32 TrustSignature = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Possession")
+	bool bCanBePossessed = true;
 
-	/** 1.0 is default size. 2.0 is double size. Allows for growth without new meshes. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")
-	float VisualScale = 1.0f;
-
-	/** Base health/stamina multiplier for this stage */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Growth")
-	float BaseConstitution = 1.0f;
-
-	// --- Data & Evolution ---
-
-	/** Logic to update the entity based on new Species Data */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Identity")
-	virtual void InitializeFromSovereignData(USovereignSpeciesData* InData);
-
-
-protected:
-	void VerifySymmetryLevel();
-
-
-	/** The 'Passport' for this entity's species and trust level */
-/** The "Advanced" data asset defining growth stages, health, and species attributes */
-	// Note: class keyword here handles the forward declaration inline
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data", meta = (AllowPrivateAccess = "true"))
-	class USovereignSpeciesData* SpeciesData;
-
-	/** Which of the 8 growth stages are we currently in? (0 to 7) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Growth")
-	int32 CurrentGrowthStage = 0;
-
-	/** How often this entity processes logic */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Performance")
-	EUpdateFrequency UpdateFrequency = EUpdateFrequency::Standard;
-
-	/** Swaps the Static Mesh based on the current Growth Stage index */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Visuals")
-	void RefreshVisuals();
-
-	// --- Internal Logic ---
-
-	/** The recurring timer handle for the heartbeat logic */
-	FTimerHandle HeartbeatTimerHandle;
-
-	/** If true, the Soul uses the ManualBirthDate instead of the current time on first spawn */
-	UPROPERTY(EditAnywhere, Category = "Sovereign|Identity")
-	bool bUseManualBirthDate = false;
-
-	/** Format: "2017.03.23-16.00.00" (Year.Month.Day-Hour.Minute.Second) */
-	UPROPERTY(EditAnywhere, Category = "Sovereign|Identity", meta = (EditCondition = "bUseManualBirthDate"))
-	FString ManualBirthDate = "2017.03.23-16.00.00";
-
-	/** The logic function that runs growth progress and checks for Evolution */
-	void OnSovereignHeartbeat();
-
-	//can i evolve?
-	void CheckForEvolution();
-
-	/** Callback function for when a mesh has been asynchronously loaded. */
-	void OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPtr);
+	virtual void BeginPlay() override;
 };
