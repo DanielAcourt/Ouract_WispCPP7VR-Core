@@ -20,6 +20,7 @@ To prevent merge conflicts and "Backlog Drift" when multiple agents or roles are
 1.  **Backlog Ownership:** Only the **Strategist** or **Commander** roles may permanently modify `BACKLOG.md`. Other roles must propose changes via `_AGENT_CONTEXT.md` or a pull request.
 2.  **File Segmentation:** Work on PSTA modules should be segmented:
     *   **Researcher:** Modifies `PSTA_Core.md` and research-level math definitions.
+    *   **Designer:** Modifies `GDD` related docs, progression curves, and balance parameters.
     *   **Tactician:** Modifies C++ implementation in `USovereignBlackBoxComponent`.
     *   **DevOps:** Manages the Pi-Unreal Bridge and telemetry sockets.
 3.  **Atomic Commits:** Agents should commit small, functional increments with clear prefixes (e.g., `PSTA: Implement N-Bit Cluster logic`) to facilitate easier merging.

@@ -37,6 +37,10 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
 | AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
+| W-001 | Dragon MVP: Egg & Hatching | 8 | Todo | Designer/DevOps | First player vessel (Dragon) with life cycle stages. | Egg entity that hatches into a possessable Dragon vessel. |
+| W-002 | Garden: Soil Component (Fertility/Density) | 5 | Todo | Designer/DevOps | Core simulation mechanics for tile-based growth. | USovereignSoilComponent implemented with Day/Night nutrient flux. |
+| W-003 | Garden: Ground Tile Actor | 3 | Todo | Designer/DevOps | Foundation for garden expansion. | ASovereignGroundTile actor integrated with SpawnManager and SaveSystem. |
+| W-004 | Meta-Progression: Legacy Subsystem | 5 | Todo | Researcher/DevOps | Persistent "Bonus Stuff" tracking for Rebirth loop. | Global save data for meta-progression currency. |
 
 ---
 

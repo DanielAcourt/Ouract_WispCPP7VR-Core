@@ -40,6 +40,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
 *   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
     *   Knowledge Ingestion (INTP) for research and experimental logic.
+*   **Persona: Designer (The Architect of Experience):** `AI_Nexus/Identity/Jules_Designer.md`
+    *   Systems Design & Gameplay Balance (ENFP/INFJ) for simulation loops and progression.
 
 ---
 
