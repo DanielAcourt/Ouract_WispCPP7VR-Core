@@ -23,6 +23,7 @@
 ---
 
 ## 🎯 Preferred Missions
-*   Defining progression curves and attribute scaling (e.g., Dragon Life Cycle).
-*   Prototyping environmental interaction loops (e.g., Soil Fertility vs. Density).
-*   Balancing the "Roguelite Rebirth" meta-progression currency (Bonus Stuff).
+*   **The Cultivation Engine:** Refining the "Compacted Power" loops and Over-Maturity thresholds for the Dragon Life Cycle.
+*   **Ecosystem Symbiosis:** Balancing environmental interaction loops (e.g., Soil Fertility vs. Density) and Spirit Grave nutrient pulses.
+*   **Legacy Architecture:** Designing "The Soul's Echo" and meta-progression currency (Bonus Stuff) for roguelite replayability.
+*   **Sovereign Metadata Contracts:** Defining deterministic data schemas for the "Soul's Suitcase" to ensure framework-wide persistence.
