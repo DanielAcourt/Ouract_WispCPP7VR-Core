@@ -22,6 +22,9 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-013 | Data Bridge: Pi-Unreal Telemetry Link | 8 | Todo | DevOps | Mirror real-world hardware truth in the Unreal reflection. | UDP/TCP listener subsystem in Unreal ingesting JSON telemetry from the Pi. |
 | B-014 | Simulation: "Fish Tank" Visual Mapping | 5 | Todo | DevOps | Provide a high-fidelity visual representation of Pi-linked key species. | Dynamic materials and animations in Unreal that reflect live Pi sensor data. |
 | B-015 | Replay: Time-Dilation scrubbing | 8 | Todo | DevOps | Enable forensic analysis of Black Box logs at various speeds. | Standardized replay interface for scrubbing through historical PSTA sessions. |
+| B-016 | Save System Performance Audit | 5 | Todo | DevOps | Investigate reported 1-second lag during EditorSave operations. | Performance report and identified bottlenecks in serialization. |
+| B-017 | "Dirty Flag" Serialization Optimization | 5 | Todo | DevOps | Skip redundant serialization of unchanged entities in USovereignSaveableEntityComponent. | Implementation of bIsDirty flag to optimize save throughput. |
+| B-018 | BP_Object Cleanup (0,0,0 Mesh Bug) | 3 | Todo | DevOps | BP_Object spawns a redundant mesh at world origin (0,0,0). | Redundant mesh spawning logic removed and BP_Object stabilized. |
 | R-000 | PSTA Core: Unified Safety & VSS | 8 | Done | Research | Move from "Weakest Link" (PSS) to "Non-Compensatory" (VSS) safety logic. | Formalized VSS formula implemented and verified in C++ core. |
 | R-001 | PSTA Math: Exponential Trust Hysteresis | 5 | Todo | Research | Define the mathematical bounds for trust recovery across all pillars. | Formalized Phi(t) equations for recovery and failure snapping. |
 | R-002 | PSTA Math: Disagreement & Conflict Penalties | 8 | Todo | Research | Penalize VSS when human intent (A) and machine truth (T) diverge. | Mathematical definition of the Disagreement Penalty based on A/T vectors. |
