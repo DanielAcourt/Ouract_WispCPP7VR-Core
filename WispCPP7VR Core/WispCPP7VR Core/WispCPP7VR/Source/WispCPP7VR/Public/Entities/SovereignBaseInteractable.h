@@ -11,12 +11,10 @@
 class USovereignSaveableEntityComponent;
 
 // 1. Setup the Trace for EVERYTHING Sovereign
-
-
-
 /**
  * 
  */
+
 UCLASS(Abstract)
 class WISPCPP7VR_API ASovereignBaseInteractable
     : public ASovereignBaseEntity
@@ -38,15 +36,22 @@ public:
 protected:
 
     // This is what was missing!
-    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Components")
-    class UStaticMeshComponent* BaseMesh;
+    //UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Components")
+    //class UStaticMeshComponent* BaseMesh;
+
     // this needs testing this might not be the smartest way to do this as the default pawn come with a standard base mesh.
+    // Only one mesh declaration
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Components")
+    UStaticMeshComponent* PhysicalVessel;
+
 
     /** Master interaction gate */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Interaction")
     bool bIsInteractable = true;
 
 public:
+
+
     /** --- IoT Telemetry (Digital Twin) --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
     float TemperatureCelsius = 0.0f;
@@ -57,7 +62,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
     float WaterDepthMM = 0.0f;
 
-    // there is not controller?
 
 public:
     /* =========================

@@ -39,9 +39,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
 
+	/** Returns the unique Save System ID for this specific entity */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
+	FGuid GetSovereignID() const;
+
 	/** The Unique Identity Signature for this class. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sovereign|Identity")
 	FGameplayTag IdentitySignature;
+
 
 	/** The Gameplay Tags for this entity. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Identity")
@@ -62,24 +67,6 @@ public:
 	/** Primary logic for moving from one growth stage to the next */
 	virtual void Evolve();
 
-	/** Returns the unique Save System ID for this specific entity */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
-	FGuid GetSovereignID() const;
-
-
-	/** * TRIGGER MATING: Checks compatibility and spawns a child if successful.
-	 * Can be called from VR Overlap events or Interaction buttons.
-	 */
-
-
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Gameplay")
-	virtual void AttemptMating(AActor* PotentialPartner);
-
-
-
-	/** Optional: Check if this entity is currently able to breed */
-	UFUNCTION(BlueprintPure, Category = "Sovereign|Gameplay")
-	bool IsReadyForMating() const;
 
 	/** Called by the Spawn Manager after the actor has been spawned. */
 	virtual void PostSpawnInitialize(const USovereignSpeciesData* InSpeciesData, const FGuid& InMotherID, const FGuid& InFatherID);

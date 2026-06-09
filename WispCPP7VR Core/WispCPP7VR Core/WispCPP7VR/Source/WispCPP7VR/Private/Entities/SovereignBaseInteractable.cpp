@@ -25,48 +25,21 @@ ASovereignBaseInteractable (Your Physical Layer):
 
 ASovereignBaseInteractable::ASovereignBaseInteractable()
 {
-    // 1. Performance: Rocks don't need to tick. 
-    // If they grow, the Soul Component's timer handles it, not the Actor's tick.
+    // 1. Performance
     PrimaryActorTick.bCanEverTick = false;
 
-    // 2. The Clean Pointer Logic:
-    // KEY Architural NOTE DAN 25/03/2026
-    // // this doubles up the logic as we have a bash mesh and an enioty mesh not good for longterm development
-    // 
-    // We don't create a 'BaseMesh'. We simply use the EntityMesh inherited from the parent.
-    // If you need a specific name for Blueprints, use an alias, but stay in C++ reality.
+    // 2. Physical Layer
+    PhysicalVessel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PhysicalVessel"));
+    RootComponent = PhysicalVessel;
 
-    if (EntityMesh)
-    {
-        // 3. Collision Logic: Optimized for VR and Interaction Traces
-        EntityMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    // 3. Collision Setup (Applied to Root)
+    PhysicalVessel->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    PhysicalVessel->SetCollisionResponseToAllChannels(ECR_Block);
+    PhysicalVessel->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
-        // Block everything by default to ensure the Rock feels 'solid'
-        EntityMesh->SetCollisionResponseToAllChannels(ECR_Block);
-
-        // CRITICAL: Ensure Visibility is blocked so the Wisp's LineTrace hits it.
-        EntityMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
-        // 4. Visual Offset: 
-        // Be careful with hardcoded offsets like -90.f. 
-        // For a Rock (AActor), the root is usually at the center. 
-        // Only use -90.f if this is a Character (to account for the capsule).
-        if (IsA<ACharacter>())
-        {
-            EntityMesh->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
-        }
-        else
-        {
-            EntityMesh->SetRelativeLocation(FVector::ZeroVector);
-        }
-    }
-
-    // 5. The Soul Handshake:
-    // Ensure the Soul Component is initialized. If it's not in the parent, create it here.
-    if (!SaveDataComponent)
-    {
-        SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
-    }
+    // 4. Soul Layer
+    // We create it here so it is always available
+    SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SovereignSoul"));
 }
 
 bool ASovereignBaseInteractable::CanInteract_Implementation(AActor* Interactor)
@@ -102,6 +75,8 @@ void ASovereignBaseInteractable::OnInteract_Implementation(AActor* Interactor)
 
     UE_LOG(LogTemp, Log, TEXT("%s"), *DebugMessage);
 }
+
+
 void ASovereignBaseInteractable::OnBeginHover_Implementation()
 {
     // Optional: highlight, sound cue, UI prompt
@@ -132,32 +107,31 @@ bool ASovereignBaseInteractable::CanBePossessed_Implementation()
     // Note: bCanBePossessed is a protected variable inherited from ASovereignBaseEntity
     return bCanBePossessed;
 }
-
+//Changes 06/06/2026. We want to use the bCanBePossessed on the unpossession check so it handles object too
 void ASovereignBaseInteractable::RequestPossession_Implementation(AController* RequestingController)
 {
-    // 1. Cast the controller to a PlayerController
-    if (APlayerController* PC = Cast<APlayerController>(RequestingController))
+    APlayerController* PC = Cast<APlayerController>(RequestingController);
+    if (!PC || !CanBePossessed_Implementation()) return;
+
+    // 1. UPDATE THE SOUL STATE
+    if (SaveDataComponent)
     {
-        if (CanBePossessed_Implementation())
-        {
-            // 2. THE BRIDGE: Instead of Possess(this), we enable input.
-            // This allows the player to "drive" the rock/actor.
-            this->EnableInput(PC);
-
-            // 3. UI/Feedback Handshake
-            if (GEngine)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
-                    FString::Printf(TEXT("Spirit Link Established with: %s"), *GetName()));
-            }
-
-            UE_LOG(LogTemp, Warning, TEXT("Input Bridge established for non-pawn actor: %s"), *GetName());
-        }
+        SaveDataComponent->bIsBeingPossessed = true;
     }
+
+    // 2. TRANSFER INPUT
+    if (APawn* WispPawn = PC->GetPawn())
+    {
+        WispPawn->DisableInput(PC);
+    }
+    this->EnableInput(PC);
+
+    UE_LOG(LogTemp, Warning, TEXT("Spirit Link established: %s is now soul-bound."), *GetName());
 }
+
 USceneComponent* ASovereignBaseInteractable::GetPossessionAttachmentComponent_Implementation()
 {
-    return BaseMesh;
+    return PhysicalVessel;
 }
 
 /* =========================

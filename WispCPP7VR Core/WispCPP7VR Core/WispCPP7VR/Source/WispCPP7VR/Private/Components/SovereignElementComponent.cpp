@@ -44,7 +44,7 @@ TMap<FString, FString> USovereignElementComponent::GetSaveData()
     Data.Add(TEXT("Elem.Earth"), FString::SanitizeFloat(EarthAffinity));
     Data.Add(TEXT("Elem.Wind"), FString::SanitizeFloat(WindAffinity));
     Data.Add(TEXT("Elem.Water"), FString::SanitizeFloat(WaterAffinity));
-    Data.Add(TEXT("Elem.SlowRes"), FString::SanitizeFloat(SlowResistance));
+    //Data.Add(TEXT("Elem.SlowRes"), FString::SanitizeFloat(SlowResistance));
 
     return Data;
 }
@@ -58,5 +58,5 @@ void USovereignElementComponent::RestoreSaveData(const TMap<FString, FString>& D
     if (const FString* Val = Data.Find(TEXT("Elem.Earth")))   EarthAffinity = FCString::Atof(**Val);
     if (const FString* Val = Data.Find(TEXT("Elem.Wind")))    WindAffinity = FCString::Atof(**Val);
     if (const FString* Val = Data.Find(TEXT("Elem.Water")))   WaterAffinity = FCString::Atof(**Val);
-    if (const FString* Val = Data.Find(TEXT("Elem.SlowRes"))) SlowResistance = FCString::Atof(**Val);
+    //if (const FString* Val = Data.Find(TEXT("Elem.SlowRes"))) SlowResistance = FCString::Atof(**Val);
 }

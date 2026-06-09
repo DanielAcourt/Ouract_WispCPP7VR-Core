@@ -33,8 +33,8 @@ public:
 
 	// Maybe electric?
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
-	float SlowResistance;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Resistances")
+	//float SlowResistance;
 
 
 	// Sovereign Save Interface Overrides (triggers the saving of data on this componet really important but i though tit inherited this fromt he parent class,)
