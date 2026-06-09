@@ -12,6 +12,7 @@
 // Forward declarations
 class ASovereignBaseEntity;
 class FJsonObject;
+class ISovereignBrokerInterface;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent
@@ -127,10 +128,24 @@ public:
     //Version 3.3 Added
     /** The Hub's way of handling data it doesn't recognize yet (Isla's unknown tags) */
     UFUNCTION(BlueprintCallable, Category = "Sovereign|SaveSystem")
-    void AddUnknownTag(FString Key, FString Value) { UnknownMetaTags.Add(Key, Value); }
+    void AddUnknownTag(FString Key, FString Value);
+
+    /** --- 6. REALITY-TRUTH ENGINE (MEDIATOR) --- */
+
+    /** Registers a specialized data broker with the Soul */
+    void RegisterBroker(TScriptInterface<ISovereignBrokerInterface> Broker);
+
+    /** Toggles the visibility/active state of the Cultivation layer */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Reality")
+    bool bMagicLayerActive = true;
+
 protected:
     /** Calculates multipliers based on the 3-axis interaction */
     float GetElementalMultiplier(ESovereignElement IncomingType);
+
+    /** Registered Brokers for the Mediator pattern */
+    UPROPERTY()
+    TArray<TScriptInterface<ISovereignBrokerInterface>> RegisteredBrokers;
 
     /** The storage for all manifested truths and elemental residuals */
     UPROPERTY(VisibleAnywhere, Category = "Sovereign|SaveSystem")
