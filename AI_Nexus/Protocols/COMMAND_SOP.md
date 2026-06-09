@@ -62,6 +62,21 @@ Every C++, Math module, and Markdown file must begin with this exact single-line
 
 ---
 
+## ❄️ CORE ARCHITECTURE HARD FREEZE (Level 0/1)
+To maintain the stability of the core gameplay loop and the integrity of the "Sovereign Soul" during multi-branch experimentation, the following classes are under a **HARD FREEZE**:
+
+1.  **ASovereignBaseEntity** (The Simulated Root)
+2.  **ASovereignBaseCharacter** (The Master Vessel)
+3.  **ASovereignPawn** (The Living Vessel)
+
+### ⚠️ Protocols for Frozen Files:
+*   **NO STRUCTURAL CHANGES:** Adding/removing member variables or changing function signatures is strictly forbidden without "Core-Break" clearance from the Technical Lead.
+*   **MODULAR-FIRST MANDATE:** All new functionality MUST be implemented via `UActorComponent` (e.g., `USovereignBioComponent`) rather than modifying these base classes.
+*   **COMMENT WARNINGS:** Every frozen file must contain the `[HARD FREEZE]` warning in its header.
+*   **EXPERIMENTAL ISOLATION:** Any required changes for experimental features must be kept in their respective branches (e.g., `feature/wisps-gdd-integration`) and never merged into `main` without a full stability audit.
+
+---
+
 ## 🛡️ Assumption Kill-Switch
 If an agent detects it is making an assumption about a critical system (Saving, Spawning, Identity), it MUST:
 1.  Stop execution.

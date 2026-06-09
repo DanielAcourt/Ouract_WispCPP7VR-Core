@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
+// [HARD FREEZE] CORE ARCHITECTURE - DO NOT MODIFY WITHOUT CORE-BREAK CLEARANCE.
 
 #pragma once
 
