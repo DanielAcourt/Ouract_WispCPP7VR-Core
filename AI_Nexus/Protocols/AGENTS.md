@@ -29,6 +29,14 @@ To prevent merge conflicts and "Backlog Drift" when multiple agents or roles are
 - All major architectural shifts must be documented in `AI_Nexus/Protocols/`.
 - Timeline updates and version history belong in `AI_Nexus/Timeline/MD.md`.
 
+### ✍️ Co-Authoring Protocol
+To support collaborative development between the Lead and AI Agents:
+1.  **Attribution:** All new reflections, major changes, or design comments must be prefixed with the author's name or initial.
+2.  **Format:** `// "[Name/Initial]" [Comment/Reflection] [YYYY-MM-DD]`
+    - Example: `// "Dan" Investigating DDR7 jitter for the Lidar Lens. 2025-06-03`
+    - Example: `// "Jules_Hardware" Initialized FPGA-side Octree research. 2025-06-03`
+3.  **Scope:** This applies to both code comments and documentation (`.md`) files.
+
 ### ⚠️ Infrastructure Constraints (Agent Workarounds)
 - **Large-Scale Changes:** During global refactors (e.g., adding copyright headers or licenses across the entire codebase), agents may encounter limitations when pushing to DevOps.
 - **Workaround:** If a `git push` failure occurs due to change volume, the agent should prioritize creating a local `.zip` of the source changes and notify the Lead to facilitate a manual merge.

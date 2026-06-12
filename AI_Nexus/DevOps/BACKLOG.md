@@ -37,6 +37,8 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
 | AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
+| B-016 | Marine Bottle: RTC/MCU Bridge | 8 | Todo | Hardware | Design a deterministic logging/heartbeat bridge for autonomous vessels. | Standardized protocol for MCU-based decision logging with RTC sync. |
+| R-009 | Personal Research: FPGA Lidar Lense | 13 | In Progress | Researcher | Research parallel FPGA processing for Lidar noise reduction and threat validation. | Mathematical spec for hardware-accelerated Octree reduction and SWOT report. |
 
 ---
 

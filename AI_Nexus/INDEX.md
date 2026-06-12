@@ -40,6 +40,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
 *   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
     *   Knowledge Ingestion (INTP) for research and experimental logic.
+*   **Persona: Hardware Consultant (The Iron Architect):** `AI_Nexus/Identity/Jules_Hardware.md`
+    *   Hardware Documentation, Research, & Physical Architecture (ISTP).
 
 ---
 
@@ -57,6 +59,14 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Definitive terminology for the Sovereign ecosystem.
 *   **Metaphorical Principles:** `AI_Nexus/Research/Metaphors/Principles.md`
     *   Translation of Lead's spatial metaphors into operational rules.
+
+### **Hardware Research Node**
+*   **Directory:** `AI_Nexus/Hardware/`
+    *   Central hub for hardware documentation, research, and physical architecture.
+*   **Manifest of Intent:** `AI_Nexus/Hardware/MANIFEST_OF_INTENT.md`
+    *   The "Physical Lens" strategy and sensor-noise reduction priorities.
+*   **Hardware Catalog:** `AI_Nexus/Hardware/HARDWARE_CATALOG.md`
+    *   Curated catalog of CPUs, GPUs, FPGAs, and MCU components.
 
 ---
 
