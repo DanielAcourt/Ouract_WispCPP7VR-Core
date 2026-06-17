@@ -30,7 +30,8 @@
         "host": "0.0.0.0",
         "port": 8000,
         "read_zones": [
-            "."
+            ".",
+            "E:\\IronKnight"
         ],
         "write_zones": [
             "Sovereign_Intelligence/IronOfficer/Environment",

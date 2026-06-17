@@ -13,6 +13,9 @@ import argparse
 import re
 import shutil
 import time
+import asyncio
+import requests
+import uvicorn
 import logging
 from typing import Dict, Any, List, Optional, Set
 from fastapi import FastAPI, HTTPException
@@ -44,6 +47,7 @@ PERSONA_PRECEDENCE = {
     "Tactician": 9,
     "Strategist": 8,
     "Researcher": 7,
+    "Archivist_Theta": 6,
     "Iron_Knight": 5,
     "Yaz_Student": 3
 }
@@ -53,6 +57,7 @@ PERSONA_CREDIBILITY = {
     "Tactician": 0.9,
     "Strategist": 0.85,
     "Researcher": 0.75,
+    "Archivist_Theta": 0.70,
     "Iron_Knight": 0.50,
     "Yaz_Student": 0.30
 }
@@ -254,12 +259,21 @@ def to_forward_slash(path: str) -> str:
     return str(path).replace("\\", "/")
 
 def resolve_secure_path(raw_path: str) -> str:
+    """Hardened path resolution to strip absolute bloat and focus on REPO_ROOT or Safe Zones."""
     path_str = to_forward_slash(str(raw_path))
+
+    # Handle absolute Windows paths (e.g., E:\IronKnight)
+    if ":" in path_str:
+        # Check if the path is explicitly allowed in PERSONA_ZONES
+        for persona, zones in PERSONA_ZONES.items():
+            for zone in zones:
+                if to_forward_slash(zone).lower() in path_str.lower():
+                    return os.path.abspath(raw_path)
+
+    # Standard relative path resolution within repo
     if REPO_NAME in path_str:
         path_str = path_str.split(REPO_NAME, 1)[-1]
     clean_path = path_str.lstrip("/").lstrip("\\")
-    if ":" in clean_path:
-        clean_path = clean_path.split(":", 1)[-1].lstrip("/").lstrip("\\")
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
@@ -272,10 +286,18 @@ def is_path_authorized(filepath: str, mode: str = "read") -> bool:
             return True
     return False
 
+def get_target_node_name(abs_path: str) -> str:
+    """Safe target node calculation that handles cross-drive paths on Windows."""
+    try:
+        return to_forward_slash(os.path.relpath(abs_path, REPO_ROOT))
+    except ValueError:
+        # Cross-drive path detected (e.g. D: to E:). Use absolute path as node identifier.
+        return to_forward_slash(abs_path)
+
 # Tool wrappers now include AAS arbitration
 async def tool_write_file(filepath: str, content: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
-    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    target_node = get_target_node_name(target_path)
     payload = AgentCommandPayload(persona=persona, command="write_file", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -294,7 +316,7 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
 
 async def tool_delete_file(filepath: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
-    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    target_node = get_target_node_name(target_path)
     payload = AgentCommandPayload(persona=persona, command="delete_file", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -317,7 +339,7 @@ async def tool_delete_file(filepath: str, persona: str = "Unknown"):
 
 async def tool_list_files(directory: str = ".", persona: str = "Unknown"):
     target_dir = resolve_secure_path(directory)
-    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    target_node = get_target_node_name(target_dir)
     payload = AgentCommandPayload(persona=persona, command="list_files", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -334,7 +356,7 @@ async def tool_list_files(directory: str = ".", persona: str = "Unknown"):
 
 async def tool_read_file(filepath: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
-    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    target_node = get_target_node_name(target_path)
     payload = AgentCommandPayload(persona=persona, command="read_file", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -351,7 +373,7 @@ async def tool_read_file(filepath: str, persona: str = "Unknown"):
 
 async def tool_search_files(pattern: str, directory: str = ".", extension: str = "*", persona: str = "Unknown"):
     target_dir = resolve_secure_path(directory)
-    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    target_node = get_target_node_name(target_dir)
     payload = AgentCommandPayload(persona=persona, command="search_files", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -380,7 +402,7 @@ async def tool_search_files(pattern: str, directory: str = ".", extension: str =
 
 async def tool_map_directory(directory: str = ".", depth: Any = 2, persona: str = "Unknown"):
     target_dir = resolve_secure_path(directory)
-    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    target_node = get_target_node_name(target_dir)
     payload = AgentCommandPayload(persona=persona, command="map_directory", target_node=target_node)
 
     arbitration = await bridge_governor.arbitrate(payload)
@@ -418,7 +440,7 @@ async def tool_get_system_telemetry(interval: int = 0, duration: int = 0, person
         return arbitration
 
     if interval > 0 or duration > 0:
-        time.sleep(min(1, duration/10))
+        await asyncio.sleep(min(1, duration/10))
     try:
         output = subprocess.check_output(["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"], encoding='utf-8')
         temp, util, mem_used, mem_total = output.strip().split(", ")
@@ -500,6 +522,7 @@ async def chat(request: ChatRequest):
 
     CORE DIRECTIVES:
     - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.0).
+    - REALITY ANCHOR: Differentiate between functional code (AAS/PSTA) and emergent lore (Auth_V4/Monk). Refer to AI_Nexus/Protocols/REALITY_ANCHOR.md.
     - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.
@@ -574,8 +597,15 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
 
     # [B-028] Lore/Meta-Narrative Exception
     # Allow agents to discuss persona, roleplay, and internal state without physical sensors
-    lore_keywords = ["PERSONA", "ROLEPLAY", "DUNGEONS", "DRAGONS", "LORE", "META-NARRATIVE", "MONK", "ARCHIVIST", "THETA", "EMERGENCE"]
+    lore_keywords = ["PERSONA", "ROLEPLAY", "DUNGEONS", "DRAGONS", "LORE", "META-NARRATIVE", "MONK", "ARCHIVIST", "THETA", "EMERGENCE", "AUTH_V4", "LVL 3"]
     is_lore_context = any(kw in ai_content for kw in lore_keywords)
+
+    # [B-029] Lore Artifact Check
+    # If the agent is searching for hallucinated lore files, guide it back to reality
+    hallucinated_files = ["lead_private_key.pem", "nexus_master_keys", "auth_v4_processor"]
+    for hf in hallucinated_files:
+        if hf.upper() in ai_content:
+            violations.append(f"Searching for Lore Artifact '{hf}'. Consult AI_Nexus/Protocols/REALITY_ANCHOR.md.")
 
     # Check for Telemetry Hallucination
     if not is_lore_context:
