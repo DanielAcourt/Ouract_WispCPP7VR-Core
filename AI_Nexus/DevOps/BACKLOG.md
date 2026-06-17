@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
 # Sovereign Framework: BACKLOG
 
 This backlog uses Fibonacci scoring to estimate task complexity. It is designed to be "KISS" compliant and easily exportable to CSV/JSON for Lead tracking.
@@ -41,6 +41,10 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-016 | Soul: Diagnostic Broker (Truth) | 5 | In Progress | DevOps | Implement the raw scientific/historical data layer for Lidar/Museum ingestion. | UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry. |
 | B-017 | Soul: Cultivation Broker (Magic) | 5 | In Progress | DevOps | Implement the gamified progression layer (Qi/Maturity) as a decoupled module. | UCultivationBroker managing optional simulation logic without breaking SSoT. |
 | B-018 | Lidar: .DLB Ingestion Pipeline | 13 | Todo | Research | Stream Lidar data from Museum APIs into the Diagnostic Broker. | Automated manifest ingestion mapping "Unknown" tags to high-fidelity mesh assets. |
+| B-019 | Unpossession Handshake (B-019) | 5 | Done | DevOps | Resolve the soft-lock bug during Spirit ejection. | EjectFromHost logic hardened with identity verification. |
+| B-020 | AAS: 409 Conflict Gate Implementation | 8 | Todo | DevOps | Implement C++ logic in the Soul to detect and log agency conflicts. | USovereignSaveableEntityComponent correctly processes AAS_Route and Confidence_Score. |
+| B-021 | AAS: Persona Authority Validator | 5 | Todo | Protocols | Create a validation layer in bridge.py for authority verification. | bridge.py rejects commands from personas with insufficient precedence in the AAS matrix. |
+| B-022 | AAS: Deep Planning Handshake Trigger | 3 | Todo | DevOps | Implement automated pause/handshake when confidence drops below 0.7. | vessel.py initiates mandatory user input session during low-confidence scenarios. |
 
 ---
 

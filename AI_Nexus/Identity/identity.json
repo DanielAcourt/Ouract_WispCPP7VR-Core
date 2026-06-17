@@ -1,9 +1,9 @@
 {
   "SchemaInfo": {
     "Name": "Sovereign Entity Identity Schema",
-    "Version": "1.2.0",
+    "Version": "1.3.0",
     "Level": 2,
-        \"AAS_GlobalAuthority\": \"AAS Protocol Engine\"
+    "AAS_GlobalAuthority": "AAS Protocol Engine",
     "Description": "The Single Source of Truth for entity state persistence. This schema defines the structural contract for the USovereignSaveableEntityComponent (The Soul)."
   },
   "DataContract": {

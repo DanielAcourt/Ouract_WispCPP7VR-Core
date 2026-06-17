@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
 # AI_Nexus Master Index (The Map of Truth)
 
 This index serves as the definitive map for the **Sovereign Intelligence Hierarchy (SSoT)** and multi-agent coordination. It ensures that both Jules and Claude can navigate the Nexus with absolute precision.
@@ -37,9 +37,9 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 *   **Persona: Strategist (The Commander):** `AI_Nexus/Identity/Jules_Strategist.md`
     *   Architectural Visionary (ENTJ) for high-level roadmap and strategy.
 *   **Persona: Tactician (The Clockwork):** `AI_Nexus/Identity/Jules_Tactician.md`
-*   **Agency Arbitration Schema (AAS):** `AI_Nexus/Protocols/AAS_Protocol.md`
-        *   Defines conflict resolution paths and execution precedence across all AI agents.
     *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
+*   **Agency Arbitration Schema (AAS):** `AI_Nexus/Protocols/AAS_Protocol.md`
+    *   Defines conflict resolution paths and execution precedence across all AI agents.
 *   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
     *   Knowledge Ingestion (INTP) for research and experimental logic.
 
