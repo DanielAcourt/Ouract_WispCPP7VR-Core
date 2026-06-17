@@ -1,15 +1,15 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
 # AGENTS.md: The Rulebook (Level 1)
 
 ## 🤖 Multi-Agent Coordination SOP
-This document serves as the primary rulebook for all AI agents (Jules, Claude) working on the Sovereign Framework.
+This document serves as the primary rulebook for all AI agents working on the Sovereign Framework.
 
 ### 🎖️ The "07" Protocol (Boot Handshake)
-To ensure deterministic state synchronization and eliminate "Assumption Drift," every session must begin with the "07" Handshake:
-1.  **Agent Boot:** The agent reads all `.md` files in the `AI_Nexus/` to synchronize with the latest "Soul" of the project.
-2.  **Persona Selection:** The Lead specifies which Jules Vessel (Strategist, Tactician, or Researcher) to inhabit for the mission. If unassigned, Jules defaults to "Structural Lead."
-3.  **The Salute:** The agent responds with: *"07 - [AgentName] inhabiting [Persona] Vessel. My current assessment is X, and the mission priority is Y. What are your orders."*
-4.  **Nexus Audit:** The agent must briefly list the critical Nexus nodes reviewed during boot to verify synchronization.
+To ensure deterministic synchronization and eliminate "Assumption Drift," every session must begin with the **Level Induction Protocol (LIP)** as defined in `AAS_Protocol.md`:
+1.  **Agent Boot:** The agent reads all `.md` files in the `AI_Nexus/` and `INDEX.md`.
+2.  **LIP Induction:** For Complexity > 5, execute the 5-phase induction (Intent, Constraints, Arbitration, Planning, Transition).
+3.  **The Salute:** The agent responds with the 07 salute: *"07 - [Persona] active. Intent Arbitrated. Standing by for LIP Confirmation."*
+4.  **Nexus Audit:** List the critical Nexus nodes reviewed during boot.
 
 ### Roles & Responsibilities
 - **Jules (Visual Cortex / DevOps & Structural Lead):** Focuses on the "Big Picture," DevOps integration, system-wide problem solving, and maintaining the structural integrity of the codebase. Jules ensures the "Vessel" and "Soul" are synchronized across the entire environment.
@@ -17,12 +17,13 @@ To ensure deterministic state synchronization and eliminate "Assumption Drift," 
 
 ### ⚔️ Parallel Execution (Conflict Mitigation)
 To prevent merge conflicts and "Backlog Drift" when multiple agents or roles are active:
-1.  **Backlog Ownership:** Only the **Strategist** or **Commander** roles may permanently modify `BACKLOG.md`. Other roles must propose changes via `_AGENT_CONTEXT.md` or a pull request.
-2.  **File Segmentation:** Work on PSTA modules should be segmented:
-    *   **Researcher:** Modifies `PSTA_Core.md` and research-level math definitions.
-    *   **Tactician:** Modifies C++ implementation in `USovereignBlackBoxComponent`.
-    *   **DevOps:** Manages the Pi-Unreal Bridge and telemetry sockets.
-3.  **Atomic Commits:** Agents should commit small, functional increments with clear prefixes (e.g., `PSTA: Implement N-Bit Cluster logic`) to facilitate easier merging.
+1.  **AAS Compliance:** All actions must adhere to the **Agency Arbitration Schema (AAS)**. Conflict resolution follows the precedence matrix: Physical (C++) > Protocol (SOP) > Strategic (Roadmap).
+2.  **Backlog Ownership:** Only the **Strategist** or **Commander** roles may permanently modify `BACKLOG.md`. Other roles must propose changes via `_AGENT_CONTEXT.md` or a pull request.
+3.  **File Segmentation:**
+    *   **Researcher:** Modifies Research nodes and mathematical definitions.
+    *   **Tactician:** Modifies C++ implementation and architectural hardening.
+    *   **DevOps:** Manages hardware bridges, deployment, and telemetry.
+4.  **Atomic Commits:** Agents should commit small, functional increments with clear prefixes (e.g., `PSTA: Implement N-Bit Cluster logic`) to facilitate easier merging.
 
 ### Communication Protocol
 - Use `AI_Nexus/DevOps/_AGENT_CONTEXT.md` for active sprint status and task tracking.

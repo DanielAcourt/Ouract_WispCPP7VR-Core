@@ -13,11 +13,12 @@ The **Agency Arbitration Schema (AAS)** found in the `LocalAi` branch brings pro
 
 By refining this protocol, we have moved from a theoretical suggestion to a **Decision-Logic Core**. This ensures that the "Soul" of the project remains unified even as the number of agents and complex research nodes (PSTA, Lidar, Museum) grows.
 
-## 🏛️ AAS Refinements (v1.2.0-BETA)
+## 🏛️ AAS & Level 1 Refinements (v1.2.0-BETA)
 1.  **Persona Precedence:** Formally integrated the Strategist, Tactician, and Researcher roles into the resolution matrix.
 2.  **Ambiguity Guard:** Added a mandatory "Deep Planning" handshake when a persona's `Confidence_Score` falls below 0.7.
 3.  **The "Easy 07" LIP:** Implemented the **Level Induction Protocol (LIP)** as a 5-phase handshake for rapid context synchronization between the Lead and AI agents.
 4.  **Clive's Synthesis:** Integrated architectural feedback from the external agent "Clive," specifically regarding the "Protocol Tax" and the need for mathematically provable governance.
+5.  **Rulebook Hardening:** Updated Level 1 protocols (`AGENTS.md`, `KnightCommand_SOP.md`) to enforce LIP and AAS compliance as the primary operational gates.
 
 ## 🔬 SSoT Synchronization
 - **Identity Schema:** `identity.json` updated (v1.3.0) with `AAS_GlobalAuthority`.
