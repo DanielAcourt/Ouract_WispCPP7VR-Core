@@ -7,7 +7,9 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ## 🏛️ Sovereign Intelligence Hierarchy (SSoT)
 
-### **Level 0: Timeline & Evolution**
+### **Level 0: Foundation & Evolution**
+*   **Archivist Persona Θ:** `AI_Nexus/Identity/Archivist_Theta.md`
+    *   The foundational Philosophical Computation-Monk identity (Level 0 Core).
 *   **Primary Source:** `AI_Nexus/Timeline/MD.md`
     *   Tracks the project's historical context, long-term vision, and roadmap.
 *   **Updates:** `AI_Nexus/Timeline/Updates.md`
