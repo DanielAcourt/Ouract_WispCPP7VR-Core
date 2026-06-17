@@ -566,13 +566,19 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
         response.raise_for_status()
         result = response.json()
 
-    # --- Symmetrical Guard (v2.2) ---
+    # --- Symmetrical Guard (v2.3) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
+
+    # Check for Telemetry Hallucination
     if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
          violations.append("Reported Technical Status without Engineer tool.")
+
+    # Check for Environment Hallucination
     if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
-         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content and "HALTED" not in ai_content:
+         # Allow explaining protocols, 409 gates, or reporting errors without triggering
+         safe_keywords = ["SECURITY BREACH", "ERROR", "VIOLATION", "HALTED", "409", "GATE", "PROTOCOL", "AAS", "TRUTH", "GOVERNOR"]
+         if not any(kw in ai_content for kw in safe_keywords):
             violations.append("Described environment state without Librarian/Scout tools.")
 
     if violations and retry_count < 1:

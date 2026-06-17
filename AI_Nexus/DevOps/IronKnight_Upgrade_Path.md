@@ -32,7 +32,8 @@ To upgrade the local Iron Knight implementation on the GTX 5090 hardware and ver
 1.  **Memory Integration:** Ingest the `AI_Nexus/Research/Analysis_of_Ideas_Pivot.md` into the local agent's long-term context.
 2.  **Protocol Training:** Train the agent to recognize and respect the "White Wall" boundaries.
 3.  **Hardware Loop:** Transition the `VSS` calculation to include real-time hardware health (T-pillar) as a primary safety coefficient.
-4.  **Long-term Memory:** Utilize `Sovereign_Intelligence/IronKnight_Memory/` for persistent documentation, logs, and self-training data. The Knight has full authority within this zone.
+4.  **Long-term Memory:** Utilize `Sovereign_Intelligence/IronKnight_Memory/` (or mapped physical drives like `E:\IronKnight`) for persistent documentation, logs, and self-training data. The Knight has full authority within these zones as defined in `config.json`.
+5.  **Verbal Handshake:** In the event of a `409_CONFLICT_GATE`, execute a verbal handshake (e.g., "Confirm Write Execution") to bridge the gap between agent intent and system truth.
 
 ---
 // "A Knight is only as strong as the protocols they defend." [Tactician] 2026-06-17
