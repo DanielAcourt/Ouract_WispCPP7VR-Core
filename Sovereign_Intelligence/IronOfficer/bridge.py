@@ -245,11 +245,25 @@ async def evaluate_safety(request: VSSRequest):
     current_model = get_best_available_model()
     prompt = f"[SYSTEM: Sovereign Iron Officer] Analyze PSTA telemetry: {json.dumps([t.model_dump() for t in request.telemetry])}. Context: {request.context}. Respond in JSON with vss, status, rationale, command."
     try:
-        response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"})
-        if response.status_code != 200: raise HTTPException(status_code=response.status_code, detail=f"Ollama Error: {response.text}")
+        response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}, timeout=30)
+        if response.status_code != 200:
+            print(f"[07 ERROR] Ollama returned {response.status_code}: {response.text}")
+            raise HTTPException(status_code=response.status_code, detail=f"Ollama Error ({response.status_code}): {response.text}")
+
         result = response.json()
-        return {"analysis": json.loads(result['response']), "model_used": current_model}
-    except Exception as e: raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
+        try:
+            analysis = json.loads(result['response'])
+            return {"analysis": analysis, "model_used": current_model}
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"[07 ERROR] Failed to parse Ollama response for {current_model}: {result.get('response', 'NO CONTENT')}")
+            raise HTTPException(status_code=500, detail=f"Model output parsing failure: {str(e)}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"[07 ERROR] Ollama Connection/Timeout: {e}")
+        raise HTTPException(status_code=503, detail=f"Ollama Unreachable: {str(e)}")
+    except Exception as e:
+        print(f"[07 ERROR] Bridge Exception: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Bridge Error: {str(e)}")
 
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
@@ -360,5 +374,16 @@ if __name__ == "__main__":
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
     DETECTED_MODELS = get_installed_models()
+
     print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n" + "="*50 + "\n")
+
+    if DETECTED_MODELS:
+        print(f"[07] Modules: {', '.join(DETECTED_MODELS)}")
+    else:
+        print("[07] Modules: [NONE DETECTED]")
+
+    if TARGET_MODEL not in DETECTED_MODELS:
+        print(f"[07 WARNING] Target model '{TARGET_MODEL}' not found. Fallback in effect.")
+
+    print("") # Spacer
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
