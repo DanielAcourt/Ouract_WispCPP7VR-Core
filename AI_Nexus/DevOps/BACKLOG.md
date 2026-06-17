@@ -37,6 +37,10 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
 | AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
+| E-001 | Epic: Sovereign Soul – The Reality-Truth Engine | 34 | In Progress | Research/DevOps | Evolve the Soul into a high-performance Orchestrator separating "Truth" from "Magic". | ISovereignBroker system implemented with Mediator pattern in USovereignSaveableEntityComponent. |
+| B-016 | Soul: Diagnostic Broker (Truth) | 5 | In Progress | DevOps | Implement the raw scientific/historical data layer for Lidar/Museum ingestion. | UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry. |
+| B-017 | Soul: Cultivation Broker (Magic) | 5 | In Progress | DevOps | Implement the gamified progression layer (Qi/Maturity) as a decoupled module. | UCultivationBroker managing optional simulation logic without breaking SSoT. |
+| B-018 | Lidar: .DLB Ingestion Pipeline | 13 | Todo | Research | Stream Lidar data from Museum APIs into the Diagnostic Broker. | Automated manifest ingestion mapping "Unknown" tags to high-fidelity mesh assets. |
 
 ---
 

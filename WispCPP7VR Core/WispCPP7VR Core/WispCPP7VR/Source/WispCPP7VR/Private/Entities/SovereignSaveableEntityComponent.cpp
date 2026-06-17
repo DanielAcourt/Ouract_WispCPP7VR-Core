@@ -4,6 +4,7 @@
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
 #include "SaveSystem/SovereignActorRegistry.h" // <--- Updated to match your Registry header
+#include "Entities/SovereignBrokerInterface.h"
 
 #include "JsonObjectConverter.h"
 #include "GameplayTagContainer.h"
@@ -189,6 +190,31 @@ float USovereignSaveableEntityComponent::GetElementalMultiplier(ESovereignElemen
 	return Multiplier;
 }
 
+void USovereignSaveableEntityComponent::AddUnknownTag(FString Key, FString Value)
+{
+	UnknownMetaTags.Add(Key, Value);
+
+	// Delegate to brokers for real-time processing (e.g. Lidar Manifest)
+	TMap<FString, FString> SingleTagMap;
+	SingleTagMap.Add(Key, Value);
+
+	for (auto& Broker : RegisteredBrokers)
+	{
+		if (Broker.GetInterface())
+		{
+			Broker->OnProcessData(SingleTagMap);
+		}
+	}
+}
+
+void USovereignSaveableEntityComponent::RegisterBroker(TScriptInterface<ISovereignBrokerInterface> Broker)
+{
+	if (Broker.GetInterface() && !RegisteredBrokers.Contains(Broker))
+	{
+		RegisteredBrokers.Add(Broker);
+	}
+}
+
 // --- META TAG HANDLING ---
 TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() const
 {
@@ -350,6 +376,19 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 		}
 	}
 
+	// --- PASS C (REALITY-TRUTH ENGINE) ---
+	for (auto& Broker : RegisteredBrokers)
+	{
+		if (Broker.GetInterface())
+		{
+			// Magic Layer filter
+			bool bIsMagic = Broker.GetObject()->GetClass()->GetName().Contains(TEXT("Cultivation"));
+			if (bIsMagic && !bMagicLayerActive) continue;
+
+			Broker->OnSave(JsonObject);
+		}
+	}
+
 	return JsonObject;
 }
 //new feature add qi components and attribute components to the save file
@@ -400,6 +439,15 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 			// (e.g., "AttributeComponent.STR") and restores itself.
 			UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Passing entire %d-key suitcase to %s for restore."), AllData.Num(), *Comp->GetName());
 			SaveInterface->RestoreSaveData(AllData);
+		}
+	}
+
+	// 5. APPLY BROKER DATA (The Reality Pass)
+	for (auto& Broker : RegisteredBrokers)
+	{
+		if (Broker.GetInterface())
+		{
+			Broker->OnLoad(JsonData);
 		}
 	}
 }
