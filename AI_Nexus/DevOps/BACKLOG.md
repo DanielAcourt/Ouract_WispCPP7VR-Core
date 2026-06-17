@@ -45,6 +45,7 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-020 | AAS: 409 Conflict Gate Implementation | 8 | Todo | DevOps | Implement C++ logic in the Soul to detect and log agency conflicts. | USovereignSaveableEntityComponent correctly processes AAS_Route and Confidence_Score. |
 | B-021 | AAS: Persona Authority Validator | 5 | Todo | Protocols | Create a validation layer in bridge.py for authority verification. | bridge.py rejects commands from personas with insufficient precedence in the AAS matrix. |
 | B-022 | AAS: Deep Planning Handshake Trigger | 3 | Todo | DevOps | Implement automated pause/handshake when confidence drops below 0.7. | vessel.py initiates mandatory user input session during low-confidence scenarios. |
+| R-009 | AAS: PSTA-Driven Prioritization Matrix | 13 | Todo | Research | mathematically codify agent precedence weights. | Formal formula: Weight = f(Risk, Credibility, Deviation) implemented in AAS. |
 
 ---
 
