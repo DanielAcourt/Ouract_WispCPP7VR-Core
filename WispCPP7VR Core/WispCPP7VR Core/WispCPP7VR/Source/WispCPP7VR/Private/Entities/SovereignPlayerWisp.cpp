@@ -307,6 +307,12 @@ bool ASovereignPlayerWisp::IsPossessing()
 void ASovereignPlayerWisp::EjectFromHost()
 {
 
+	// 0. Safety Check
+	if (!bIsPossessing || !IsValid(CurrentHost))
+	{
+		return;
+	}
+
 	// 1. ARCHITECT CHECK: Safety first
 	if (!bIsPossessing || !CurrentHost)
 	{

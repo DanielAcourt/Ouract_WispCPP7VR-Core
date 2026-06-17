@@ -7,7 +7,9 @@
 
 #include "GameFramework/Pawn.h"
 #include "interaction/SovereignEntityInterface.h"
+
 //#include "SovereignEntityInterface.h""
+
 #include "SovereignPawn.generated.h"
 
 /**
