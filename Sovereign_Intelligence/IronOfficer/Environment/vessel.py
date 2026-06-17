@@ -62,7 +62,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /07, /t, /s, /a, /verify, /vss, /phi, /velocity, /report, /status, /tools, /exit")
+        print(" Commands: /07, /t, /s, /a, /verify, /vss, /phi, /velocity, /backups, /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -111,7 +111,7 @@ class ChatVessel:
                     print(f"T: **[Technical Truth - GPU Metrics]:** {t.get('gpu_utilization', '??%')} Utilization, Temp={t.get('gpu_temperature', '??C')} ({t.get('status', 'Unknown')}). Phi={t.get('phi', '1.0')}")
 
                 a = data['A']
-                print(f"A: **[Administrative Truth - Nexus State]:** All AAS directives are {a['status']} and compliant with v{a['version']}. Nexus {'OK' if a['nexus_ok'] else 'FAILED'}.")
+                print(f"A: **[Administrative Truth - Nexus State]:** All AAS directives are {a['status']} and compliant with v{a['version']}. Nexus {'OK' if a['nexus_ok'] else 'FAILED'}. Diligence Score={a.get('diligence', '0.0')}")
                 print("\n*Status Cycle Complete. Reporting nominal functionality.*\n")
             else:
                 print(f"\n[07 ERROR] Salute failed: {response.text}\n")
@@ -215,6 +215,18 @@ class ChatVessel:
         except Exception as e:
             print(f"\n[07 ERROR] Velocity failed: {e}\n")
 
+    def run_backups(self):
+        print(f"\n[ARCHITECTURAL BACKUP INVENTORY]")
+        try:
+            response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": [{"role": "user", "name": self.user_name, "content": "list all .bak files in safe zones"}]}, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                print(f"{self.identity}> {data.get('result', {}).get('message', {}).get('content', 'No backup data found.')}\n")
+            else:
+                print(f"\n[07 ERROR] Backup list failed: {response.text}\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Backup inventory exception: {e}\n")
+
     def run(self):
         self.print_header()
         while True:
@@ -236,6 +248,8 @@ class ChatVessel:
                         user_input = f"/verify {target} read_file"
                     elif "list" in action:
                         user_input = f"/verify {target} list_files"
+                    elif "write" in action or "save" in action or "commit" in action:
+                        user_input = f"/verify {target} write_file"
                     elif "monitor" in action or "status" in action:
                         user_input = "/07"
 
@@ -254,6 +268,7 @@ class ChatVessel:
                 if cmd == "/vss": self.run_vss(args); continue
                 if cmd == "/phi": self.run_phi(); continue
                 if cmd == "/velocity": self.run_velocity(); continue
+                if cmd == "/backups": self.run_backups(); continue
                 if cmd == "/tools":
                     self.show_tools = not self.show_tools
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")

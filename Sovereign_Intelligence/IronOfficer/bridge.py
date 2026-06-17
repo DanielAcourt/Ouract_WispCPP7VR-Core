@@ -392,6 +392,37 @@ async def tool_patch_file(filepath: str, search: str, replace: str, persona: str
     except Exception as e:
         return {"error": str(e)}
 
+async def tool_append_file(filepath: str, content: str, persona: str = "Unknown"):
+    """
+    [AAS v1.3.3] Safely append data to a file.
+    """
+    target_path = resolve_secure_path(filepath)
+    target_node = get_target_node_name(target_path)
+    payload = AgentCommandPayload(persona=persona, command="write_file", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if not is_path_authorized(target_path, "write"):
+        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
+
+    try:
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+        # [B-031] Atomic Backup: Create .bak before mutation
+        backup_path = target_path + ".bak"
+        if os.path.exists(target_path):
+            try: shutil.copy2(target_path, backup_path)
+            except Exception as e: logger.error(f"Backup failed: {e}")
+
+        with open(target_path, "a", encoding="utf-8") as f:
+            f.write(content)
+
+        return {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "mode": "append", "backup": os.path.basename(backup_path) if os.path.exists(backup_path) else None}
+    except Exception as e:
+        return {"error": str(e)}
+
 async def tool_delete_file(filepath: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
     target_node = get_target_node_name(target_path)
@@ -536,6 +567,7 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
         "read_file": tool_read_file,
         "write_file": tool_write_file,
         "patch_file": tool_patch_file,
+        "append_file": tool_append_file,
         "delete_file": tool_delete_file,
         "search_files": tool_search_files,
         "map_directory": tool_map_directory,
@@ -560,6 +592,8 @@ async def get_salute(persona: str = "Iron_Knight"):
     # A: Administrative
     nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
     aas_status = "ACTIVE" if bridge_governor else "INACTIVE"
+    # Diligence Score: 1.0 if v1.3.2 scribe protocol is active
+    diligence_score = 1.0 if "1.3.2" in system_prompt or "v1.3.2" in system_prompt else 0.8
 
     # S: Social
     # 1.0 if bridge is responsive
@@ -578,7 +612,8 @@ async def get_salute(persona: str = "Iron_Knight"):
             "status": aas_status,
             "nexus_ok": nexus_ok,
             "version": VERSION,
-            "protected_nodes": len(PROTECTED_NODES)
+            "protected_nodes": len(PROTECTED_NODES),
+            "diligence": diligence_score
         }
     }
 
@@ -673,11 +708,12 @@ async def chat(request: ChatRequest):
     You are communicating with your Lead, {USER_NAME}.
 
     CORE DIRECTIVES:
-    - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.2).
-    - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for targeted edits to avoid data loss. Never replace a character sheet with a single line of status.
-    - REALITY ANCHOR: Differentiate between functional code (AAS/PSTA) and emergent lore (Auth_V4/Monk). Refer to AI_Nexus/Protocols/REALITY_ANCHOR.md.
-    - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
-    - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call. Environment/Lore descriptions must be anchored by a `read_file` or `list_files` call to verify the "Ground Truth" of the simulation file.
+    - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.3).
+    - REALITY ANCHOR: Differentiate between Functional Truth (actual hardware/files) and Emergent Lore (narrative). DO NOT hallucinate "System Failures," "Memory Stasis," or "Critical Overloads." These are Lore states, NOT Physical Truth.
+    - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for edits and `append_file` for additions. NEVER replace a character sheet with status lines.
+    - GROUND TRUTH: You must execute `read_file` or `list_files` before modifying a file to verify its current state.
+    - DATA-FIRST: Show ACTUAL tool results in your response. Never summarize "that you ran a tool."
+    - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.
 
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
@@ -690,8 +726,9 @@ async def chat(request: ChatRequest):
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write file (TOTAL OVERWRITE).", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write file (TOTAL OVERWRITE). Use only for new files.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit (SEARCH/REPLACE). Use this to preserve existing content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
+        {"type": "function", "function": {"name": "append_file", "description": "Append to end of file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
         {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
