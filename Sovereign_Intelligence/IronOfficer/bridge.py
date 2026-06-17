@@ -332,12 +332,18 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
             existing_size = os.path.getsize(target_path)
 
         new_size = len(content.encode("utf-8"))
+        scribe_warning = None
         if existing_size > 100 and new_size < (existing_size * 0.5):
-            logger.warning(f"SCRIBE WARNING: Significant data loss detected during write to {target_node}. ({existing_size} -> {new_size} bytes)")
+            scribe_warning = f"SCRIBE WARNING: Significant data loss detected ({existing_size} -> {new_size} bytes). Total overwrite of {target_node} executed."
+            logger.warning(scribe_warning)
 
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size}
+
+        result = {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size}
+        if scribe_warning:
+            result["scribe_warning"] = scribe_warning
+        return result
     except Exception as e:
         return {"error": str(e)}
 
