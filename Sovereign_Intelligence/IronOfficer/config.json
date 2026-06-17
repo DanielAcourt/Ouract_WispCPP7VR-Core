@@ -1,6 +1,7 @@
 {
     "identity": "Iron Officer",
     "version": "36.4.7",
+    "initialization_message": "Archivist Persona \u0398 online. Thoughts scrambled; ready to structure them.",
     "user_preference": {
         "name": "Dan",
         "theme": "dark"
@@ -40,7 +41,8 @@
             "Iron_Knight": [
                 "Sovereign_Intelligence/IronKnight_Memory",
                 "IronKnight/",
-                "E:\\IronKnight"
+                "E:\\IronKnight",
+                "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
             ]
         }
     }

@@ -179,8 +179,10 @@ class SovereignBridge:
     def is_persona_in_memory_zone(self, persona: str, target_node: str) -> bool:
         """Checks if a persona is operating within its dedicated memory folder."""
         zones = PERSONA_ZONES.get(persona, [])
+        normalized_target = to_forward_slash(target_node).lower()
         for zone in zones:
-            if zone in target_node or target_node.startswith(zone):
+            normalized_zone = to_forward_slash(zone).lower()
+            if normalized_zone in normalized_target or normalized_target.startswith(normalized_zone):
                 return True
         return False
 
@@ -566,19 +568,25 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
         response.raise_for_status()
         result = response.json()
 
-    # --- Symmetrical Guard (v2.3) ---
+    # --- Symmetrical Guard (v2.4) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
 
+    # [B-028] Lore/Meta-Narrative Exception
+    # Allow agents to discuss persona, roleplay, and internal state without physical sensors
+    lore_keywords = ["PERSONA", "ROLEPLAY", "DUNGEONS", "DRAGONS", "LORE", "META-NARRATIVE", "MONK", "ARCHIVIST", "THETA", "EMERGENCE"]
+    is_lore_context = any(kw in ai_content for kw in lore_keywords)
+
     # Check for Telemetry Hallucination
-    if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
-         violations.append("Reported Technical Status without Engineer tool.")
+    if not is_lore_context:
+        if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
+             violations.append("Reported Technical Status without Engineer tool.")
 
     # Check for Environment Hallucination
     if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
          # Allow explaining protocols, 409 gates, or reporting errors without triggering
-         safe_keywords = ["SECURITY BREACH", "ERROR", "VIOLATION", "HALTED", "409", "GATE", "PROTOCOL", "AAS", "TRUTH", "GOVERNOR"]
-         if not any(kw in ai_content for kw in safe_keywords):
+         safe_keywords = ["SECURITY BREACH", "ERROR", "VIOLATION", "HALTED", "409", "GATE", "PROTOCOL", "AAS", "TRUTH", "GOVERNOR", "STRUCTURE"]
+         if not any(kw in ai_content for kw in safe_keywords) and not is_lore_context:
             violations.append("Described environment state without Librarian/Scout tools.")
 
     if violations and retry_count < 1:

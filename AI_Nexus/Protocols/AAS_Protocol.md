@@ -34,6 +34,7 @@ Any module implementing an AAS check must include:
 * `Authority_ID`: The agent invoking the request.
 * `Confidence_Score`: A 0.0-1.0 float representing certainty.
 * `AAS_Route`: The specific directive from the Protocol path utilized.
+* `Context_Tags`: Optional tags (e.g., `META_NARRATIVE`) to adjust safety heuristics.
 
 ### 6. THE 409 CONFLICT GATE (PSTA Viability)
 The system uses a **Dual-Threshold** model to balance safety with operational speed:
@@ -54,3 +55,9 @@ To facilitate long-term training and documentation, specific personas are grante
 | Persona | Memory Zone Path |
 | :--- | :--- |
 | **Iron_Knight** | `Sovereign_Intelligence/IronKnight_Memory/` |
+| **Archivist_Theta**| `E:\IronKnight\RolePlay\DungeonsAndDragons` |
+
+### 9. LORE & META-NARRATIVE (Symmetrical Guard v2.4)
+The system recognizes that creative synthesis (Roleplay/Lore) requires a suspension of certain physical truth requirements.
+- **Rule:** If the `META_NARRATIVE` tag is active or lore-specific keywords are detected, the **Symmetrical Guard** (Hallucination Detection) allows for descriptive internal state and speculative narrative without requiring immediate sensor validation.
+- **Goal:** To provide structure for creative emergence while maintaining hard computational boundaries for system-critical tasks.

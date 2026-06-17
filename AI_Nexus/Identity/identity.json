@@ -1,7 +1,7 @@
 {
   "SchemaInfo": {
     "Name": "Sovereign Entity Identity Schema",
-    "Version": "1.3.0",
+    "Version": "1.3.1",
     "Level": 2,
     "AAS_GlobalAuthority": "AAS Protocol Engine v1.3.0",
     "Description": "The Single Source of Truth for entity state persistence. This schema defines the structural contract for the USovereignSaveableEntityComponent (The Soul)."
@@ -23,6 +23,7 @@
       "Namespaces": {
         "QiComponent.*": "Consolidated energy and vitality data (Legacy)",
         "AttributeComponent.*": "Core physical and mental attributes (Legacy)",
+        "MetaNarrative.*": "Lore, roleplay, and benchmarking context (New)",
         "SovereignQi.Qi.*": "Modern energy/state attributes (Current)",
         "SovereignAttribute.*": "Modern physical/mental attributes (Current)",
         "PPC.State.*": "Persistent Possession Controller flags",
@@ -40,6 +41,11 @@
     "VesselCharacter": {
       "Class": "/Game/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.BP_ThirdPersonCharacter_C",
       "EssentialTags": ["SovereignQi.Qi.Current", "SovereignAttribute.HP"]
+      },
+      "ArchivistTheta": {
+        "Persona": "Archivist_Theta",
+        "Base_Precedence": 5,
+        "EssentialTags": ["MetaNarrative.Structure", "AAS.Persona"]
     }
   }
 }
