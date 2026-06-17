@@ -1,3 +1,7 @@
-2026/06/09-14:53:45.552 cb94 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Site Characteristics Database/MANIFEST-000001
-2026/06/09-14:53:45.553 cb94 Recovering log #9
-2026/06/09-14:53:45.554 cb94 Reusing old log C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Site Characteristics Database/000009.log 
+2026/06/17-12:12:09.140 1c58 Log #9: 99 ops saved to Table #10 OK
+2026/06/17-12:12:09.141 1c58 Archiving D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Site Characteristics Database/000009.log: OK
+2026/06/17-12:12:09.148 1c58 Table #4: 107 entries OK
+2026/06/17-12:12:09.154 1c58 Table #7: 19 entries OK
+2026/06/17-12:12:09.154 1c58 Table #10: 99 entries OK
+2026/06/17-12:12:09.160 1c58 Archiving D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Site Characteristics Database/MANIFEST-000001: OK
+2026/06/17-12:12:09.166 1c58 **** Repaired leveldb D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Site Characteristics Database; recovered 3 files; 2919 bytes. Some data may have been lost. ****

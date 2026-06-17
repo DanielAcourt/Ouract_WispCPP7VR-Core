@@ -37,6 +37,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 *   **Persona: Strategist (The Commander):** `AI_Nexus/Identity/Jules_Strategist.md`
     *   Architectural Visionary (ENTJ) for high-level roadmap and strategy.
 *   **Persona: Tactician (The Clockwork):** `AI_Nexus/Identity/Jules_Tactician.md`
+*   **Agency Arbitration Schema (AAS):** `AI_Nexus/Protocols/AAS_Protocol.md`
+        *   Defines conflict resolution paths and execution precedence across all AI agents.
     *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
 *   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
     *   Knowledge Ingestion (INTP) for research and experimental logic.

@@ -1,5 +1,2 @@
-2026/06/09-14:59:41.258 b214 Reusing MANIFEST C:\Users\Danie\Unreal Projects\2027\repo\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
-2026/06/09-14:59:41.262 b214 Recovering log #74
-2026/06/09-14:59:41.262 b214 Level-0 table #76: started
-2026/06/09-14:59:41.267 b214 Level-0 table #76: 82002 bytes OK
-2026/06/09-14:59:41.269 b214 Delete type=0 #74
+2026/06/17-12:12:09.174 b104 Creating DB D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb since it was missing.
+2026/06/17-12:12:09.186 b104 Reusing MANIFEST D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
