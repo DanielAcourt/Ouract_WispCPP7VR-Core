@@ -143,6 +143,10 @@ class SovereignBridge:
         self.is_hard_freeze = is_hard_freeze
 
     def calculate_psta_viability(self, payload: AgentCommandPayload) -> float:
+        """
+        [R-009] Mathematically codifies agent precedence weights.
+        Formula: V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation)
+        """
         credibility = PERSONA_CREDIBILITY.get(payload.persona, 0.4)
 
         risk = 0.2
@@ -154,7 +158,7 @@ class SovereignBridge:
         unknown_tags_count = len([t for t in payload.meta_tags if t not in known_tags])
         deviation = min(1.0, unknown_tags_count * 0.15)
 
-        alpha, beta, gamma = 0.5, 0.3, 0.2
+        alpha, beta, gamma = 1.0, 0.3, 0.2
         weight = (alpha * credibility) - (beta * risk) - (gamma * deviation)
 
         return max(0.0, min(1.0, weight))
@@ -166,10 +170,17 @@ class SovereignBridge:
         is_destructive = any(kw in normalized_cmd for kw in destructive_keywords)
         persona_p = PERSONA_PRECEDENCE.get(payload.persona, 3)
 
-        # 1. Global Tool Precedence Check (All Tools)
-        if persona_p < TOOL_MIN_PRECEDENCE.get(payload.command, 10):
-             logger.critical(f"AAS ALERT: Insufficient precedence for tool '{payload.command}' by {payload.persona}")
-             return False
+        # [B-024] Persona Memory Zone Override
+        # Grant personas full authority within their dedicated memory folder
+        is_persona_memory_zone = False
+        if payload.persona == "Iron_Knight" and "Sovereign_Intelligence/IronKnight_Memory" in payload.target_node:
+            is_persona_memory_zone = True
+
+        # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone
+        if not is_persona_memory_zone:
+            if persona_p < TOOL_MIN_PRECEDENCE.get(payload.command, 10):
+                 logger.critical(f"AAS ALERT: Insufficient precedence for tool '{payload.command}' by {payload.persona}")
+                 return False
 
         # 2. Destructive Intent Checks
         if is_destructive:
@@ -177,6 +188,7 @@ class SovereignBridge:
                 logger.critical(f"AAS ALERT: Blocked destructive op during HARD FREEZE by {payload.persona}")
                 return False
 
+            # Protected nodes are NEVER mutable by lower precedence, even in memory zones
             if any(node in payload.target_node for node in PROTECTED_NODES):
                 logger.critical(f"AAS ALERT: Structural mutation blocked on protected node: {payload.target_node}")
                 return False
