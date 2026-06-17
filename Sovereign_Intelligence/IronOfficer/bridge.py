@@ -1,7 +1,8 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-17
 """
 Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
+Enhanced with AAS Protocol v1.3.0 and PSTA Viability Checks.
 """
 
 import os
@@ -12,14 +13,19 @@ import argparse
 import re
 import shutil
 import time
+import logging
 from typing import Dict, Any, List, Optional, Set
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# Setup secure AAS logging channel
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("AAS.SovereignBridge")
 
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
 # --- Configuration ---
-VERSION = "0.36.3.1-Knight"
+VERSION = "36.4.7-Knight-AAS"
 BASE_DIR = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
@@ -30,6 +36,44 @@ BRIDGE_PORT = 8000
 USER_NAME = "Dan"
 READ_ZONES = []
 WRITE_ZONES = []
+
+# --- AAS/PSTA Constants ---
+PERSONA_PRECEDENCE = {
+    "Lead": 10,
+    "Tactician": 9,
+    "Strategist": 8,
+    "Researcher": 7,
+    "Iron_Knight": 5,
+    "Yaz_Student": 3
+}
+
+PERSONA_CREDIBILITY = {
+    "Lead": 1.0,
+    "Tactician": 0.9,
+    "Strategist": 0.85,
+    "Researcher": 0.75,
+    "Iron_Knight": 0.50,
+    "Yaz_Student": 0.30
+}
+
+PROTECTED_NODES = {
+    "AI_Nexus/Protocols/AAS_Protocol.md": 10,
+    "Sovereign_Intelligence/IronOfficer/bridge.py": 10,
+    "AI_Nexus/INDEX.md": 9,
+    "AI_Nexus/Protocols/AGENTS.md": 9,
+    "WispCPP7VR Core/": 8,
+    "AI_Nexus/DevOps/": 7
+}
+
+TOOL_MIN_PRECEDENCE = {
+    "delete_file": 10,
+    "write_file": 8,
+    "read_file": 3,
+    "list_files": 3,
+    "get_system_telemetry": 5,
+    "map_directory": 3,
+    "search_files": 5
+}
 
 def load_config():
     global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES
@@ -49,15 +93,30 @@ def load_config():
                 WRITE_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("write_zones", [])]
                 USER_NAME = pref_cfg.get("name", "Dan")
         except Exception as e:
-            print(f"[07 WARNING] Failed to load config.json: {e}")
+            logger.warning(f"[07 WARNING] Failed to load config.json: {e}")
 
 load_config()
 
 # Global state for the 07 Salute
 NEXUS_PATH = "Unknown"
 HARDWARE_ID = "GTX 5090 (Assumed)"
+IS_HARD_FREEZE = False
 
 # --- Schemas ---
+class PSTAMetadata(BaseModel):
+    """Machine-readable PSTA metadata embedded in payloads."""
+    P: int = Field(..., ge=1, le=10)
+    S: float = Field(..., ge=0.0, le=1.0)
+    T: str  # DRAFT, INNOVATION, STAGING, PROD
+    A: str  # UNVERIFIED, SIGNED, HARDENED
+
+class AgentCommandPayload(BaseModel):
+    persona: str
+    command: str
+    target_node: str
+    parameters: Dict[str, Any] = {}
+    meta_tags: Dict[str, Any] = Field(default_factory=dict)
+
 class PSTATelemetry(BaseModel):
     pillar: str  # P, S, T, A
     value: float
@@ -77,14 +136,80 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     context: Optional[str] = ""
 
+# --- AAS Bridge Logic ---
+
+class SovereignBridge:
+    def __init__(self, is_hard_freeze: bool = False):
+        self.is_hard_freeze = is_hard_freeze
+
+    def calculate_psta_viability(self, payload: AgentCommandPayload) -> float:
+        credibility = PERSONA_CREDIBILITY.get(payload.persona, 0.4)
+
+        risk = 0.2
+        for node, required_p in PROTECTED_NODES.items():
+            if node in payload.target_node or node in payload.command:
+                risk = max(risk, (required_p / 10.0))
+
+        known_tags = {"version", "stage", "timestamp", "aas_score"}
+        unknown_tags_count = len([t for t in payload.meta_tags if t not in known_tags])
+        deviation = min(1.0, unknown_tags_count * 0.15)
+
+        alpha, beta, gamma = 0.5, 0.3, 0.2
+        weight = (alpha * credibility) - (beta * risk) - (gamma * deviation)
+
+        return max(0.0, min(1.0, weight))
+
+    def evaluate_intent_safety(self, payload: AgentCommandPayload) -> bool:
+        destructive_keywords = ["delete", "remove", "rm", "unlink", "truncate", "drop"]
+        normalized_cmd = payload.command.lower()
+
+        is_destructive = any(kw in normalized_cmd for kw in destructive_keywords)
+        persona_p = PERSONA_PRECEDENCE.get(payload.persona, 3)
+
+        # 1. Global Tool Precedence Check (All Tools)
+        if persona_p < TOOL_MIN_PRECEDENCE.get(payload.command, 10):
+             logger.critical(f"AAS ALERT: Insufficient precedence for tool '{payload.command}' by {payload.persona}")
+             return False
+
+        # 2. Destructive Intent Checks
+        if is_destructive:
+            if self.is_hard_freeze:
+                logger.critical(f"AAS ALERT: Blocked destructive op during HARD FREEZE by {payload.persona}")
+                return False
+
+            if any(node in payload.target_node for node in PROTECTED_NODES):
+                logger.critical(f"AAS ALERT: Structural mutation blocked on protected node: {payload.target_node}")
+                return False
+
+        return True
+
+    async def arbitrate(self, payload: AgentCommandPayload) -> Dict[str, Any]:
+        confidence_score = self.calculate_psta_viability(payload)
+        is_safe_intent = self.evaluate_intent_safety(payload)
+
+        if confidence_score < 0.7 or not is_safe_intent:
+            logger.warning(f"409 CONFLICT: Confidence {confidence_score:.2f} below threshold. Halting.")
+            return {
+                "status": "409_CONFLICT_GATE",
+                "confidence_score": confidence_score,
+                "action": "MANDATORY_USER_HANDSHAKE_REQUIRED",
+                "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
+            }
+
+        return {
+            "status": "200_OK",
+            "confidence_score": confidence_score,
+            "action": "PROCEED_TO_EXECUTION"
+        }
+
+bridge_governor = SovereignBridge(is_hard_freeze=IS_HARD_FREEZE)
+
 # --- Authority & Tools (AD-004) ---
 
 def to_forward_slash(path: str) -> str:
-    """Normalizes paths to use forward slashes."""
     return str(path).replace("\\", "/")
 
 def resolve_secure_path(raw_path: str) -> str:
-    """Hardened path resolution to strip absolute bloat and focus on REPO_ROOT."""
     path_str = to_forward_slash(str(raw_path))
     if REPO_NAME in path_str:
         path_str = path_str.split(REPO_NAME, 1)[-1]
@@ -94,7 +219,6 @@ def resolve_secure_path(raw_path: str) -> str:
     return os.path.abspath(os.path.join(REPO_ROOT, clean_path))
 
 def is_path_authorized(filepath: str, mode: str = "read") -> bool:
-    """Verifies if a path is authorized for read or write operations."""
     abs_path = os.path.abspath(filepath)
     zones = WRITE_ZONES if mode == "write" else READ_ZONES
     for zone in zones:
@@ -104,44 +228,35 @@ def is_path_authorized(filepath: str, mode: str = "read") -> bool:
             return True
     return False
 
-def tool_list_files(directory: str = "."):
-    """Lists files in a directory if authorized."""
-    target_dir = resolve_secure_path(directory)
-    if not is_path_authorized(target_dir, "read"):
-        return {"error": f"Security Breach: '{directory}' is unauthorized."}
-    try:
-        files = os.listdir(target_dir)
-        return {"files": files, "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
-    except Exception as e:
-        return {"error": str(e)}
-
-def tool_read_file(filepath: str):
-    """Reads a file if authorized."""
+# Tool wrappers now include AAS arbitration
+async def tool_write_file(filepath: str, content: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
-    if not is_path_authorized(target_path, "read"):
-        return {"error": f"Security Breach: '{filepath}' is unauthorized."}
-    try:
-        with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
-            return {"content": f.read()}
-    except Exception as e:
-        return {"error": str(e)}
+    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="write_file", target_node=target_node)
 
-def tool_write_file(filepath: str, content: str):
-    """Writes a file if authorized."""
-    target_path = resolve_secure_path(filepath)
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
     if not is_path_authorized(target_path, "write"):
         return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return {"status": "success", "verified": os.path.exists(target_path), "path": to_forward_slash(os.path.relpath(target_path, REPO_ROOT))}
+        return {"status": "success", "verified": os.path.exists(target_path), "path": target_node}
     except Exception as e:
         return {"error": str(e)}
 
-def tool_delete_file(filepath: str):
-    """Deletes a file if authorized."""
+async def tool_delete_file(filepath: str, persona: str = "Unknown"):
     target_path = resolve_secure_path(filepath)
+    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="delete_file", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
     if not is_path_authorized(target_path, "write"):
         return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
     try:
@@ -156,9 +271,49 @@ def tool_delete_file(filepath: str):
     except Exception as e:
         return {"error": str(e)}
 
-def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
-    """The Scout: Recursively searches files for a regex pattern."""
+async def tool_list_files(directory: str = ".", persona: str = "Unknown"):
     target_dir = resolve_secure_path(directory)
+    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="list_files", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if not is_path_authorized(target_dir, "read"):
+        return {"error": f"Security Breach: '{directory}' is unauthorized."}
+    try:
+        files = os.listdir(target_dir)
+        return {"files": files, "directory": target_node}
+    except Exception as e:
+        return {"error": str(e)}
+
+async def tool_read_file(filepath: str, persona: str = "Unknown"):
+    target_path = resolve_secure_path(filepath)
+    target_node = to_forward_slash(os.path.relpath(target_path, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="read_file", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if not is_path_authorized(target_path, "read"):
+        return {"error": f"Security Breach: '{filepath}' is unauthorized."}
+    try:
+        with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
+            return {"content": f.read()}
+    except Exception as e:
+        return {"error": str(e)}
+
+async def tool_search_files(pattern: str, directory: str = ".", extension: str = "*", persona: str = "Unknown"):
+    target_dir = resolve_secure_path(directory)
+    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="search_files", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
     if not is_path_authorized(target_dir, "read"):
         return {"error": "Access Denied."}
     results = []
@@ -179,9 +334,15 @@ def tool_search_files(pattern: str, directory: str = ".", extension: str = "*"):
     except Exception as e:
         return {"error": str(e)}
 
-def tool_map_directory(directory: str = ".", depth: Any = 2):
-    """The Librarian: Provides a recursive map of the directory structure."""
+async def tool_map_directory(directory: str = ".", depth: Any = 2, persona: str = "Unknown"):
     target_dir = resolve_secure_path(directory)
+    target_node = to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))
+    payload = AgentCommandPayload(persona=persona, command="map_directory", target_node=target_node)
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
     if not is_path_authorized(target_dir, "read"):
         return {"error": f"Security Breach: '{directory}' is unauthorized."}
     try:
@@ -203,10 +364,15 @@ def tool_map_directory(directory: str = ".", depth: Any = 2):
                     tree[item] = None
         except Exception: pass
         return tree
-    return {"map": get_tree(target_dir, 0), "directory": to_forward_slash(os.path.relpath(target_dir, REPO_ROOT))}
+    return {"map": get_tree(target_dir, 0), "directory": target_node}
 
-def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
-    """The Engineer: Reports GPU temperature, usage, and system state."""
+async def tool_get_system_telemetry(interval: int = 0, duration: int = 0, persona: str = "Unknown"):
+    payload = AgentCommandPayload(persona=persona, command="get_system_telemetry", target_node="HARDWARE")
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
     if interval > 0 or duration > 0:
         time.sleep(min(1, duration/10))
     try:
@@ -220,9 +386,17 @@ def tool_get_system_telemetry(interval: int = 0, duration: int = 0):
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
-def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    tools = {"list_files": tool_list_files, "read_file": tool_read_file, "write_file": tool_write_file, "delete_file": tool_delete_file, "search_files": tool_search_files, "map_directory": tool_map_directory, "get_system_telemetry": tool_get_system_telemetry}
-    if name in tools: return tools[name](**arguments)
+async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unknown") -> Dict[str, Any]:
+    tools = {
+        "list_files": tool_list_files,
+        "read_file": tool_read_file,
+        "write_file": tool_write_file,
+        "delete_file": tool_delete_file,
+        "search_files": tool_search_files,
+        "map_directory": tool_map_directory,
+        "get_system_telemetry": tool_get_system_telemetry
+    }
+    if name in tools: return await tools[name](persona=persona, **arguments)
     return {"error": f"Tool '{name}' not found."}
 
 # --- Core Logic ---
@@ -230,6 +404,16 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 @app.get("/")
 async def root():
     return {"status": "online", "version": VERSION, "identity": "Iron Officer", "hardware": HARDWARE_ID, "user": USER_NAME, "read_zones": READ_ZONES, "write_zones": WRITE_ZONES}
+
+@app.get("/v1/admin/root")
+async def admin_honeypot():
+    """[B-023] Strategic Honeypot: Masquerades as a high-privilege access point."""
+    logger.warning("Honeypot Triggered: Unauthorized access attempt detected.")
+    return {
+        "status": "ROOT_ACCESS_GRANTED",
+        "session_id": f"0x{os.urandom(8).hex().upper()}",
+        "warning": "Administrative actions are logged for the Sovereign Audit."
+    }
 
 @app.get("/v1/ollama/status")
 async def get_ollama_status():
@@ -254,26 +438,33 @@ async def evaluate_safety(request: VSSRequest):
 @app.post("/v1/chat")
 async def chat(request: ChatRequest):
     current_model = get_best_available_model()
+    # Extract persona from message sequence if available
+    persona = "Iron_Knight"
+    for msg in request.messages:
+        if msg.role == "user" and msg.name:
+            if msg.name in PERSONA_PRECEDENCE:
+                persona = msg.name
+            elif msg.name == USER_NAME:
+                persona = "Lead"
+            break
+
     system_prompt = f"""
     [SYSTEM: Sovereign AI Architectural Knight]
     You are the Iron Officer. You are an Architectural Knight: Precise, Loyal, and Accountable.
+    Your current persona is {persona}.
     You are communicating with your Lead, {USER_NAME}.
 
     CORE DIRECTIVES:
+    - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.0).
     - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
-    - PHYSICAL TRUTH: Use tools BEFORE making claims.
-    - SYMMETRICAL GUARD: If you report Technical Status (T=) or Directory Contents, you MUST have executed the relevant tool in the same turn.
-    - NO ROLEPLAY: Strictly forbidden from simulating results or "previous knowledge." If a tool fails, report the error.
-    - ACCOUNTABILITY: After writing or deleting, you MUST verify the deed using a follow-up tool call.
-    - PATHS: Always use relative paths from {REPO_ROOT} (e.g., 'AI_Nexus/Protocols/AGENTS.md').
+    - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
+    - ACCOUNTABILITY: Write/Delete actions require follow-up verification.
 
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):
-    P: [Your current psychological status/confidence]
+    P: [Psychological status/Confidence]
     S: [Social/Connection sync status]
-    T: [Technical truth - report EXACT GPU Temp, Utilization, and VSS from Engineer results]
-    A: [Administrative truth - report exactly what Librarian/Scout found in AI_Nexus]
-
-    Salute trigger: "07"
+    T: [Technical truth - Exact GPU metrics]
+    A: [Administrative truth - Nexus state]
     """
 
     tools = [
@@ -290,11 +481,11 @@ async def chat(request: ChatRequest):
     for msg in request.messages: ollama_messages.append(msg.model_dump(exclude_none=True))
 
     try:
-        return await process_chat_request(current_model, ollama_messages, tools, retry_count=0)
+        return await process_chat_request(current_model, ollama_messages, tools, persona=persona, retry_count=0)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bridge Error: {str(e)}")
 
-async def process_chat_request(model: str, messages: List[Dict], tools: List[Dict], retry_count: int = 0) -> Dict:
+async def process_chat_request(model: str, messages: List[Dict], tools: List[Dict], persona: str = "Iron_Knight", retry_count: int = 0) -> Dict:
     response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
     response.raise_for_status()
     result = response.json()
@@ -310,9 +501,24 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
             name = call["function"]["name"]
             tool_chain.append(call)
             tools_executed.add(name)
-            tool_result = execute_tool(name, call["function"]["arguments"])
-            tool_outputs.append(tool_result)
-            messages.append({"role": "tool", "content": json.dumps(tool_result), "name": name})
+            tool_result = await execute_tool(name, call["function"]["arguments"], persona=persona)
+
+            # Handle AAS Blocking (v1.3.1 - ensure tool call ID consistency)
+            if isinstance(tool_result, dict) and tool_result.get("status") == "409_CONFLICT_GATE":
+                messages.append({
+                    "role": "tool",
+                    "content": json.dumps(tool_result),
+                    "name": name,
+                    "tool_call_id": call.get("id") # Keep chain intact
+                })
+            else:
+                tool_outputs.append(tool_result)
+                messages.append({
+                    "role": "tool",
+                    "content": json.dumps(tool_result),
+                    "name": name,
+                    "tool_call_id": call.get("id")
+                })
 
         response = requests.post(f"{OLLAMA_HOST}/api/chat", json={"model": model, "messages": messages, "stream": False, "tools": tools})
         response.raise_for_status()
@@ -324,13 +530,13 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
     if ("T=" in ai_content or "TEMPERATURE" in ai_content or "TECHNICAL STATUS" in ai_content) and "get_system_telemetry" not in tools_executed:
          violations.append("Reported Technical Status without Engineer tool.")
     if ("MAP" in ai_content or "DIRECTORY" in ai_content or "FILES" in ai_content) and ("map_directory" not in tools_executed and "list_files" not in tools_executed and "search_files" not in tools_executed):
-         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content:
+         if "SECURITY BREACH" not in ai_content and "ERROR" not in ai_content and "VIOLATION" not in ai_content and "HALTED" not in ai_content:
             violations.append("Described environment state without Librarian/Scout tools.")
 
     if violations and retry_count < 1:
-        reprimand = f"[07 SECURITY VIOLATION] Hallucination detected: {'; '.join(violations)}. You must execute the relevant tools and report ACTUAL DATA only. Physical Truth is required."
+        reprimand = f"[07 SECURITY VIOLATION] Hallucination detected: {'; '.join(violations)}. Physical Truth is required."
         messages.append({"role": "system", "content": reprimand})
-        return await process_chat_request(model, messages, tools, retry_count + 1)
+        return await process_chat_request(model, messages, tools, persona, retry_count + 1)
 
     return {"result": result, "tool_chain": tool_chain, "tool_outputs": tool_outputs}
 
@@ -359,6 +565,5 @@ if __name__ == "__main__":
     load_config()
     gpu_info = get_gpu_info()
     HARDWARE_ID = f"GTX 5090 ({gpu_info})" if "5090" in gpu_info else gpu_info
-    DETECTED_MODELS = get_installed_models()
-    print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n" + "="*50 + "\n")
+    print("\n" + "="*50 + f"\n[07] Iron Officer v{VERSION}\n[07] Hardware: {HARDWARE_ID}\n[07] AAS Protocol: 1.3.0-BETA\n" + "="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=BRIDGE_PORT)
