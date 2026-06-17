@@ -148,6 +148,11 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     context: Optional[str] = ""
 
+class VerifyRequest(BaseModel):
+    persona: str
+    target_node: str
+    command: str = "read_file"
+
 # --- AAS Bridge Logic ---
 
 class SovereignBridge:
@@ -157,8 +162,12 @@ class SovereignBridge:
     def calculate_psta_viability(self, payload: AgentCommandPayload) -> float:
         """
         [R-009] Mathematically codifies agent precedence weights.
-        Formula: V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation) + MemoryBoost
         """
+        breakdown = self.get_vss_breakdown(payload)
+        return breakdown["vss"]
+
+    def get_vss_breakdown(self, payload: AgentCommandPayload) -> Dict[str, Any]:
+        """Calculates and returns the detailed VSS breakdown."""
         credibility = PERSONA_CREDIBILITY.get(payload.persona, 0.4)
 
         risk = 0.2
@@ -170,16 +179,24 @@ class SovereignBridge:
         unknown_tags_count = len([t for t in payload.meta_tags if t not in known_tags])
         deviation = min(1.0, unknown_tags_count * 0.15)
 
-        # [B-025] Memory Zone Viability Boost (+0.5)
-        # If the agent is working in its own designated safe zone, boost viability
         memory_boost = 0.0
         if self.is_persona_in_memory_zone(payload.persona, payload.target_node):
             memory_boost = 0.5
 
         alpha, beta, gamma = 1.0, 0.3, 0.2
-        weight = (alpha * credibility) - (beta * risk) - (gamma * deviation) + memory_boost
+        vss = (alpha * credibility) - (beta * risk) - (gamma * deviation) + memory_boost
+        vss = max(0.0, min(1.0, vss))
 
-        return max(0.0, min(1.0, weight))
+        return {
+            "vss": vss,
+            "credibility": credibility,
+            "risk": risk,
+            "deviation": deviation,
+            "memory_boost": memory_boost,
+            "alpha": alpha,
+            "beta": beta,
+            "gamma": gamma
+        }
 
     def is_persona_in_memory_zone(self, persona: str, target_node: str) -> bool:
         """Checks if a persona is operating within its dedicated memory folder."""
@@ -470,6 +487,66 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
 @app.get("/")
 async def root():
     return {"status": "online", "version": VERSION, "identity": "Iron Officer", "hardware": HARDWARE_ID, "user": USER_NAME, "read_zones": READ_ZONES, "write_zones": WRITE_ZONES}
+
+@app.get("/v1/psta/salute")
+async def get_salute(persona: str = "Iron_Knight"):
+    """Aggregates live data for the 07 Protocol Salute."""
+    # T: Technical
+    telemetry = await tool_get_system_telemetry(persona=persona)
+
+    # A: Administrative
+    nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
+    aas_status = "ACTIVE" if bridge_governor else "INACTIVE"
+
+    # S: Social
+    # 1.0 if bridge is responsive
+    social_sync = 1.0
+
+    # P: Psychological
+    # Defaulting to 1.0 (Optimal) for nominal operation
+    psych_status = 1.0
+
+    return {
+        "P": {"status": "Optimal", "value": psych_status},
+        "S": {"status": "Synchronized", "value": social_sync},
+        "T": telemetry,
+        "A": {
+            "status": aas_status,
+            "nexus_ok": nexus_ok,
+            "version": VERSION,
+            "protected_nodes": len(PROTECTED_NODES)
+        }
+    }
+
+@app.get("/v1/psta/telemetry")
+async def get_psta_telemetry(persona: str = "Iron_Knight"):
+    return await tool_get_system_telemetry(persona=persona)
+
+@app.get("/v1/psta/administrative")
+async def get_psta_admin():
+    nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
+    return {
+        "status": "ACTIVE" if bridge_governor else "INACTIVE",
+        "nexus_ok": nexus_ok,
+        "version": VERSION,
+        "protected_nodes": PROTECTED_NODES
+    }
+
+@app.get("/v1/psta/social")
+async def get_psta_social():
+    return {"status": "Synchronized", "value": 1.0, "bridge_url": f"http://127.0.0.1:{BRIDGE_PORT}"}
+
+@app.post("/v1/aas/verify")
+async def aas_verify(request: VerifyRequest):
+    """Performs a pre-flight authority check on a target node."""
+    payload = AgentCommandPayload(persona=request.persona, command=request.command, target_node=request.target_node)
+    arbitration = await bridge_governor.arbitrate(payload)
+    breakdown = bridge_governor.get_vss_breakdown(payload)
+
+    return {
+        "arbitration": arbitration,
+        "vss_breakdown": breakdown
+    }
 
 @app.get("/v1/admin/root")
 async def admin_honeypot():

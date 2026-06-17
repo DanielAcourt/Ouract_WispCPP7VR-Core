@@ -62,7 +62,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /report, /status, /tools, /exit")
+        print(" Commands: /07, /t, /s, /a, /verify, /vss, /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -94,16 +94,126 @@ class ChatVessel:
         except Exception as e:
             print(f"\n[07 ERROR] Status failed: {e}")
 
+    def run_salute(self):
+        print(f"\n{self.user_name}> /07")
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/salute?persona={self.identity.replace(' ', '_')}", timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                print(f"\n{self.identity}> **07 Protocol Salute Initiated.**")
+                print(f"P: **[Psychological Status]:** {data['P']['status']} operational capacity. Confidence: {data['P']['value']}")
+                print(f"S: **[Social Sync Status]:** {data['S']['status']} with Command. Value: {data['S']['value']}")
+
+                t = data['T']
+                if 'error' in t:
+                    print(f"T: **[Technical Truth]:** ERROR - {t['error']}")
+                else:
+                    print(f"T: **[Technical Truth - GPU Metrics]:** {t.get('gpu_utilization', '??%')} Utilization, Temp={t.get('gpu_temperature', '??C')} ({t.get('status', 'Unknown')})")
+
+                a = data['A']
+                print(f"A: **[Administrative Truth - Nexus State]:** AAS {a['status']}, Nexus {'OK' if a['nexus_ok'] else 'FAILED'}. Version: {a['version']}")
+                print("\n*Status Cycle Complete. Reporting nominal functionality.*\n")
+            else:
+                print(f"\n[07 ERROR] Salute failed: {response.text}\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Salute exception: {e}\n")
+
+    def run_telemetry(self):
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/telemetry", timeout=5)
+            data = response.json()
+            print(f"\n[TECHNICAL TRUTH - HARDWARE]")
+            if "error" in data:
+                print(f" -> ERROR: {data['error']}")
+            else:
+                for k, v in data.items():
+                    print(f" -> {k.upper()}: {v}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Telemetry failed: {e}\n")
+
+    def run_social(self):
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/social", timeout=2)
+            data = response.json()
+            print(f"\n[SOCIAL SYNC - CONNECTION]")
+            for k, v in data.items():
+                print(f" -> {k.upper()}: {v}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Social sync failed: {e}\n")
+
+    def run_admin(self):
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/administrative", timeout=2)
+            data = response.json()
+            print(f"\n[ADMINISTRATIVE TRUTH - NEXUS]")
+            print(f" -> STATUS: {data['status']}")
+            print(f" -> NEXUS: {'OK' if data['nexus_ok'] else 'NOT FOUND'}")
+            print(f" -> VERSION: {data['version']}")
+            print(f" -> PROTECTED NODES: {len(data['protected_nodes'])}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Admin failed: {e}\n")
+
+    def run_verify(self, args: List[str]):
+        if not args:
+            print("\n[07] Usage: /verify <node_path> [command]\n")
+            return
+        node = args[0]
+        cmd = args[1] if len(args) > 1 else "read_file"
+        try:
+            payload = {"persona": self.identity.replace(" ", "_"), "target_node": node, "command": cmd}
+            response = requests.post(f"{BRIDGE_URL}/v1/aas/verify", json=payload, timeout=5)
+            data = response.json()
+            print(f"\n[AAS AUTHORITY VERIFICATION]")
+            print(f" -> NODE: {node}")
+            print(f" -> ACTION: {cmd}")
+            arb = data["arbitration"]
+            print(f" -> STATUS: {arb['status']}")
+            print(f" -> CONFIDENCE: {arb.get('confidence_score', 'N/A')}")
+            if arb["status"] != "200_OK":
+                print(f" -> REASON: {arb.get('reason', 'Access Denied')}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Verification failed: {e}\n")
+
+    def run_vss(self, args: List[str]):
+        node = args[0] if args else "AI_Nexus"
+        cmd = args[1] if len(args) > 1 else "read_file"
+        try:
+            payload = {"persona": self.identity.replace(" ", "_"), "target_node": node, "command": cmd}
+            response = requests.post(f"{BRIDGE_URL}/v1/aas/verify", json=payload, timeout=5)
+            data = response.json()
+            breakdown = data["vss_breakdown"]
+            print(f"\n[VSS MATHEMATICAL BREAKDOWN]")
+            print(f" V = ({breakdown['alpha']} * {breakdown['credibility']}) - ({breakdown['beta']} * {breakdown['risk']}) - ({breakdown['gamma']} * {breakdown['deviation']}) + {breakdown['memory_boost']}")
+            print(f" RESULT: {breakdown['vss']:.4f}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] VSS failed: {e}\n")
+
     def run(self):
         self.print_header()
         while True:
             try:
                 user_input = input(f"{self.user_name}> ").strip()
                 if not user_input: continue
-                if user_input.lower() == "/exit": break
-                if user_input.lower() == "/report": self.save_mission_report(); continue
-                if user_input.lower() == "/status": self.show_status(); continue
-                if user_input.lower() == "/tools":
+
+                parts = user_input.split()
+                cmd = parts[0].lower()
+                args = parts[1:]
+
+                if cmd == "/exit": break
+                if cmd == "/report": self.save_mission_report(); continue
+                if cmd == "/status": self.show_status(); continue
+                if cmd == "/07": self.run_salute(); continue
+                if cmd == "/t": self.run_telemetry(); continue
+                if cmd == "/s": self.run_social(); continue
+                if cmd == "/a": self.run_admin(); continue
+                if cmd == "/verify": self.run_verify(args); continue
+                if cmd == "/vss": self.run_vss(args); continue
+                if cmd == "/tools":
                     self.show_tools = not self.show_tools
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
                     continue
