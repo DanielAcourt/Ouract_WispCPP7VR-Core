@@ -71,6 +71,13 @@ The system calculates the **Uncertainty Weight** ($U_W$) to manage systemic vigi
 *   **Degraded Logic:** A sensor cluster ($x_{ij}$) is considered "Degraded" if its Topology Mask $\mathbf{b}_{ij}$ has lost bits (e.g., [1, 0] instead of [1, 1]).
 *   **Weighted Discovery Ratio:** This ensures that losing a high-weight navigation sensor (Lidar) shifts the safety posture more aggressively than losing a low-weight decorative sensor.
 
+**Threshold Adjustment:**
+If the total Uncertainty Weight ($U_W$) relative to the Total Weight ($W_{total}$) exceeds a threshold, the system shifts $t_{caut}$ upward to enforce a safety-first posture.
+
+$$t_{caut, adj} = t_{caut, base} + \gamma \cdot \left( \frac{U_W}{W_{total}} \right)$$
+
+Where **Epistemic Skepticism ($\gamma$)** is a sensitivity factor determining the aggressiveness of the posture.
+
 ### 3.2 Technical (T) Hardening: Physical Truth vs. Simulated State
 The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware sensors) and **Simulated State** (Gamified variables).
 
@@ -128,6 +135,9 @@ If the system's **Administrative Intent** (the AI's "opinion" or command) diverg
 ### 5.2 The Hard-Kill Boundary
 *   **Non-Neural Execution:** The severance is a direct, deterministic write to the hardware-level E-Stop register. It intentionally bypasses the neural network/AI to prevent "The Safety Paradox" (where a failing AI overrides its own safety triggers).
 *   **Black Box Enforcement:** Every Severance Event is logged with the raw Symmetrical Delta and the specific Intent Vector that caused the violation, providing an indisputable forensic record.
+
+### 5.3 Asymmetric Failure Awareness
+If the **Administrative (A)** pillar (Human Intent) and **Technical (T)** pillar (Sensor Truth) disagree beyond a conflict threshold, a **Conflict Penalty** is applied to the final VSS, signaling a breakdown in mission integrity. This ensures that social or psychological health cannot "average out" a fundamental alignment failure.
 
 ---
 

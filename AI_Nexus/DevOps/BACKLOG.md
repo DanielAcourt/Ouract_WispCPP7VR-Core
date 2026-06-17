@@ -41,6 +41,9 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-016 | Soul: Diagnostic Broker (Truth) | 5 | In Progress | DevOps | Implement the raw scientific/historical data layer for Lidar/Museum ingestion. | UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry. |
 | B-017 | Soul: Cultivation Broker (Magic) | 5 | In Progress | DevOps | Implement the gamified progression layer (Qi/Maturity) as a decoupled module. | UCultivationBroker managing optional simulation logic without breaking SSoT. |
 | B-018 | Lidar: .DLB Ingestion Pipeline | 13 | Todo | Research | Stream Lidar data from Museum APIs into the Diagnostic Broker. | Automated manifest ingestion mapping "Unknown" tags to high-fidelity mesh assets. |
+| B-021 | Tool: `scope_validation` | 8 | Todo | DevOps | Enable agents to verify external path availability without risking operational stalls. | Proactive path testing tool with Temporal Dependency Mapping (TDM) and TOS reporting. |
+| B-022 | Tool: `introspection_schema` | 5 | Todo | DevOps | Provide agents with verifiable structural blueprints of system subsystems. | Schema retrieval tool with Degradation Forecasting and Failure Mode Simulation (DFS). |
+| B-023 | Tool: `cross_protocol_analyzer` | 13 | Todo | Research | Facilitate semantic translation between disparate system outputs and standards. | Semantic mapping engine with Constraint-Optimized Transformation (COTE) matrix. |
 
 ---
 

@@ -29,7 +29,9 @@
         "PPC.State.*": "Persistent Possession Controller flags",
         "Terminal.*": "Interactive terminal state flags",
         "AAS.Precedence": "Current agent precedence level",
-        "AAS.Persona": "Identifying persona for audit logs"
+        "AAS.Persona": "Identifying persona for audit logs",
+        "AAS.Memory.Log.*": "Append-only deterministic logs (Observations, Thoughts, Decisions, Transitions)",
+        "AAS.Memory.Cache.*": "Reflections and derived insights (Immutable cache)"
       }
     }
   },
