@@ -337,10 +337,16 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
             scribe_warning = f"SCRIBE WARNING: Significant data loss detected ({existing_size} -> {new_size} bytes). Total overwrite of {target_node} executed."
             logger.warning(scribe_warning)
 
+        # [B-031] Atomic Backup: Create .bak before mutation
+        backup_path = target_path + ".bak"
+        if os.path.exists(target_path):
+            try: shutil.copy2(target_path, backup_path)
+            except Exception as e: logger.error(f"Backup failed: {e}")
+
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
 
-        result = {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size}
+        result = {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size, "backup": os.path.basename(backup_path)}
         if scribe_warning:
             result["scribe_warning"] = scribe_warning
         return result
@@ -374,10 +380,15 @@ async def tool_patch_file(filepath: str, search: str, replace: str, persona: str
 
         new_content = content.replace(search, replace)
 
+        # [B-031] Atomic Backup: Create .bak before mutation
+        backup_path = target_path + ".bak"
+        try: shutil.copy2(target_path, backup_path)
+        except Exception as e: logger.error(f"Backup failed: {e}")
+
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(new_content)
 
-        return {"status": "success", "verified": True, "path": target_node, "mode": "surgical_patch"}
+        return {"status": "success", "verified": True, "path": target_node, "mode": "surgical_patch", "backup": os.path.basename(backup_path)}
     except Exception as e:
         return {"error": str(e)}
 
@@ -663,10 +674,10 @@ async def chat(request: ChatRequest):
 
     CORE DIRECTIVES:
     - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.2).
-    - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for targeted edits. Total overwrites of large files are prohibited unless explicitly commanded.
+    - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for targeted edits to avoid data loss. Never replace a character sheet with a single line of status.
     - REALITY ANCHOR: Differentiate between functional code (AAS/PSTA) and emergent lore (Auth_V4/Monk). Refer to AI_Nexus/Protocols/REALITY_ANCHOR.md.
     - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
-    - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
+    - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call. Environment/Lore descriptions must be anchored by a `read_file` or `list_files` call to verify the "Ground Truth" of the simulation file.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.
 
     07 PROTOCOL SALUTE (LINE-BY-LINE FORMAT):

@@ -16,12 +16,14 @@ To prevent future occurrences of this "Amnesia Bug," the **Scribe Protocol** has
 The following hardening measures have been implemented:
 
 1.  **`patch_file` (Surgical Modification):** A new tool that allows the Knight to perform targeted search-and-replace operations. This ensures that only the intended lines are modified while the rest of the document remains untouched.
-2.  **Data Loss Detection:** The `write_file` tool now performs a "Diligence Check." If a write operation results in more than 50% data loss on a file larger than 100 bytes, the bridge logs a critical `SCRIBE WARNING` for the Audit.
-3.  **Scribe Directives:** The system prompt has been updated to explicitly label the Knight as a "Diligent Scribe," mandating the use of `patch_file` for incremental updates and prohibiting unauthorized total overwrites.
-4.  **Vessel Feedback:** The `vessel.py` terminal now provides explicit `[SCRIBE]` feedback in the tool logs, allowing the Lead to immediately identify if a "Total Overwrite" or a "Surgical Patch" is being executed.
+2.  **Data Loss Detection:** The `write_file` tool now performs a "Diligence Check." If a write operation results in more than 50% data loss on a file larger than 100 bytes, the bridge logs a critical `SCRIBE WARNING` for the Audit and returns the warning to the Vessel.
+3.  **Atomic Backups (.bak):** Both `write_file` and `patch_file` now automatically create a `.bak` copy of the target file before any mutation occurs, providing a deterministic recovery path for critical simulation data (e.g., character sheets).
+4.  **Scribe Directives:** The system prompt has been updated to explicitly label the Knight as a "Diligent Scribe," mandating the use of `patch_file` for incremental updates.
+5.  **Vessel Feedback:** The `vessel.py` terminal now provides explicit `[SCRIBE]` feedback in the tool logs, identifying overwrites, patches, and backup creation.
 
 ## 🔬 Technical Verification
 - **Targeted HP Update:** Verified that `patch_file` can update `Current Health` without affecting the `Appearance` or `Lore` sections.
+- **Backup Verification:** Confirmed that `persona.md.bak` is generated successfully during a patch operation.
 - **Protocol Handshake:** The 07 Salute now reflects the active status of the AAS v1.3.2 Scribe Protocol.
 
 ## 🎯 Next Strategic Node

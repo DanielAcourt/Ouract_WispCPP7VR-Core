@@ -278,8 +278,14 @@ class ChatVessel:
                             # Diligent Scribe: Feedback on writes
                             if name == "write_file":
                                 print(f" -> [SCRIBE] TOTAL OVERWRITE: {args.get('filepath')}")
+                                if isinstance(output, dict) and "backup" in output:
+                                    print(f" -> [SCRIBE] BACKUP CREATED: {output['backup']}")
+                                if isinstance(output, dict) and "scribe_warning" in output:
+                                    print(f" -> [SCRIBE WARNING]: {output['scribe_warning']}")
                             elif name == "patch_file":
                                 print(f" -> [SCRIBE] SURGICAL PATCH: {args.get('filepath')}")
+                                if isinstance(output, dict) and "backup" in output:
+                                    print(f" -> [SCRIBE] BACKUP CREATED: {output['backup']}")
 
                             print(f" -> EXECUTING: {name}({args})")
                             print(f" -> RESULT: {str(output)[:200]}...") # Cap output length for display
