@@ -315,6 +315,7 @@ void ASovereignBaseEntity::ProcessEvolution(float DeltaTime)
 }
 */
 
+/*
 void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
 {
     if (!PotentialPartner || !IsReadyForMating()) return;
@@ -351,7 +352,7 @@ bool ASovereignBaseEntity::IsReadyForMating() const
 
     return TimeSinceLastMating >= SaveDataComponent->MatingCooldownDuration;
 }
-
+*/
 
 FGuid ASovereignBaseEntity::GetSovereignID() const
 {

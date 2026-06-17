@@ -106,8 +106,11 @@ enum class ESovereignElement : uint8
     // Alignment
     Light, Dark, Grey,
     // Core Natural
-    Fire, Water, Earth, Nature, Air,
+    Fire, Water, Earth,
+    // Not implemented in element component
+    Nature, Air,
     // Special
+    // Not defined in any save compoent or element component ideally it needs to be handled with tags
     Electric, Fairy, Dragon
 };
 
@@ -166,6 +169,8 @@ struct FEntitySaveData
     /** * THE SECRET SAUCE: Handles tags the system can't know in advance.
      * This is where your "Key:Value" scraper saves its data.
      */
+
+    // SHould this be a Bleuprint readwrite option
     TSharedPtr<FJsonObject> UnknownMetaTags;
 
 
