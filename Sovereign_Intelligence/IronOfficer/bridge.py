@@ -145,7 +145,7 @@ class SovereignBridge:
     def calculate_psta_viability(self, payload: AgentCommandPayload) -> float:
         """
         [R-009] Mathematically codifies agent precedence weights.
-        Formula: V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation)
+        Formula: V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation) + MemoryBoost
         """
         credibility = PERSONA_CREDIBILITY.get(payload.persona, 0.4)
 
@@ -158,10 +158,24 @@ class SovereignBridge:
         unknown_tags_count = len([t for t in payload.meta_tags if t not in known_tags])
         deviation = min(1.0, unknown_tags_count * 0.15)
 
+        # [B-025] Memory Zone Viability Boost (+0.5)
+        # If the agent is working in its own designated safe zone, boost viability
+        memory_boost = 0.0
+        if self.is_persona_in_memory_zone(payload.persona, payload.target_node):
+            memory_boost = 0.5
+
         alpha, beta, gamma = 1.0, 0.3, 0.2
-        weight = (alpha * credibility) - (beta * risk) - (gamma * deviation)
+        weight = (alpha * credibility) - (beta * risk) - (gamma * deviation) + memory_boost
 
         return max(0.0, min(1.0, weight))
+
+    def is_persona_in_memory_zone(self, persona: str, target_node: str) -> bool:
+        """Checks if a persona is operating within its dedicated memory folder."""
+        if persona == "Iron_Knight":
+            # Support both repository path and local resolved path from user report
+            if "Sovereign_Intelligence/IronKnight_Memory" in target_node or target_node.startswith("IronKnight/"):
+                return True
+        return False
 
     def evaluate_intent_safety(self, payload: AgentCommandPayload) -> bool:
         destructive_keywords = ["delete", "remove", "rm", "unlink", "truncate", "drop"]
@@ -172,9 +186,7 @@ class SovereignBridge:
 
         # [B-024] Persona Memory Zone Override
         # Grant personas full authority within their dedicated memory folder
-        is_persona_memory_zone = False
-        if payload.persona == "Iron_Knight" and "Sovereign_Intelligence/IronKnight_Memory" in payload.target_node:
-            is_persona_memory_zone = True
+        is_persona_memory_zone = self.is_persona_in_memory_zone(payload.persona, payload.target_node)
 
         # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone
         if not is_persona_memory_zone:

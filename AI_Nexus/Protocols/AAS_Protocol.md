@@ -39,10 +39,10 @@ Any module implementing an AAS check must include:
 If the calculated **Viability Score** falls below **0.7**, the system must trigger a `409_CONFLICT_GATE`. This halts execution and requires a mandatory user handshake (Lead authorization) to proceed.
 
 **Viability Formula:**
-`V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation)`
+`V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation) + MemoryBoost`
 
 ### 7. PERSONA MEMORY ZONES (Authority Overrides)
-To facilitate long-term training and documentation, specific personas are granted **Full Authority** (Read/Write/Delete) within their dedicated memory zones. Precedence checks are bypassed for operations targeting these directories.
+To facilitate long-term training and documentation, specific personas are granted **Full Authority** (Read/Write/Delete) and a **+0.5 Viability Boost** within their dedicated memory zones. Precedence checks are bypassed for operations targeting these directories.
 
 | Persona | Memory Zone Path |
 | :--- | :--- |
