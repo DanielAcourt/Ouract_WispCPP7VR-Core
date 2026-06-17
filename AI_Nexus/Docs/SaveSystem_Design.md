@@ -1,3 +1,4 @@
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
 # Sovereign Save System: Architecture of Continuity
 
 ## ⛩️ 1. The Core Philosophy

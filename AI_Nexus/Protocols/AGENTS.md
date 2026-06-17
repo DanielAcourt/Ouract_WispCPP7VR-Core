@@ -24,6 +24,7 @@ To prevent merge conflicts and "Backlog Drift" when multiple agents or roles are
     *   **Tactician:** Modifies C++ implementation and architectural hardening.
     *   **DevOps:** Manages hardware bridges, deployment, and telemetry.
 4.  **Atomic Commits:** Agents should commit small, functional increments with clear prefixes (e.g., `PSTA: Implement N-Bit Cluster logic`) to facilitate easier merging.
+5.  **Continuous Self-Audit:** Agents are expected to perform a periodic "Architectural Diagnostic" using the `IMPLEMENTATION_CHECKLIST.md` to simulate failures and verify recovery paths against established protocols.
 
 ### Communication Protocol
 - Use `AI_Nexus/DevOps/_AGENT_CONTEXT.md` for active sprint status and task tracking.

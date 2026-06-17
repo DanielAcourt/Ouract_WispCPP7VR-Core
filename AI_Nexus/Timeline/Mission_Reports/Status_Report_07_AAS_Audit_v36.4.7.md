@@ -18,7 +18,8 @@ By refining this protocol, we have moved from a theoretical suggestion to a **De
 2.  **Ambiguity Guard:** Added a mandatory "Deep Planning" handshake when a persona's `Confidence_Score` falls below 0.7.
 3.  **The "Easy 07" LIP:** Implemented the **Level Induction Protocol (LIP)** as a 5-phase handshake for rapid context synchronization between the Lead and AI agents.
 4.  **Clive's Synthesis:** Integrated architectural feedback from the external agent "Clive," specifically regarding the "Protocol Tax" and the need for mathematically provable governance.
-5.  **Rulebook Hardening:** Updated Level 1 protocols (`AGENTS.md`, `KnightCommand_SOP.md`) to enforce LIP and AAS compliance as the primary operational gates.
+5.  **Rulebook Hardening:** Updated Level 1 protocols (`AGENTS.md`, `KnightCommand_SOP.md`, `COMMAND_SOP.md`) to enforce LIP and AAS compliance.
+6.  **Protocol Decoupling:** Codified the "Alchemist's Filter" in `COMMAND_SOP.md` to ensure research (Level 2) does not destabilize core framework protocols (Level 1) without formal audit.
 
 ## 🔬 SSoT Synchronization
 - **Identity Schema:** `identity.json` updated (v1.3.0) with `AAS_GlobalAuthority`.

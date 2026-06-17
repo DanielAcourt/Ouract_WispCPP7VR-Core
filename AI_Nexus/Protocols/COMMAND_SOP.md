@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-03
 # Command & Delegation Protocol (The Sun Tzu SOP)
 
 > "If words of command are not clear and distinct, if orders are not thoroughly understood, then the general is to blame. But, if orders are clear and the soldiers nevertheless disobey, then it is the fault of their officers." — *Sun Tzu*
@@ -59,6 +59,14 @@ Every C++, Math module, and Markdown file must begin with this exact single-line
 ### 2. Enforcement Rule
 *   **Mandatory Check:** Every time an AI Agent or human opens/reads a file within the scope, they MUST verify the presence and accuracy of this header.
 *   **Immediate Correction:** If the header is missing, outdated, or incorrect, it must be updated immediately as part of the current task.
+
+---
+
+## 🛡️ Protocol Decoupling (The Alchemist's Filter)
+To prevent "Research Noise" from destabilizing the core framework, all emergent theories or research discoveries must be decoupled from Level 1 Protocols.
+1.  **Isolation:** No Research discovery (Level 2) can directly modify a Level 1 Protocol or core SOP.
+2.  **The Filter:** New theories must first be documented as a `Protocol_Draft` in `AI_Nexus/Research/Proposals/`.
+3.  **Audit:** The **Tactician** must formally review the draft against existing L1 rules and physical C++ constraints before the Lead grants "Core-Break" clearance for integration.
 
 ---
 
