@@ -13,9 +13,6 @@
 
 #include "interaction/SovereignEntityInterface.h"
 
-//#include "Interaction/SovereignEntityInterface.h"
-//#include "Interaction/SovereignEntityInterface.h" // Add the Universal Interface
-
 #include "SovereignBaseEntity.generated.h" //Must be last
 
 // Forward declarations to keep compile times fast
@@ -117,7 +114,7 @@ protected:
 
 
 	/** The 'Passport' for this entity's species and trust level */
-/** The "Advanced" data asset defining growth stages, health, and species attributes */
+	/** The "Advanced" data asset defining growth stages, health, and species attributes */
 	// Note: class keyword here handles the forward declaration inline
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data", meta = (AllowPrivateAccess = "true"))
 	class USovereignSpeciesData* SpeciesData;

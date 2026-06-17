@@ -53,6 +53,8 @@ public:
 
 
     /** --- IoT Telemetry (Digital Twin) --- */
+    // This should be here? It should be a component based on Telemetry type as there are different type of sensors
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Telemetry")
     float TemperatureCelsius = 0.0f;
 
