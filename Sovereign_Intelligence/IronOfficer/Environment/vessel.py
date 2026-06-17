@@ -274,6 +274,13 @@ class ChatVessel:
                             name = tool.get("function", {}).get("name", "unknown")
                             args = tool.get("function", {}).get("arguments", {})
                             output = tool_outputs[i] if i < len(tool_outputs) else "No data"
+
+                            # Diligent Scribe: Feedback on writes
+                            if name == "write_file":
+                                print(f" -> [SCRIBE] TOTAL OVERWRITE: {args.get('filepath')}")
+                            elif name == "patch_file":
+                                print(f" -> [SCRIBE] SURGICAL PATCH: {args.get('filepath')}")
+
                             print(f" -> EXECUTING: {name}({args})")
                             print(f" -> RESULT: {str(output)[:200]}...") # Cap output length for display
                         print("-" * 20)

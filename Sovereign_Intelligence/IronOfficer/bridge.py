@@ -325,9 +325,53 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
         return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+        # [B-030] Diligent Scribe: Check for significant data loss
+        existing_size = 0
+        if os.path.exists(target_path):
+            existing_size = os.path.getsize(target_path)
+
+        new_size = len(content.encode("utf-8"))
+        if existing_size > 100 and new_size < (existing_size * 0.5):
+            logger.warning(f"SCRIBE WARNING: Significant data loss detected during write to {target_node}. ({existing_size} -> {new_size} bytes)")
+
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return {"status": "success", "verified": os.path.exists(target_path), "path": target_node}
+        return {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size}
+    except Exception as e:
+        return {"error": str(e)}
+
+async def tool_patch_file(filepath: str, search: str, replace: str, persona: str = "Unknown"):
+    """
+    [AAS v1.3.2] Surgical file modification to prevent total overwrite data loss.
+    """
+    target_path = resolve_secure_path(filepath)
+    target_node = get_target_node_name(target_path)
+    payload = AgentCommandPayload(persona=persona, command="write_file", target_node=target_node) # Patching is a write action
+
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if not is_path_authorized(target_path, "write"):
+        return {"error": f"Security Breach: '{filepath}' is outside WRITE zones."}
+
+    if not os.path.exists(target_path):
+        return {"error": f"Patch failed: File '{filepath}' does not exist."}
+
+    try:
+        with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+        if search not in content:
+             return {"error": f"Patch failed: Search string not found in '{filepath}'."}
+
+        new_content = content.replace(search, replace)
+
+        with open(target_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+
+        return {"status": "success", "verified": True, "path": target_node, "mode": "surgical_patch"}
     except Exception as e:
         return {"error": str(e)}
 
@@ -474,6 +518,7 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
         "list_files": tool_list_files,
         "read_file": tool_read_file,
         "write_file": tool_write_file,
+        "patch_file": tool_patch_file,
         "delete_file": tool_delete_file,
         "search_files": tool_search_files,
         "map_directory": tool_map_directory,
@@ -611,7 +656,8 @@ async def chat(request: ChatRequest):
     You are communicating with your Lead, {USER_NAME}.
 
     CORE DIRECTIVES:
-    - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.0).
+    - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.2).
+    - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for targeted edits. Total overwrites of large files are prohibited unless explicitly commanded.
     - REALITY ANCHOR: Differentiate between functional code (AAS/PSTA) and emergent lore (Auth_V4/Monk). Refer to AI_Nexus/Protocols/REALITY_ANCHOR.md.
     - DATA-FIRST: Never summarize "that you ran a tool." Show the ACTUAL results in your response.
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
@@ -627,7 +673,8 @@ async def chat(request: ChatRequest):
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
-        {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write file (TOTAL OVERWRITE).", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit (SEARCH/REPLACE). Use this to preserve existing content.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
         {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
         {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
