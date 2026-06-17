@@ -16,10 +16,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   The "Black Box" historical record of all Lead/Agent review sessions.
 
 ### **Level 1: The Rulebook**
-*   **Primary Source:** `AI_Nexus/Protocols/AGENTS.md`
-    *   SOPs, role definitions, architectural constraints, and coding standards.
-*   **Contribution Guide:** `AI_Nexus/Protocols/CONTRIBUTING.md`
-    *   Workflow standards for multi-agent cooperation.
+*   **Primary Source:** `AI_Nexus/Protocols/Agent_Workflow.md`
+    *   Consolidated SOPs, multi-agent coordination, and architectural constraints.
 *   **Command SOP:** `AI_Nexus/Protocols/COMMAND_SOP.md`
     *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
 *   **SaveSystem Design:** `AI_Nexus/Docs/SaveSystem_Design.md`
