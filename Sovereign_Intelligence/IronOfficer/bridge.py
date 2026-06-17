@@ -36,6 +36,7 @@ BRIDGE_PORT = 8000
 USER_NAME = "Dan"
 READ_ZONES = []
 WRITE_ZONES = []
+PERSONA_ZONES = {}
 
 # --- AAS/PSTA Constants ---
 PERSONA_PRECEDENCE = {
@@ -76,7 +77,7 @@ TOOL_MIN_PRECEDENCE = {
 }
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -91,6 +92,12 @@ def load_config():
 
                 READ_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("read_zones", [])]
                 WRITE_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("write_zones", [])]
+
+                # [B-025] Ingest Persona-Specific Safe Zones
+                PERSONA_ZONES = bridge_cfg.get("persona_zones", {
+                    "Iron_Knight": ["Sovereign_Intelligence/IronKnight_Memory", "IronKnight/"]
+                })
+
                 USER_NAME = pref_cfg.get("name", "Dan")
         except Exception as e:
             logger.warning(f"[07 WARNING] Failed to load config.json: {e}")
@@ -171,9 +178,9 @@ class SovereignBridge:
 
     def is_persona_in_memory_zone(self, persona: str, target_node: str) -> bool:
         """Checks if a persona is operating within its dedicated memory folder."""
-        if persona == "Iron_Knight":
-            # Support both repository path and local resolved path from user report
-            if "Sovereign_Intelligence/IronKnight_Memory" in target_node or target_node.startswith("IronKnight/"):
+        zones = PERSONA_ZONES.get(persona, [])
+        for zone in zones:
+            if zone in target_node or target_node.startswith(zone):
                 return True
         return False
 
@@ -211,11 +218,22 @@ class SovereignBridge:
         confidence_score = self.calculate_psta_viability(payload)
         is_safe_intent = self.evaluate_intent_safety(payload)
 
-        if confidence_score < 0.7 or not is_safe_intent:
-            logger.warning(f"409 CONFLICT: Confidence {confidence_score:.2f} below threshold. Halting.")
+        # [B-026] Dual-Threshold System (0.4 for Read-Only, 0.7 for Mutation)
+        threshold = 0.7
+        non_destructive_tools = ["list_files", "read_file", "map_directory", "get_system_telemetry", "search_files"]
+        if payload.command in non_destructive_tools:
+            threshold = 0.4
+
+        # [B-027] Hardware Node Whitelist for Knights
+        if payload.target_node == "HARDWARE" and PERSONA_PRECEDENCE.get(payload.persona, 0) >= 5:
+            return {"status": "200_OK", "confidence_score": 1.0, "action": "HARDWARE_ACCESS_GRANTED"}
+
+        if confidence_score < threshold or not is_safe_intent:
+            logger.warning(f"409 CONFLICT: Confidence {confidence_score:.2f} below threshold {threshold}. Halting.")
             return {
                 "status": "409_CONFLICT_GATE",
                 "confidence_score": confidence_score,
+                "threshold_required": threshold,
                 "action": "MANDATORY_USER_HANDSHAKE_REQUIRED",
                 "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
             }

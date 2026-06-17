@@ -17,6 +17,7 @@
       "Innovation": "Researcher (P:7)",
       "Sandbox": "Yaz_Student (P:3)"
     },
+    "PersonaZones": "Config-driven memory folders per persona (SSoT: bridge config.json)",
     "MetaTags": {
       "Structure": "TMap<FString, FString>",
       "Namespaces": {

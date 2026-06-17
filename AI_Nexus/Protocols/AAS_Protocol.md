@@ -36,13 +36,20 @@ Any module implementing an AAS check must include:
 * `AAS_Route`: The specific directive from the Protocol path utilized.
 
 ### 6. THE 409 CONFLICT GATE (PSTA Viability)
-If the calculated **Viability Score** falls below **0.7**, the system must trigger a `409_CONFLICT_GATE`. This halts execution and requires a mandatory user handshake (Lead authorization) to proceed.
+The system uses a **Dual-Threshold** model to balance safety with operational speed:
+- **0.7 (Mutation Floor):** Required for `write_file` and `delete_file`.
+- **0.4 (Observation Floor):** Required for `read_file`, `list_files`, and `get_system_telemetry`.
+
+If the calculated **Viability Score** falls below the relevant floor, the system triggers a `409_CONFLICT_GATE`.
 
 **Viability Formula:**
 `V = (1.0 * Credibility) - (0.3 * NodeRisk) - (0.2 * StructuralDeviation) + MemoryBoost`
 
-### 7. PERSONA MEMORY ZONES (Authority Overrides)
-To facilitate long-term training and documentation, specific personas are granted **Full Authority** (Read/Write/Delete) and a **+0.5 Viability Boost** within their dedicated memory zones. Precedence checks are bypassed for operations targeting these directories.
+### 7. HARDWARE WHITELIST
+Any persona with **Precedence (P) >= 5** is granted an automatic **1.0 Viability Score** when targeting the `HARDWARE` node for telemetry. This ensures agents can monitor their own "Body" without impedance.
+
+### 8. PERSONA MEMORY ZONES (Authority Overrides)
+To facilitate long-term training and documentation, specific personas are granted **Full Authority** (Read/Write/Delete) and a **+0.5 Viability Boost** within their dedicated memory zones. Precedence checks are bypassed for operations targeting these directories. These zones are defined in the bridge `config.json`.
 
 | Persona | Memory Zone Path |
 | :--- | :--- |
