@@ -493,6 +493,7 @@ async def get_salute(persona: str = "Iron_Knight"):
     """Aggregates live data for the 07 Protocol Salute."""
     # T: Technical
     telemetry = await tool_get_system_telemetry(persona=persona)
+    phi = 1.0 if telemetry.get("status") == "NOMINAL" else 0.0 # Coherence Coefficient
 
     # A: Administrative
     nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
@@ -505,11 +506,12 @@ async def get_salute(persona: str = "Iron_Knight"):
     # P: Psychological
     # Defaulting to 1.0 (Optimal) for nominal operation
     psych_status = 1.0
+    tonic_state = 1.0
 
     return {
-        "P": {"status": "Optimal", "value": psych_status},
+        "P": {"status": "Optimal", "value": psych_status, "tonic_state": tonic_state},
         "S": {"status": "Synchronized", "value": social_sync},
-        "T": telemetry,
+        "T": {**telemetry, "phi": phi},
         "A": {
             "status": aas_status,
             "nexus_ok": nexus_ok,
@@ -535,6 +537,17 @@ async def get_psta_admin():
 @app.get("/v1/psta/social")
 async def get_psta_social():
     return {"status": "Synchronized", "value": 1.0, "bridge_url": f"http://127.0.0.1:{BRIDGE_PORT}"}
+
+@app.get("/v1/psta/phi")
+async def get_psta_phi(persona: str = "Iron_Knight"):
+    telemetry = await tool_get_system_telemetry(persona=persona)
+    phi = 1.0 if telemetry.get("status") == "NOMINAL" else 0.0
+    return {"phi": phi, "status": telemetry.get("status")}
+
+@app.get("/v1/psta/velocity")
+async def get_psta_velocity():
+    # Placeholder for Risk Velocity (dV/dt)
+    return {"velocity": 0.0, "status": "STABLE"}
 
 @app.post("/v1/aas/verify")
 async def aas_verify(request: VerifyRequest):

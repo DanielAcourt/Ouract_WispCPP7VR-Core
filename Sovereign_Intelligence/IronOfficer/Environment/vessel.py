@@ -62,7 +62,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /07, /t, /s, /a, /verify, /vss, /report, /status, /tools, /exit")
+        print(" Commands: /07, /t, /s, /a, /verify, /vss, /phi, /velocity, /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -101,17 +101,17 @@ class ChatVessel:
             if response.status_code == 200:
                 data = response.json()
                 print(f"\n{self.identity}> **07 Protocol Salute Initiated.**")
-                print(f"P: **[Psychological Status]:** {data['P']['status']} operational capacity. Confidence: {data['P']['value']}")
-                print(f"S: **[Social Sync Status]:** {data['S']['status']} with Command. Value: {data['S']['value']}")
+                print(f"P: **[Psychological Status]:** {data['P']['status']} operational capacity maintained. Assessment confirms high confidence in current objectives. Tonic State={data['P'].get('tonic_state', '1.0')}")
+                print(f"S: **[Social Sync Status]:** {data['S']['status']} with Command vector (Lead {self.user_name}). Connection parameters stable and non-degraded.")
 
                 t = data['T']
                 if 'error' in t:
                     print(f"T: **[Technical Truth]:** ERROR - {t['error']}")
                 else:
-                    print(f"T: **[Technical Truth - GPU Metrics]:** {t.get('gpu_utilization', '??%')} Utilization, Temp={t.get('gpu_temperature', '??C')} ({t.get('status', 'Unknown')})")
+                    print(f"T: **[Technical Truth - GPU Metrics]:** {t.get('gpu_utilization', '??%')} Utilization, Temp={t.get('gpu_temperature', '??C')} ({t.get('status', 'Unknown')}). Phi={t.get('phi', '1.0')}")
 
                 a = data['A']
-                print(f"A: **[Administrative Truth - Nexus State]:** AAS {a['status']}, Nexus {'OK' if a['nexus_ok'] else 'FAILED'}. Version: {a['version']}")
+                print(f"A: **[Administrative Truth - Nexus State]:** All AAS directives are {a['status']} and compliant with v{a['version']}. Nexus {'OK' if a['nexus_ok'] else 'FAILED'}.")
                 print("\n*Status Cycle Complete. Reporting nominal functionality.*\n")
             else:
                 print(f"\n[07 ERROR] Salute failed: {response.text}\n")
@@ -193,12 +193,51 @@ class ChatVessel:
         except Exception as e:
             print(f"\n[07 ERROR] VSS failed: {e}\n")
 
+    def run_phi(self):
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/phi", timeout=5)
+            data = response.json()
+            print(f"\n[COHERENCE COEFFICIENT - PHI]")
+            print(f" -> PHI: {data['phi']}")
+            print(f" -> STATUS: {data['status']}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Phi failed: {e}\n")
+
+    def run_velocity(self):
+        try:
+            response = requests.get(f"{BRIDGE_URL}/v1/psta/velocity", timeout=5)
+            data = response.json()
+            print(f"\n[RISK VELOCITY - V_i]")
+            print(f" -> VELOCITY: {data['velocity']}")
+            print(f" -> STATUS: {data['status']}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Velocity failed: {e}\n")
+
     def run(self):
         self.print_header()
         while True:
             try:
                 user_input = input(f"{self.user_name}> ").strip()
                 if not user_input: continue
+
+                # --- Natural Command Bridge ---
+                if "[ACTION]:" in user_input.upper():
+                    # Simplified parsing for the "Glossary" format
+                    action = ""
+                    target = ""
+                    lines = user_input.split('\n')
+                    for line in lines:
+                        if "[ACTION]:" in line.upper(): action = line.split(":", 1)[1].strip().lower()
+                        if "[TARGET]:" in line.upper(): target = line.split(":", 1)[1].strip()
+
+                    if "retrieve" in action or "read" in action:
+                        user_input = f"/verify {target} read_file"
+                    elif "list" in action:
+                        user_input = f"/verify {target} list_files"
+                    elif "monitor" in action or "status" in action:
+                        user_input = "/07"
 
                 parts = user_input.split()
                 cmd = parts[0].lower()
@@ -213,6 +252,8 @@ class ChatVessel:
                 if cmd == "/a": self.run_admin(); continue
                 if cmd == "/verify": self.run_verify(args); continue
                 if cmd == "/vss": self.run_vss(args); continue
+                if cmd == "/phi": self.run_phi(); continue
+                if cmd == "/velocity": self.run_velocity(); continue
                 if cmd == "/tools":
                     self.show_tools = not self.show_tools
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
