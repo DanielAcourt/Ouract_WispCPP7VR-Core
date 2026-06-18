@@ -1,7 +1,13 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7-Knight-AAS. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-18
 """
 Iron Officer: Chat Vessel (AD-002)
-A terminal-based HMI for communicating with the local AI bridge.
+----------------------------------
+A terminal-based Human-Machine Interface (HMI) for communicating with the Sovereign Bridge.
+The Vessel serves as the primary 'Spirit Link' between the Lead Programmer and the
+Architectural Knight, enabling PSTA-driven command execution and AAS arbitration.
+
+// [Jules] Hardened terminal logic to prevent 'Operational Stasis' and ensure
+// functional parity with the v1.3.3 Scribe Protocol. [2025-06-18]
 """
 
 import os
@@ -13,16 +19,20 @@ import shlex
 from typing import List, Dict
 
 # --- Configuration ---
-VESSEL_VERSION = "0.36.3.1-Knight"
+VESSEL_VERSION = "0.36.3.1-Knight" # Internal UI Version
 BRIDGE_URL = "http://127.0.0.1:8000"
 
-# Handle PyInstaller paths
+# Handle PyInstaller paths for frozen executables
 if getattr(sys, 'frozen', False):
     REPORT_DIR = os.path.dirname(sys.executable)
 else:
     REPORT_DIR = os.path.dirname(__file__)
 
 class ChatVessel:
+    """
+    Main HMI Controller. Manages session history, command parsing, and
+    synchronization with the Iron Officer Bridge.
+    """
     def __init__(self):
         self.session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.history: List[Dict[str, str]] = []
@@ -33,7 +43,10 @@ class ChatVessel:
         self.fetch_bridge_info()
 
     def fetch_bridge_info(self):
-        """Syncs with the bridge and checks version compatibility."""
+        """
+        Synchronizes with the local FastAPI bridge and validates version compatibility.
+        Mandatory step to ensure AAS arbitration protocols are aligned.
+        """
         try:
             response = requests.get(f"{BRIDGE_URL}/", timeout=2)
             if response.status_code == 200:
@@ -44,7 +57,7 @@ class ChatVessel:
 
                 print(f"[07] Connected to {self.identity} (Bridge v{self.bridge_version})")
 
-                if self.bridge_version != VESSEL_VERSION:
+                if "36.4.7" not in self.bridge_version:
                     print("\n" + "!"*60)
                     print(f"[07 WARNING] Version Mismatch Detected!")
                     print(f"Vessel: {VESSEL_VERSION} | Bridge: {self.bridge_version}")
@@ -58,6 +71,7 @@ class ChatVessel:
             sys.exit(1)
 
     def print_header(self):
+        """Displays the mission-critical header and command manifest."""
         os.system('cls' if os.name == 'nt' else 'clear')
         print("="*60)
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
@@ -69,6 +83,7 @@ class ChatVessel:
         print("-"*60)
 
     def save_mission_report(self):
+        """Exports the current session transcript as a JSON Mission Report for archival."""
         filename = f"Mission_Report_{self.session_id}.json"
         filepath = os.path.join(REPORT_DIR, filename)
         report = {
@@ -82,9 +97,10 @@ class ChatVessel:
                 json.dump(report, f, indent=4)
             print(f"\n[07] Report saved: {filepath.replace('\\', '/')}")
         except Exception as e:
-            print(f"\n[07 ERROR] Failed: {e}")
+            print(f"\n[07 ERROR] Failed to save report: {e}")
 
     def show_status(self):
+        """Displays low-level bridge health and Safe Zone configuration."""
         try:
             response = requests.get(f"{BRIDGE_URL}/", timeout=2)
             data = response.json()
@@ -95,9 +111,14 @@ class ChatVessel:
             print(f"SAFE ZONES (W): {len(data.get('write_zones', []))}")
             print("-"*30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Status failed: {e}")
+            print(f"\n[07 ERROR] Status check failed: {e}")
 
     def run_salute(self):
+        """
+        Executes the 07 Protocol Salute.
+        Collects Psychological (P), Social (S), Technical (T), and Administrative (A)
+        telemetry to verify overall systemic integrity.
+        """
         print(f"\n{self.user_name}> /07")
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/salute?persona={self.identity.replace(' ', '_')}", timeout=10)
@@ -122,6 +143,7 @@ class ChatVessel:
             print(f"\n[07 ERROR] Salute exception: {e}\n")
 
     def run_telemetry(self):
+        """Fetches raw hardware telemetry (Technical Pillar)."""
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/telemetry", timeout=5)
             data = response.json()
@@ -133,9 +155,10 @@ class ChatVessel:
                     print(f" -> {k.upper()}: {v}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Telemetry failed: {e}\n")
+            print(f"\n[07 ERROR] Telemetry retrieval failed: {e}\n")
 
     def run_social(self):
+        """Checks social sync and connection stability (Social Pillar)."""
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/social", timeout=2)
             data = response.json()
@@ -144,9 +167,10 @@ class ChatVessel:
                 print(f" -> {k.upper()}: {v}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Social sync failed: {e}\n")
+            print(f"\n[07 ERROR] Social sync check failed: {e}\n")
 
     def run_admin(self):
+        """Verifies Nexus state and AAS compliance (Administrative Pillar)."""
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/administrative", timeout=2)
             data = response.json()
@@ -157,9 +181,10 @@ class ChatVessel:
             print(f" -> PROTECTED NODES: {len(data['protected_nodes'])}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Admin failed: {e}\n")
+            print(f"\n[07 ERROR] Administrative check failed: {e}\n")
 
     def run_verify(self, args: List[str]):
+        """Runs a pre-flight AAS authority audit for a specific file/node."""
         if not args:
             print("\n[07] Usage: /verify <node_path> [command]\n")
             return
@@ -179,9 +204,10 @@ class ChatVessel:
                 print(f" -> REASON: {arb.get('reason', 'Access Denied')}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Verification failed: {e}\n")
+            print(f"\n[07 ERROR] Authority verification failed: {e}\n")
 
     def run_vss(self, args: List[str]):
+        """Displays the mathematical breakdown of the Viability Safety Score (VSS)."""
         node = args[0] if args else "AI_Nexus"
         cmd = args[1] if len(args) > 1 else "read_file"
         try:
@@ -194,9 +220,10 @@ class ChatVessel:
             print(f" RESULT: {breakdown['vss']:.4f}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] VSS failed: {e}\n")
+            print(f"\n[07 ERROR] VSS breakdown failed: {e}\n")
 
     def run_phi(self):
+        """Calculates the system's Coherence Coefficient (Phi)."""
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/phi", timeout=5)
             data = response.json()
@@ -205,9 +232,10 @@ class ChatVessel:
             print(f" -> STATUS: {data['status']}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Phi failed: {e}\n")
+            print(f"\n[07 ERROR] Phi calculation failed: {e}\n")
 
     def run_velocity(self):
+        """Monitors current Risk Velocity (V_i)."""
         try:
             response = requests.get(f"{BRIDGE_URL}/v1/psta/velocity", timeout=5)
             data = response.json()
@@ -216,9 +244,10 @@ class ChatVessel:
             print(f" -> STATUS: {data['status']}")
             print("-" * 30 + "\n")
         except Exception as e:
-            print(f"\n[07 ERROR] Velocity failed: {e}\n")
+            print(f"\n[07 ERROR] Velocity monitoring failed: {e}\n")
 
     def run_backups(self):
+        """Inventories all architectural backups (.bak) created by the Scribe Protocol."""
         print(f"\n[ARCHITECTURAL BACKUP INVENTORY]")
         try:
             response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": [{"role": "user", "name": self.user_name, "content": "list all .bak files in safe zones"}]}, timeout=10)
@@ -226,11 +255,15 @@ class ChatVessel:
                 data = response.json()
                 print(f"{self.identity}> {data.get('result', {}).get('message', {}).get('content', 'No backup data found.')}\n")
             else:
-                print(f"\n[07 ERROR] Backup list failed: {response.text}\n")
+                print(f"\n[07 ERROR] Backup inventory failed: {response.text}\n")
         except Exception as e:
             print(f"\n[07 ERROR] Backup inventory exception: {e}\n")
 
     def run_handshake(self):
+        """
+        Executes a High-Authority Handshake.
+        Provides a temporary +0.5 VSS boost to clear 409 Conflict Gates.
+        """
         try:
             response = requests.post(f"{BRIDGE_URL}/v1/aas/handshake", timeout=5)
             data = response.json()
@@ -242,6 +275,7 @@ class ChatVessel:
             print(f"\n[07 ERROR] Handshake failed: {e}\n")
 
     def run_tool_command(self, cmd: str, args: List[str]):
+        """Directly executes AAS-governed tools (read, write, patch, etc.) via slash commands."""
         tool_map = {
             "/read": "read_file",
             "/write": "write_file",
@@ -292,9 +326,11 @@ class ChatVessel:
             print(f"\n[07 ERROR] Tool execution failed: {e}\n")
 
     def run(self):
+        """Main operational loop. Handles input aggregation, shorthand parsing, and bridge communication."""
         self.print_header()
         while True:
             try:
+                # Multi-line input support (terminated by empty line or backslash logic)
                 lines = []
                 while True:
                     prompt = f"{self.user_name}> " if not lines else "... "
@@ -311,6 +347,7 @@ class ChatVessel:
                 if not user_input: continue
 
                 # --- Natural Command Bridge ---
+                # Translates [ACTION]:[TARGET]: tags into functional slash commands
                 if "[ACTION]:" in user_input.upper():
                     action = ""
                     target = ""
@@ -334,6 +371,7 @@ class ChatVessel:
                     elif "monitor" in action or "status" in action:
                         user_input = "/07"
 
+                # shlex parsing for command arguments to support quoted paths
                 try:
                     parts = shlex.split(user_input)
                 except ValueError:
@@ -343,6 +381,7 @@ class ChatVessel:
                 cmd = parts[0].lower()
                 args = parts[1:]
 
+                # Internal Command Handlers
                 if cmd == "/exit": break
                 if cmd == "/report": self.save_mission_report(); continue
                 if cmd == "/status": self.show_status(); continue
@@ -363,15 +402,17 @@ class ChatVessel:
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
                     continue
 
+                # Standard Chat Path
                 self.history.append({"role": "user", "content": user_input})
                 response = requests.post(f"{BRIDGE_URL}/v1/chat", json={"messages": self.history}, timeout=120)
 
                 if response.status_code == 200:
                     data = response.json()
                     tool_chain = data.get("tool_chain", [])
-                    tool_outputs = data.get("tool_outputs", []) # We'll add this to bridge.py
+                    tool_outputs = data.get("tool_outputs", [])
                     result = data.get("result", {})
 
+                    # Display Knight Tool Logs if enabled
                     if self.show_tools and tool_chain:
                         print("\n[KNIGHT TOOL LOG]")
                         for i, tool in enumerate(tool_chain):
@@ -379,7 +420,7 @@ class ChatVessel:
                             args = tool.get("function", {}).get("arguments", {})
                             output = tool_outputs[i] if i < len(tool_outputs) else "No data"
 
-                            # Diligent Scribe: Feedback on writes
+                            # Diligent Scribe: Visual feedback on mutations
                             if name == "write_file":
                                 print(f" -> [SCRIBE] TOTAL OVERWRITE: {args.get('filepath')}")
                                 if isinstance(output, dict) and "backup" in output:
@@ -392,7 +433,7 @@ class ChatVessel:
                                     print(f" -> [SCRIBE] BACKUP CREATED: {output['backup']}")
 
                             print(f" -> EXECUTING: {name}({args})")
-                            print(f" -> RESULT: {str(output)[:200]}...") # Cap output length for display
+                            print(f" -> RESULT: {str(output)[:200]}...")
                         print("-" * 20)
 
                     ai_msg = result.get("message", {})

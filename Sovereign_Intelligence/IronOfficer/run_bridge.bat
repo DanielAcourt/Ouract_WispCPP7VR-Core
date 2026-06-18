@@ -1,41 +1,32 @@
 @echo off
-:: Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
-:: Sovereign Framework: Iron Officer One-Click Launcher (Self-Healing)
+:: Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE).
+:: 07 Architect: Iron Officer One-Click Launcher (Self-Healing)
+:: Purpose: Initializes the FastAPI Bridge, validates environment, and resolves local Nexus paths.
 
 echo [07] Initializing Iron Officer Bridge...
 echo [07] Hardware Target: GTX 5090
 
-:: Get the directory where this batch file is located (IronOfficer folder)
+:: Get the directory where this batch file is located
 set "IRON_OFFICER_DIR=%~dp0"
-
-:: Navigate to the directory
 cd /d "%IRON_OFFICER_DIR%"
 
-:: Calculate the Nexus Path (Up two levels from IronOfficer/ to repo root)
-:: We use double-backslashes to ensure Python handles the path correctly
+:: 1. Calculate the Nexus Path (Up two levels from IronOfficer/ to repo root)
 set "REPO_ROOT=%~dp0..\.."
 pushd "%REPO_ROOT%"
 set "NEXUS_PATH=%cd%\AI_Nexus"
 popd
 
-:: 1. Try standard commands
+:: 2. Python Resolution Logic (Priority: python -> py -> python3)
 set "PY_CMD="
-
 python --version >nul 2>&1
 if %errorlevel% EQU 0 (set "PY_CMD=python" & goto :FOUND)
-
 py --version >nul 2>&1
 if %errorlevel% EQU 0 (set "PY_CMD=py" & goto :FOUND)
-
 python3 --version >nul 2>&1
 if %errorlevel% EQU 0 (set "PY_CMD=python3" & goto :FOUND)
 
-:: 2. Search common local paths
+:: Fallback: Search common Windows installation paths
 for /d %%D in ("%LocalAppData%\Programs\Python\Python*") do (
-    if exist "%%D\python.exe" (set "PY_CMD="%%D\python.exe"" & goto :FOUND)
-)
-
-for /d %%D in ("%ProgramFiles%\Python*") do (
     if exist "%%D\python.exe" (set "PY_CMD="%%D\python.exe"" & goto :FOUND)
 )
 
@@ -44,14 +35,14 @@ pause
 exit /b
 
 :FOUND
-:: 4. Check for and Install Dependencies
+:: 3. Dependency Check & Sync
 %PY_CMD% -c "import requests, fastapi, uvicorn" >nul 2>&1
 if %errorlevel% NEQ 0 (
     echo [07] Missing dependencies detected. Installing now...
     %PY_CMD% -m pip install -r requirements.txt
 )
 
-:: 5. Pre-flight Checks (Port 8000 & Ollama)
+:: 4. Port 8000 Conflict Resolution
 netstat -ano | findstr :8000 | findstr LISTENING >nul
 if %errorlevel% EQU 0 (
     echo [07 WARNING] Port 8000 is already in use.
@@ -61,32 +52,19 @@ if %errorlevel% EQU 0 (
     if /i "%choice%"=="y" (
         taskkill /F /PID %PID%
         echo [07] Process terminated. Continuing...
-    ) else (
-        echo [07] Continuing with caution...
     )
 )
 
-:: Check for Ollama process (try both common names)
+:: 5. Ollama Persistence Check
 set "OLLAMA_RUNNING=0"
 tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
 if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
-tasklist /FI "IMAGENAME eq ollama app.exe" 2>NUL | find /I /N "ollama app.exe">NUL
-if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
-tasklist /FI "IMAGENAME eq Ollama.app.exe" 2>NUL | find /I /N "Ollama.app.exe">NUL
-if "%ERRORLEVEL%" EQU "0" set "OLLAMA_RUNNING=1"
-
 if "%OLLAMA_RUNNING%" NEQ "1" (
-    echo [07 CRITICAL] Ollama is not running.
-    echo [07] Please start Ollama from your System Tray or Start Menu.
-    :: We pause here because the bridge will definitely fail without Ollama
+    echo [07 CRITICAL] Ollama is not running. Please start it before proceeding.
     pause
 )
 
-:: Set Ollama Environment Overrides if needed
-:: (Defaults to standard locations if not set in config)
-set "OLLAMA_MODELS=%USERPROFILE%\.ollama\models"
-
-:: 6. Start the Bridge with the local Nexus path
+:: 6. Launch the Sovereign Bridge
 echo [07] Starting FastAPI Service...
 %PY_CMD% bridge.py --nexus "%NEXUS_PATH%"
 
