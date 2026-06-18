@@ -9,6 +9,7 @@ import sys
 import json
 import requests
 import datetime
+import shlex
 from typing import List, Dict
 
 # --- Configuration ---
@@ -62,7 +63,9 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /07, /p, /t, /s, /a, /verify, /vss, /phi, /velocity, /backups, /handshake, /report, /status, /tools, /exit")
+        print(" Commands: /07, /p, /t, /s, /a, /verify, /vss, /phi, /velocity")
+        print(" Tools:    /read, /write, /patch, /append, /list, /backups, /handshake")
+        print(" Meta:     /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -238,33 +241,105 @@ class ChatVessel:
         except Exception as e:
             print(f"\n[07 ERROR] Handshake failed: {e}\n")
 
+    def run_tool_command(self, cmd: str, args: List[str]):
+        tool_map = {
+            "/read": "read_file",
+            "/write": "write_file",
+            "/patch": "patch_file",
+            "/append": "append_file",
+            "/list": "list_files"
+        }
+        tool_name = tool_map.get(cmd)
+        if not tool_name: return
+
+        if not args:
+            print(f"\n[07] Usage: {cmd} <path> [args...]\n")
+            return
+
+        path = args[0]
+        tool_args = {}
+        if tool_name == "read_file": tool_args = {"filepath": path}
+        elif tool_name == "list_files": tool_args = {"directory": path}
+        elif tool_name == "write_file": tool_args = {"filepath": path, "content": " ".join(args[1:])}
+        elif tool_name == "append_file": tool_args = {"filepath": path, "content": " ".join(args[1:])}
+        elif tool_name == "patch_file":
+            if len(args) < 3:
+                print(f"\n[07] Usage: /patch <path> <search> <replace>\n")
+                return
+            tool_args = {"filepath": path, "search": args[1], "replace": args[2]}
+
+        print(f"\n[AAS TOOL EXECUTION: {tool_name}]")
+        print(f" -> TARGET: {path}")
+        try:
+            payload = {"persona": self.identity.replace(" ", "_"), "command": tool_name, "arguments": tool_args}
+            response = requests.post(f"{BRIDGE_URL}/v1/aas/execute", json=payload, timeout=10)
+            data = response.json()
+            if "error" in data:
+                print(f" -> ERROR: {data['error']}")
+                if data.get("status") == "409_CONFLICT_GATE":
+                    print(f" -> AAS ALERT: Use /handshake to override.")
+            else:
+                print(f" -> STATUS: SUCCESS")
+                if "content" in data:
+                    print("-" * 20)
+                    print(data["content"][:1000] + ("..." if len(data["content"]) > 1000 else ""))
+                if "files" in data:
+                    print(f" -> FILES: {', '.join(data['files'])}")
+                if "backup" in data:
+                    print(f" -> BACKUP: {data['backup']}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Tool execution failed: {e}\n")
+
     def run(self):
         self.print_header()
         while True:
             try:
-                user_input = input(f"{self.user_name}> ").strip()
+                lines = []
+                while True:
+                    prompt = f"{self.user_name}> " if not lines else "... "
+                    line = input(prompt).strip()
+                    if not line: break
+                    if line.endswith("\\"):
+                        lines.append(line[:-1].strip())
+                        continue
+                    else:
+                        lines.append(line)
+                        break
+
+                user_input = "\n".join(lines).strip()
                 if not user_input: continue
 
                 # --- Natural Command Bridge ---
                 if "[ACTION]:" in user_input.upper():
-                    # Simplified parsing for the "Glossary" format
                     action = ""
                     target = ""
-                    lines = user_input.split('\n')
+                    other_lines = []
                     for line in lines:
-                        if "[ACTION]:" in line.upper(): action = line.split(":", 1)[1].strip().lower()
-                        if "[TARGET]:" in line.upper(): target = line.split(":", 1)[1].strip()
+                        upper_line = line.upper()
+                        if "[ACTION]:" in upper_line:
+                            action = line.split(":", 1)[1].strip().lower()
+                        elif "[TARGET]:" in upper_line:
+                            target = line.split(":", 1)[1].strip()
+                        else:
+                            other_lines.append(line)
 
+                    content = "\n".join(other_lines).strip()
                     if "retrieve" in action or "read" in action:
-                        user_input = f"/verify {target} read_file"
+                        user_input = f"/read {target}"
                     elif "list" in action:
-                        user_input = f"/verify {target} list_files"
+                        user_input = f"/list {target}"
                     elif "write" in action or "save" in action or "commit" in action:
-                        user_input = f"/verify {target} write_file"
+                        user_input = f"/write {target} {content}"
                     elif "monitor" in action or "status" in action:
                         user_input = "/07"
 
-                parts = user_input.split()
+                try:
+                    parts = shlex.split(user_input)
+                except ValueError:
+                    parts = user_input.split()
+
+                if not parts: continue
                 cmd = parts[0].lower()
                 args = parts[1:]
 
@@ -281,6 +356,8 @@ class ChatVessel:
                 if cmd == "/velocity": self.run_velocity(); continue
                 if cmd == "/backups": self.run_backups(); continue
                 if cmd == "/handshake": self.run_handshake(); continue
+                if cmd in ["/read", "/write", "/patch", "/append", "/list"]:
+                    self.run_tool_command(cmd, args); continue
                 if cmd == "/tools":
                     self.show_tools = not self.show_tools
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")

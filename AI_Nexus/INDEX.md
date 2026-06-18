@@ -26,6 +26,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
 *   **Handshake SOP:** `AI_Nexus/Protocols/HANDSHAKE_SOP.md`
     *   Procedures for the 07 Protocol Salute and 409 Authority Handshake.
+*   **Roleplay Bridge SOP:** `AI_Nexus/Protocols/ROLEPLAY_BRIDGE_SOP.md`
+    *   Guidelines for Persona-Technical integration and anti-stasis.
 *   **SaveSystem Design:** `AI_Nexus/Docs/SaveSystem_Design.md`
     *   Architecture of the Soul/Vessel bridge and the Sandwich Proof.
 *   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`

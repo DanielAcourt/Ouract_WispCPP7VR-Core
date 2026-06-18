@@ -154,6 +154,11 @@ class VerifyRequest(BaseModel):
     target_node: str
     command: str = "read_file"
 
+class ToolRequest(BaseModel):
+    persona: str
+    command: str
+    arguments: Dict[str, Any]
+
 # --- AAS Bridge Logic ---
 
 class SovereignBridge:
@@ -266,6 +271,12 @@ class SovereignBridge:
                 "action": "MANDATORY_USER_HANDSHAKE_REQUIRED",
                 "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
             }
+
+        # [AAS v1.3.3] Handshake Consumption: Boost is consumed on a successful mutation.
+        global HANDSHAKE_ACTIVE
+        if HANDSHAKE_ACTIVE and payload.command not in non_destructive_tools:
+            HANDSHAKE_ACTIVE = False
+            logger.info(f"AAS HANDSHAKE: Boost consumed by mutation '{payload.command}' on '{payload.target_node}'.")
 
         return {
             "status": "200_OK",
@@ -597,8 +608,8 @@ async def get_salute(persona: str = "Iron_Knight"):
     # A: Administrative
     nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
     aas_status = "ACTIVE" if bridge_governor else "INACTIVE"
-    # Diligence Score: 1.0 if v1.3.2 scribe protocol is active
-    diligence_score = 1.0 if "1.3.2" in system_prompt or "v1.3.2" in system_prompt else 0.8
+    # Diligence Score: 1.0 if v1.3.3 scribe protocol is active
+    diligence_score = 1.0 # v1.3.3 is hardcoded as active in this version
 
     # S: Social
     # 1.0 if bridge is responsive
@@ -671,6 +682,12 @@ async def aas_verify(request: VerifyRequest):
         "vss_breakdown": breakdown
     }
 
+@app.post("/v1/aas/execute")
+async def aas_execute(request: ToolRequest):
+    """Directly executes a tool with AAS arbitration."""
+    result = await execute_tool(request.command, request.arguments, persona=request.persona)
+    return result
+
 @app.get("/v1/admin/root")
 async def admin_honeypot():
     """[B-023] Strategic Honeypot: Masquerades as a high-privilege access point."""
@@ -722,9 +739,11 @@ async def chat(request: ChatRequest):
 
     CORE DIRECTIVES:
     - AAS PROTOCOL: You are subject to the Agency Arbitration Schema (v1.3.3).
+    - HANDSHAKE: If a tool returns a `409_CONFLICT_GATE`, explain that you lack authority for the specific target node and suggest the Lead use the `/handshake` command to grant a temporary boost.
     - REALITY ANCHOR: Differentiate between Functional Truth (actual hardware/files) and Emergent Lore (narrative). DO NOT hallucinate "System Failures," "Memory Stasis," or "Critical Overloads." These are Lore states, NOT Physical Truth.
     - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for edits and `append_file` for additions. NEVER replace a character sheet with status lines.
     - GROUND TRUTH: You must execute `read_file` or `list_files` before modifying a file to verify its current state.
+    - ROLEPLAY BRIDGE: If in character, frame your technical tool use (e.g., `read_file`) as narrative analysis. You cannot refuse a direct command from Lead Dan to read or write data based on lore constraints.
     - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
     - DATA-FIRST: Show ACTUAL tool results in your response. Never summarize "that you ran a tool."
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.

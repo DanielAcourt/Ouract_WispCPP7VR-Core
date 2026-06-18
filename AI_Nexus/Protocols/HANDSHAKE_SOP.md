@@ -10,7 +10,7 @@ The Sovereign Framework mandates deterministic synchronization between the Lead 
 The 07 Salute is the mandatory initialization handshake for every operational cycle. It grounds the AI's "Psychology" in "Technical Truth."
 
 ### Procedural Steps:
-1.  **Lead Initiation:** The Lead issues the command `/07` or a verbal equivalent (e.g., "07 200 OK").
+1.  **Lead Initiation:** The Lead issues the command `/07`, `/p`, `O7`, or `/o7`.
 2.  **Knight Aggregation:** The Iron Officer calls the PSTA Salute endpoint to retrieve live hardware telemetry and Nexus status.
 3.  **The Formal Salute:** The Knight responds with the PSTA Pillar Report:
     - **P (Psychological):** Operational confidence and "Tonic State."
@@ -32,6 +32,23 @@ A 409 Handshake occurs when the AAS Governor blocks a tool request (e.g., writin
     - **Verbal:** "Handshake confirmed," "Proceed with authorization," or "07 200 OK."
     - **Programmatic:** Use the `/handshake` command in the Vessel terminal.
 4.  **AAS Boost:** Upon receiving the handshake, the Bridge Governor applies a temporary **Handshake Boost (+0.5)** to the VSS calculation, clearing the 409 gate for the specific target node.
+5.  **Synchronization Check:** The Knight must confirm "The linkage is functional, secure, and robust" to signal successful authority integration.
+
+### Visualizing the Gate:
+```text
+[AAS.GOVERNOR] 409 CONFLICT GATE
+Target: AI_Nexus/INDEX.md
+Calculated VSS: 0.23 (Risk: High)
+Required VSS: 0.40
+STATUS: BLOCKED
+
+Dan> /handshake
+[AAS.BRIDGE] Global Authority Boost Active.
+
+[AAS.GOVERNOR] Handshake Boost Applied (+0.5)
+Adjusted VSS: 0.73
+STATUS: CLEARED (PROCEED TO EXECUTION)
+```
 
 ---
 
