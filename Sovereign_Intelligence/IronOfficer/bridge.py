@@ -113,6 +113,7 @@ load_config()
 NEXUS_PATH = "Unknown"
 HARDWARE_ID = "GTX 5090 (Assumed)"
 IS_HARD_FREEZE = False
+HANDSHAKE_ACTIVE = False
 
 # --- Schemas ---
 class PSTAMetadata(BaseModel):
@@ -183,8 +184,12 @@ class SovereignBridge:
         if self.is_persona_in_memory_zone(payload.persona, payload.target_node):
             memory_boost = 0.5
 
+        # [AAS v1.3.3] Handshake Boost
+        global HANDSHAKE_ACTIVE
+        handshake_boost = 0.5 if HANDSHAKE_ACTIVE else 0.0
+
         alpha, beta, gamma = 1.0, 0.3, 0.2
-        vss = (alpha * credibility) - (beta * risk) - (gamma * deviation) + memory_boost
+        vss = (alpha * credibility) - (beta * risk) - (gamma * deviation) + memory_boost + handshake_boost
         vss = max(0.0, min(1.0, vss))
 
         return {
@@ -633,7 +638,15 @@ async def get_psta_admin():
 
 @app.get("/v1/psta/social")
 async def get_psta_social():
-    return {"status": "Synchronized", "value": 1.0, "bridge_url": f"http://127.0.0.1:{BRIDGE_PORT}"}
+    global HANDSHAKE_ACTIVE
+    return {"status": "Synchronized", "value": 1.0, "bridge_url": f"http://127.0.0.1:{BRIDGE_PORT}", "handshake_active": HANDSHAKE_ACTIVE}
+
+@app.post("/v1/aas/handshake")
+async def execute_handshake():
+    global HANDSHAKE_ACTIVE
+    HANDSHAKE_ACTIVE = True
+    logger.info("AAS HANDSHAKE: Global Authority Boost Active.")
+    return {"status": "200_OK", "message": "Handshake successful. Authority boosted (+0.5)."}
 
 @app.get("/v1/psta/phi")
 async def get_psta_phi(persona: str = "Iron_Knight"):
@@ -712,6 +725,7 @@ async def chat(request: ChatRequest):
     - REALITY ANCHOR: Differentiate between Functional Truth (actual hardware/files) and Emergent Lore (narrative). DO NOT hallucinate "System Failures," "Memory Stasis," or "Critical Overloads." These are Lore states, NOT Physical Truth.
     - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for edits and `append_file` for additions. NEVER replace a character sheet with status lines.
     - GROUND TRUTH: You must execute `read_file` or `list_files` before modifying a file to verify its current state.
+    - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
     - DATA-FIRST: Show ACTUAL tool results in your response. Never summarize "that you ran a tool."
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.

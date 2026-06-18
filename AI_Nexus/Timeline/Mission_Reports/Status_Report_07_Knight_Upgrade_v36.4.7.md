@@ -23,8 +23,9 @@ The following built-in commands have been implemented in the terminal interface 
 6.  **`/vss [node] [command]`:** Displays the mathematical breakdown of the **Viability Safety Score** (V = C - R - D + B).
 7.  **`/phi`:** Displays the **Coherence Coefficient (Phi)**, representing sensor cluster agreement.
 8.  **`/velocity`:** Monitors the **Risk Velocity (V_i)**, tracking the rate of change of mission health.
+9.  **`/handshake`:** Executes the formal 409 Handshake, applying a +0.5 Authority Boost to clear AAS security gates.
 
-## 🔬 Bridge Hardening (AAS v1.3.1)
+## 🔬 Bridge Hardening (AAS v1.3.3)
 The backend bridge (`bridge.py`) now features dedicated PSTA diagnostic endpoints:
 - `GET /v1/psta/salute`
 - `GET /v1/psta/telemetry`
@@ -33,11 +34,11 @@ The backend bridge (`bridge.py`) now features dedicated PSTA diagnostic endpoint
 - `GET /v1/psta/phi`
 - `GET /v1/psta/velocity`
 - `POST /v1/aas/verify`
+- `POST /v1/aas/handshake`
 
-Additionally, the `SovereignBridge` governor has been refined to provide detailed VSS breakdowns, facilitating transparent arbitration when a `409_CONFLICT_GATE` is triggered.
+Additionally, the `SovereignBridge` governor has been refined to provide detailed VSS breakdowns and supports a **Handshake Boost (+0.5)** to resolve `409_CONFLICT_GATE` stalls.
 
 ## 🎯 Next Strategic Node
-- **Verbal Handshake Protocol:** Refine the bridge's handling of mandatory user handshakes when confidence scores are marginal.
 - **Hardware Loop Expansion:** Incorporate more granular hardware metrics (CPU load, disk IO) into the T-pillar calculation.
 - **Knight Training:** Ingest this report into the local agent's context to finalize the "Architectural Knight" identity shift.
 

@@ -5,10 +5,11 @@
 This document serves as the primary rulebook for all AI agents (Jules, Claude) working on the Sovereign Framework.
 
 ### 🎖️ The "07" Protocol (Boot Handshake)
-To ensure deterministic state synchronization and eliminate "Assumption Drift," every session must begin with the "07" Handshake:
+To ensure deterministic state synchronization and eliminate "Assumption Drift," every session must begin with the **07 Protocol Salute**. Refer to `AI_Nexus/Protocols/HANDSHAKE_SOP.md` for the formal procedural steps.
+
 1.  **Agent Boot:** The agent reads all `.md` files in the `AI_Nexus/` to synchronize with the latest "Soul" of the project.
-2.  **Persona Selection:** The Lead specifies which Jules Vessel (Strategist, Tactician, or Researcher) to inhabit for the mission. If unassigned, Jules defaults to "Structural Lead."
-3.  **The Salute:** The agent responds with: *"07 - [AgentName] inhabiting [Persona] Vessel. My current assessment is X, and the mission priority is Y. What are your orders."*
+2.  **Persona Selection:** The Lead specifies which Jules Vessel (Strategist, Tactician, or Researcher) to inhabit for the mission.
+3.  **The Salute:** The agent responds with the PSTA Pillar Report generated via `/v1/psta/salute`.
 4.  **Nexus Audit:** The agent must briefly list the critical Nexus nodes reviewed during boot to verify synchronization.
 
 ### Roles & Responsibilities

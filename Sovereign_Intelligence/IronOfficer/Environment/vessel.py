@@ -62,7 +62,7 @@ class ChatVessel:
         print(f" SOVEREIGN IRON OFFICER | VESSEL v{VESSEL_VERSION}")
         print(f" User: {self.user_name} | Session: {self.session_id}")
         print("="*60)
-        print(" Commands: /07, /t, /s, /a, /verify, /vss, /phi, /velocity, /backups, /report, /status, /tools, /exit")
+        print(" Commands: /07, /p, /t, /s, /a, /verify, /vss, /phi, /velocity, /backups, /handshake, /report, /status, /tools, /exit")
         print("-"*60)
 
     def save_mission_report(self):
@@ -227,6 +227,17 @@ class ChatVessel:
         except Exception as e:
             print(f"\n[07 ERROR] Backup inventory exception: {e}\n")
 
+    def run_handshake(self):
+        try:
+            response = requests.post(f"{BRIDGE_URL}/v1/aas/handshake", timeout=5)
+            data = response.json()
+            print(f"\n[AAS AUTHORITY HANDSHAKE]")
+            print(f" -> STATUS: {data['status']}")
+            print(f" -> MESSAGE: {data['message']}")
+            print("-" * 30 + "\n")
+        except Exception as e:
+            print(f"\n[07 ERROR] Handshake failed: {e}\n")
+
     def run(self):
         self.print_header()
         while True:
@@ -260,7 +271,7 @@ class ChatVessel:
                 if cmd == "/exit": break
                 if cmd == "/report": self.save_mission_report(); continue
                 if cmd == "/status": self.show_status(); continue
-                if cmd == "/07": self.run_salute(); continue
+                if cmd == "/07" or cmd == "/p": self.run_salute(); continue
                 if cmd == "/t": self.run_telemetry(); continue
                 if cmd == "/s": self.run_social(); continue
                 if cmd == "/a": self.run_admin(); continue
@@ -269,6 +280,7 @@ class ChatVessel:
                 if cmd == "/phi": self.run_phi(); continue
                 if cmd == "/velocity": self.run_velocity(); continue
                 if cmd == "/backups": self.run_backups(); continue
+                if cmd == "/handshake": self.run_handshake(); continue
                 if cmd == "/tools":
                     self.show_tools = not self.show_tools
                     print(f"[07] Logs: {'ON' if self.show_tools else 'OFF'}")
