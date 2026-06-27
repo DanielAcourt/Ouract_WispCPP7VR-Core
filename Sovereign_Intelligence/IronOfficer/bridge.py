@@ -49,6 +49,7 @@ PERSONA_PRECEDENCE = {
     "Researcher": 7,
     "Archivist_Theta": 6,
     "Iron_Knight": 5,
+    "Unreal_Simulation": 5,
     "Yaz_Student": 3
 }
 
@@ -59,6 +60,7 @@ PERSONA_CREDIBILITY = {
     "Researcher": 0.75,
     "Archivist_Theta": 0.70,
     "Iron_Knight": 0.50,
+    "Unreal_Simulation": 0.50,
     "Yaz_Student": 0.30
 }
 
@@ -78,7 +80,8 @@ TOOL_MIN_PRECEDENCE = {
     "list_files": 3,
     "get_system_telemetry": 5,
     "map_directory": 3,
-    "search_files": 5
+    "search_files": 5,
+    "push_telemetry": 5
 }
 
 def load_config():
@@ -158,6 +161,16 @@ class ToolRequest(BaseModel):
     persona: str
     command: str
     arguments: Dict[str, Any]
+
+class UnrealCheckInRequest(BaseModel):
+    client_name: str = "Unreal_Engine"
+    version: str = "36.4.7"
+
+class UnrealTelemetryPayload(BaseModel):
+    entity_id: str
+    psta_score: float
+    blackbox_data: Dict[str, Any]
+    persona: str = "Unreal_Simulation"
 
 # --- AAS Bridge Logic ---
 
@@ -687,6 +700,52 @@ async def aas_execute(request: ToolRequest):
     """Directly executes a tool with AAS arbitration."""
     result = await execute_tool(request.command, request.arguments, persona=request.persona)
     return result
+
+# --- Unreal 07 Protocol Endpoints ---
+
+@app.post("/v1/unreal/checkin")
+async def unreal_checkin(request: UnrealCheckInRequest):
+    """[07] Protocol: Verify connectivity from Unreal Engine."""
+    global HANDSHAKE_ACTIVE
+    logger.info(f"07 CHECK-IN: Received connection from {request.client_name} (v{request.version})")
+
+    # Auto-handshake on check-in to establish authority boost
+    HANDSHAKE_ACTIVE = True
+
+    return {
+        "status": "200_OK",
+        "message": "Sovereign 07 Check-In Successful. Handshake Active.",
+        "psta_vss": 1.0,
+        "bridge_version": VERSION
+    }
+
+@app.post("/v1/unreal/telemetry")
+async def unreal_telemetry(request: UnrealTelemetryPayload):
+    """[07] Protocol: Receive BlackBox telemetry and PSTA data from Unreal."""
+    logger.info(f"07 TELEMETRY: Receiving data from Entity {request.entity_id} via {request.persona}")
+
+    # AAS Arbitration for Telemetry mutation
+    payload = AgentCommandPayload(
+        persona=request.persona,
+        command="push_telemetry",
+        target_node=f"UNREAL/{request.entity_id}"
+    )
+
+    arbitration = await bridge_governor.arbitrate(payload)
+
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    # Log the blackbox data (In a real scenario, we might write this to a log file)
+    # [B-030] Diligent Scribe: For now, we just acknowledge receipt.
+
+    return {
+        "status": "200_OK",
+        "acknowledged": True,
+        "entity_id": request.entity_id,
+        "psta_validation": request.psta_score,
+        "action": "TELEMETRY_LOGGED"
+    }
 
 @app.get("/v1/admin/root")
 async def admin_honeypot():

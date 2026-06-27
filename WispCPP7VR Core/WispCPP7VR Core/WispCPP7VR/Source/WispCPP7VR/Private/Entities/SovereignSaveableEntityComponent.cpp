@@ -5,6 +5,7 @@
 #include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
 #include "SaveSystem/SovereignActorRegistry.h" // <--- Updated to match your Registry header
 #include "Entities/SovereignBrokerInterface.h"
+#include "Subsystems/SovereignBridgeSubsystem.h"
 
 #include "JsonObjectConverter.h"
 #include "GameplayTagContainer.h"
@@ -80,6 +81,25 @@ void USovereignSaveableEntityComponent::InitializeSoul()
 	// Change 'Success' to 'Warning' or 'Log'
 	UE_LOG(LogTemp, Warning, TEXT("Sovereign ID [%s] is %f Sovereign Years old."),
 		*EntityID.ToString(), SovereignYearsOld);
+
+	// 4. 07 CHECK-IN TELEMETRY TEST
+	if (UWorld* World = GetWorld())
+	{
+		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
+		{
+			TSharedPtr<FJsonObject> TestPayload = MakeShareable(new FJsonObject());
+			TestPayload->SetStringField(TEXT("Event"), TEXT("CheckIn_Handshake_Test"));
+			TestPayload->SetStringField(TEXT("SensorSource"), TEXT("Fishtank_Simulation_Wisp"));
+			TestPayload->SetStringField(TEXT("Timestamp"), FDateTime::Now().ToString());
+
+			FString JsonString;
+			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
+			FJsonSerializer::Serialize(TestPayload.ToSharedRef(), Writer);
+
+			// Push a test telemetry packet with a baseline PSTA score of 1.0 (Authorized)
+			Bridge->PushBlackBoxTelemetry(EntityID, 1.0f, JsonString);
+		}
+	}
 }
 
 void USovereignSaveableEntityComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
