@@ -1,2 +1,3 @@
-2026/06/17-12:12:09.174 b104 Creating DB D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb since it was missing.
-2026/06/17-12:12:09.186 b104 Reusing MANIFEST D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/27-11:36:39.617 b844 Reusing MANIFEST D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/27-11:36:39.621 b844 Recovering log #3
+2026/06/27-11:36:39.623 b844 Reusing old log D:\Robotics\OuractMain\Ouract_WispCPP7VR-Core\WispCPP7VR Core\WispCPP7VR Core\WispCPP7VR\Saved\webcache_6613\Default\Local Storage\leveldb/000003.log 
