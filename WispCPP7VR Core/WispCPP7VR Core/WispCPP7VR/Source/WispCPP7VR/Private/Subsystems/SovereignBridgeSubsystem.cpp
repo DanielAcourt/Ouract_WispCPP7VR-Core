@@ -1,5 +1,7 @@
 // Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE).
 
+// // [J] Tactical Implementation of the 07 Handshake and Telemetry Pipeline. 2025-06-18
+
 #include "Subsystems/SovereignBridgeSubsystem.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
@@ -56,6 +58,7 @@ FString USovereignBridgeSubsystem::GetConfigPath() const
 
 void USovereignBridgeSubsystem::Perform07CheckIn()
 {
+    // // [J] The 07 Protocol ensures we boot up and 'check in' with the Lead's GTX 5090 before simulation starts.
     UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Initiating 07 Protocol Check-In..."));
 
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();

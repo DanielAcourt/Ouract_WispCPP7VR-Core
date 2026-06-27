@@ -32,6 +32,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Architecture of the Soul/Vessel bridge and the Sandwich Proof.
 *   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
     *   Hardening standards and verification SOPs for the Soul/Vessel bridge.
+*   **07 Bridge Integration:** `AI_Nexus/Docs/07_Unreal_Bridge_Integration.md`
+    *   Setup and implementation guide for the 07 Protocol sync between Unreal and the Iron Officer.
 *   **Quick Reference:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`
     *   Immediate actions for critical system failures.
 

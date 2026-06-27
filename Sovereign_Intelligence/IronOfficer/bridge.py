@@ -702,6 +702,7 @@ async def aas_execute(request: ToolRequest):
     return result
 
 # --- Unreal 07 Protocol Endpoints ---
+# // [J] Initialized the 07 Simulation Bridge to bridge the gap between Local Hardware and the Virtual Simulation. 2025-06-18
 
 @app.post("/v1/unreal/checkin")
 async def unreal_checkin(request: UnrealCheckInRequest):
@@ -721,7 +722,10 @@ async def unreal_checkin(request: UnrealCheckInRequest):
 
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
-    """[07] Protocol: Receive BlackBox telemetry and PSTA data from Unreal."""
+    """
+    [07] Protocol: Receive BlackBox telemetry and PSTA data from Unreal.
+    // [J] This endpoint acts as the "Truth Ingest" for simulation data, ensuring every packet is mathematically arbitrated.
+    """
     logger.info(f"07 TELEMETRY: Receiving data from Entity {request.entity_id} via {request.persona}")
 
     # AAS Arbitration for Telemetry mutation

@@ -2,6 +2,8 @@
 
 #pragma once
 
+// // [J] The 07 Bridge Subsystem: Connecting the simulation soul to the architectural engine. 2025-06-18
+
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "Interfaces/IHttpRequest.h"
