@@ -1,6 +1,7 @@
 {
     "identity": "Iron Officer",
-    "version": "0.36.3.1MABackup",
+    "version": "36.4.7",
+    "initialization_message": "Archivist Persona \u0398 online. Thoughts scrambled; ready to structure them.",
     "user_preference": {
         "name": "Dan",
         "theme": "dark"
@@ -29,11 +30,21 @@
         "host": "0.0.0.0",
         "port": 8000,
         "read_zones": [
-            "."
+            ".",
+            "E:\\IronKnight"
         ],
         "write_zones": [
             "Sovereign_Intelligence/IronOfficer/Environment",
-            "AI_Nexus"
-        ]
+            "AI_Nexus",
+            "E:\\IronKnight"
+        ],
+        "persona_zones": {
+            "Iron_Knight": [
+                "Sovereign_Intelligence/IronKnight_Memory",
+                "IronKnight/",
+                "E:\\IronKnight",
+                "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
+            ]
+        }
     }
 }

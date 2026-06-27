@@ -1,7 +1,9 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 0.36.3.1MABackup. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-18
 """
 Sovereign Framework: Iron Officer Verification Script
-Run this to test the connection between the Bridge, Ollama, and your GTX 5090.
+------------------------------------------------------
+Verifies the Social (S) and Technical (T) pillars by testing the communication link
+between the Vessel, Bridge, and Ollama.
 """
 
 import requests
@@ -10,48 +12,48 @@ import json
 BRIDGE_URL = "http://127.0.0.1:8000"
 
 def test_bridge_health():
-    print("--- Testing Bridge Health ---")
+    """Checks if the FastAPI bridge is active and reporting identity correctly."""
+    print("--- 1. Testing Bridge Health (Social Pillar) ---")
     try:
         response = requests.get(BRIDGE_URL)
         print(f"Status: {response.status_code}")
-        print(f"Response: {response.json()}")
+        print(f"Identity: {response.json().get('identity', 'Unknown')}")
+        print(f"Hardware: {response.json().get('hardware', 'Unknown')}")
     except Exception as e:
         print(f"[07 ERROR] Connection to Bridge failed: {e}")
         if "10061" in str(e):
             print(">>> SOLUTION: Run 'run_bridge.bat' first.")
-        elif "10048" in str(e):
-            print(">>> SOLUTION: Another bridge is already running. Check Task Manager.")
 
 def check_ollama_models():
-    print("\n--- Checking Ollama Models ---")
+    """Checks if the Bridge can query the local Ollama instance for model parity."""
+    print("\n--- 2. Checking Ollama Models (Technical Pillar) ---")
     try:
         response = requests.get(f"{BRIDGE_URL}/v1/ollama/status")
         if response.status_code == 200:
             models = response.json().get('models', [])
             model_names = [m['name'] for m in models]
-            print(f"Found Models: {model_names}")
-            if "llama3:70b" not in model_names:
-                print("[WARNING] 'llama3:70b' not found in Ollama. Evaluation might fail.")
-                print("Run: 'ollama pull llama3:70b' in a CMD window.")
+            print(f"Detected Models: {model_names}")
         else:
             print(f"Error: {response.json()}")
     except Exception as e:
         print(f"[07 ERROR] Bridge cannot talk to Ollama: {e}")
-        print(">>> SOLUTION: Ensure Ollama is running in the Windows System Tray.")
+        print(">>> SOLUTION: Ensure Ollama is running (check system tray).")
 
 def test_vss_evaluation():
-    print("\n--- Testing VSS Evaluation (Ollama + 5090) ---")
+    """Performs a live VSS evaluation using the target model to verify GPU inference."""
+    print("\n--- 3. Testing VSS Evaluation (GTX 5090 Inference) ---")
     telemetry = [
         {"pillar": "T", "value": 0.9, "metadata": {"temp": "nominal"}},
-        {"pillar": "P", "value": 0.4, "metadata": {"stress": "high"}}
+        {"pillar": "P", "value": 1.0, "metadata": {"confidence": "optimal"}}
     ]
     payload = {
         "telemetry": telemetry,
-        "context": "Simulated stress test on the Lead's machine."
+        "context": "Architectural integrity verification."
     }
 
     try:
-        response = requests.post(f"{BRIDGE_URL}/v1/safety/evaluate", json=payload)
+        # Note: This may take a few seconds as it wakes up the GPU
+        response = requests.post(f"{BRIDGE_URL}/v1/safety/evaluate", json=payload, timeout=30)
         print(f"Status: {response.status_code}")
         if response.status_code == 200:
             print("Iron Officer Analysis:")
@@ -60,7 +62,7 @@ def test_vss_evaluation():
             print("Error Details:")
             print(json.dumps(response.json(), indent=2))
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Inference Error: {e}")
 
 if __name__ == "__main__":
     test_bridge_health()

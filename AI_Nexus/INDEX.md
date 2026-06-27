@@ -7,7 +7,9 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 
 ## 🏛️ Sovereign Intelligence Hierarchy (SSoT)
 
-### **Level 0: Timeline & Evolution**
+### **Level 0: Foundation & Evolution**
+*   **Archivist Persona Θ:** `AI_Nexus/Identity/Archivist_Theta.md`
+    *   The foundational Philosophical Computation-Monk identity (Level 0 Core).
 *   **Primary Source:** `AI_Nexus/Timeline/MD.md`
     *   Tracks the project's historical context, long-term vision, and roadmap.
 *   **Updates:** `AI_Nexus/Timeline/Updates.md`
@@ -22,10 +24,16 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
     *   Workflow standards for multi-agent cooperation.
 *   **Command SOP:** `AI_Nexus/Protocols/COMMAND_SOP.md`
     *   Sun Tzu-inspired protocol for clear delegation (Why, What, How).
+*   **Handshake SOP:** `AI_Nexus/Protocols/HANDSHAKE_SOP.md`
+    *   Procedures for the 07 Protocol Salute and 409 Authority Handshake.
+*   **Roleplay Bridge SOP:** `AI_Nexus/Protocols/ROLEPLAY_BRIDGE_SOP.md`
+    *   Guidelines for Persona-Technical integration and anti-stasis.
 *   **SaveSystem Design:** `AI_Nexus/Docs/SaveSystem_Design.md`
     *   Architecture of the Soul/Vessel bridge and the Sandwich Proof.
 *   **SaveSystem Setup:** `AI_Nexus/Protocols/SAVESYSTEM_SETUP_GUIDE.md`
     *   Hardening standards and verification SOPs for the Soul/Vessel bridge.
+*   **07 Bridge Integration:** `AI_Nexus/Docs/07_Unreal_Bridge_Integration.md`
+    *   Setup and implementation guide for the 07 Protocol sync between Unreal and the Iron Officer.
 *   **Quick Reference:** `AI_Nexus/Protocols/SAVESYSTEM_QUICK_FIX_REFERENCE.md`
     *   Immediate actions for critical system failures.
 
@@ -37,6 +45,8 @@ This index serves as the definitive map for the **Sovereign Intelligence Hierarc
 *   **Persona: Strategist (The Commander):** `AI_Nexus/Identity/Jules_Strategist.md`
     *   Architectural Visionary (ENTJ) for high-level roadmap and strategy.
 *   **Persona: Tactician (The Clockwork):** `AI_Nexus/Identity/Jules_Tactician.md`
+*   **Agency Arbitration Schema (AAS):** `AI_Nexus/Protocols/AAS_Protocol.md`
+        *   Defines conflict resolution paths and execution precedence across all AI agents.
     *   Systems Architect (ISTJ/INTJ) for C++ implementation and DevOps.
 *   **Persona: Researcher (The Alchemist):** `AI_Nexus/Identity/Jules_Researcher.md`
     *   Knowledge Ingestion (INTP) for research and experimental logic.
