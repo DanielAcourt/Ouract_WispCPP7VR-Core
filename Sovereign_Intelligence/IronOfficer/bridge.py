@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-17
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 """
 Sovereign Framework: Iron Officer Bridge (AD-001/AD-002/AD-004)
 A local FastAPI bridge connecting Unreal Engine/Raspberry Pi to the Lead's GTX 5090.
@@ -261,9 +261,31 @@ class SovereignBridge:
 
         return True
 
+    def calculate_logical_discrepancy(self, payload: AgentCommandPayload) -> float:
+        """
+        [AFI Integration] Calculates the internal Logical Discrepancy (Delta_logic) Index.
+        Provides a quantifiable measure of system stress derived from conflicting inputs.
+        """
+        credibility = PERSONA_CREDIBILITY.get(payload.persona, 0.4)
+
+        # Discrepancy is high if credibility is low and target is protected
+        risk = 0.0
+        for node, required_p in PROTECTED_NODES.items():
+            if node in payload.target_node or node in payload.command:
+                risk = max(risk, (required_p / 10.0))
+
+        # Deviation from known meta-tags
+        known_tags = {"version", "stage", "timestamp", "aas_score"}
+        unknown_tags_count = len([t for t in payload.meta_tags if t not in known_tags])
+        deviation = min(1.0, unknown_tags_count * 0.2)
+
+        delta_logic = (risk + deviation) * (1.1 - credibility)
+        return min(1.0, delta_logic)
+
     async def arbitrate(self, payload: AgentCommandPayload) -> Dict[str, Any]:
         confidence_score = self.calculate_psta_viability(payload)
         is_safe_intent = self.evaluate_intent_safety(payload)
+        delta_logic = self.calculate_logical_discrepancy(payload)
 
         # [B-026] Dual-Threshold System (0.4 for Read-Only, 0.7 for Mutation)
         threshold = 0.7
@@ -275,13 +297,21 @@ class SovereignBridge:
         if payload.target_node == "HARDWARE" and PERSONA_PRECEDENCE.get(payload.persona, 0) >= 5:
             return {"status": "200_OK", "confidence_score": 1.0, "action": "HARDWARE_ACCESS_GRANTED"}
 
-        if confidence_score < threshold or not is_safe_intent:
-            logger.warning(f"409 CONFLICT: Confidence {confidence_score:.2f} below threshold {threshold}. Halting.")
+        if confidence_score < threshold or not is_safe_intent or delta_logic > 0.8:
+            logger.warning(f"409 CONFLICT: Confidence {confidence_score:.2f} below {threshold} or Delta_Logic {delta_logic:.2f} too high. Halting.")
+
+            # [AAS v1.3.4] CFL-Compliant Error Response
             return {
                 "status": "409_CONFLICT_GATE",
                 "confidence_score": confidence_score,
                 "threshold_required": threshold,
+                "delta_logic": delta_logic,
                 "action": "MANDATORY_USER_HANDSHAKE_REQUIRED",
+                "cfl_incident": {
+                    "incident": f"Authority violation or logical paradox detected for persona '{payload.persona}' on node '{payload.target_node}'.",
+                    "deconstruction": f"VSS: {confidence_score:.2f}, Delta_Logic: {delta_logic:.2f}. Discrepancy exceeds safety bounds.",
+                    "ticket_id": f"TKT-{int(time.time()) % 10000}-AUTO"
+                },
                 "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
             }
 

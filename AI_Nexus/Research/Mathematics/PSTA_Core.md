@@ -88,7 +88,7 @@ To account for logic-breaking events identified via the **CFL Protocol**, the sy
     $$VSS_{adj} = VSS \cdot (1 - \Xi)$$
     Where $\Xi \in [0, 1]$ is the **Paradox Density** reported by the Researcher.
 
-### 3.4 Technical (T) Hardening: Physical Truth vs. Simulated State
+### 3.3 Technical (T) Hardening: Physical Truth vs. Simulated State
 The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware sensors) and **Simulated State** (Gamified variables).
 
 *   **Physical Truth (The Black Box):** High-fidelity logs derived from real-world sensors (Lidar, IoT Telemetry). This is the only source of truth for PSTA integrity verification.
@@ -96,12 +96,12 @@ The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware 
 *   **The "Sandwich" Proof:** By successfully persisting unknown tags (e.g., `Sandwhich: True`), the system demonstrates its ability to act as a **Deterministic Data Bridge** for both real-world sensors and simulated metadata.
 *   **Namespace Scoping:** Data is scoped (e.g., `Telemetry.*` for Truth vs. `Qi.*` for Simulation). This ensures the PSTA system only assesses risk based on physical telemetry while maintaining the gamified simulation.
 
-### 3.5 Automated Discovery Layer (Vision Integration)
+### 3.4 Automated Discovery Layer (Vision Integration)
 To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spatial sensors (Computer Vision/Lidar):
 *   **Semantic Transcription:** Objects identified via Image Recognition (e.g., a "High-Voltage Hazard") are automatically registered as $x_{ij}$ factors in the **Administrative (A)** or **Technical (T)** dimensions.
 *   **Autonomous Priority Mapping:** Known visual archetypes carry pre-defined impact weights, allowing the system to scale its risk assessment without manual human input.
 
-### 3.6 Classification and Threshold Mapping
+### 3.5 Classification and Threshold Mapping
 The system maps the continuous VSS score to a discrete operational status.
 
 | Status | Range | Logic with "Unknown" Discovery |
