@@ -214,6 +214,12 @@ void USovereignSaveableEntityComponent::AddUnknownTag(FString Key, FString Value
 {
 	UnknownMetaTags.Add(Key, Value);
 
+	// Paradox Density: If we encounter 'Paradox' or 'Conflict' tags, or unverified 'Unknown' values, increase density.
+	if (Key.Contains(TEXT("Paradox")) || Key.Contains(TEXT("Conflict")) || Value.Equals(TEXT("Unknown"), ESearchCase::IgnoreCase))
+	{
+		ParadoxDensity = FMath::Clamp(ParadoxDensity + 0.1f, 0.0f, 1.0f);
+	}
+
 	// Delegate to brokers for real-time processing (e.g. Lidar Manifest)
 	TMap<FString, FString> SingleTagMap;
 	SingleTagMap.Add(Key, Value);

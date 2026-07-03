@@ -6,6 +6,7 @@
 #include "SaveSystem/SovereignGameData.h" // <--- ADD THIS LI
 
 #include "Interaction/SovereignSaveInterface.h"
+#include "Interaction/SovereignEntityInterface.h"
 
 #include "SovereignSaveableEntityComponent.generated.h"
 
@@ -15,7 +16,7 @@ class FJsonObject;
 class ISovereignBrokerInterface;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent
+class WISPCPP7VR_API USovereignSaveableEntityComponent : public UActorComponent, public ISovereignEntityInterface
 {
     GENERATED_BODY()
 
@@ -141,6 +142,14 @@ public:
     /** Toggles the visibility/active state of the Cultivation layer */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Reality")
     bool bMagicLayerActive = true;
+
+    /** The density of logical paradoxes within this entity (0.0 = Pure Truth, 1.0 = Total Paradox) */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Reality")
+    float ParadoxDensity = 0.0f;
+
+    /** ISovereignEntityInterface Implementation */
+    virtual USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return const_cast<USovereignSaveableEntityComponent*>(this); }
+    virtual float GetSystemConfidence_Implementation() const override { return 1.0f - ParadoxDensity; }
 
 protected:
     /** Calculates multipliers based on the 3-axis interaction */

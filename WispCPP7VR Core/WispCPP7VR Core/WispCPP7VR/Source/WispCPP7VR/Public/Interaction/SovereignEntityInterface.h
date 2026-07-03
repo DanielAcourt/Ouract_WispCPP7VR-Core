@@ -48,5 +48,9 @@ public:
 	/** Returns the mesh so the Wisp knows where the "Physical Center" is. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
 	UPrimitiveComponent* GetPrimaryMesh() const;
+
+	/** Returns the System Confidence score (1 - ParadoxDensity) */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Sovereign|Interface")
+	float GetSystemConfidence() const;
 public:
 };
