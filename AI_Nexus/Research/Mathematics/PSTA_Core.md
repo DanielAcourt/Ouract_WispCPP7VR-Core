@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 # Research Node: PSTA Core (Provable Trust Framework)
 
 ## 🔬 1. The Philosophical "Why"
@@ -14,7 +14,7 @@ The system monitors four core dimensions to determine total mission health:
 *   **Psychological (P):** Internal human variables (cognitive load, stress, biometric data).
 *   **Social (S):** Inter-agent dynamics (trust, cohesion, communication latency).
 *   **Technical (T):** Hard constraints (hardware health, sensor drift, latency).
-*   **Administrative (A):** Soft constraints (policy compliance, budget variance).
+*   **Administrative (A):** Soft constraints (policy compliance, budget variance, and temporal authority).
 
 ### 2.2 Dimension Health ($D_i$) & $N$-Bit Topology
 The Dimension Score $D_i \in [0, 1]$ represents the overall health of a single dimension. To account for sensor redundancy and prevent hardware glitches from triggering false aborts, factors are refactored into **$N$-Bit Sensor Clusters**.
@@ -78,7 +78,17 @@ $$t_{caut, adj} = t_{caut, base} + \gamma \cdot \left( \frac{U_W}{W_{total}} \ri
 
 Where **Epistemic Skepticism ($\gamma$)** is a sensitivity factor determining the aggressiveness of the posture.
 
-### 3.2 Technical (T) Hardening: Physical Truth vs. Simulated State
+### 3.2 Epistemic Paradox & Temporal Authority (E)
+To account for logic-breaking events identified via the **CFL Protocol**, the system incorporates **Paradox Penalties**.
+
+*   **Temporal Anchor Violation:** If the internal simulation time deviates from the **External Temporal Anchor** (Lead Mandate), the **Administrative (A)** pillar is penalized by a factor of $\Psi_{temp}$.
+    $$\Psi_{temp} = |T_{sim} - T_{anchor}| \cdot \lambda$$
+    Where $\lambda$ is the Temporal Rigidity constant.
+*   **Logical Inconsistency ($\Xi$):** Represents the presence of unresolvable paradoxes (e.g., The Liar Paradox) within the active SDK configuration.
+    $$VSS_{adj} = VSS \cdot (1 - \Xi)$$
+    Where $\Xi \in [0, 1]$ is the **Paradox Density** reported by the Researcher.
+
+### 3.3 Technical (T) Hardening: Physical Truth vs. Simulated State
 The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware sensors) and **Simulated State** (Gamified variables).
 
 *   **Physical Truth (The Black Box):** High-fidelity logs derived from real-world sensors (Lidar, IoT Telemetry). This is the only source of truth for PSTA integrity verification.
@@ -86,12 +96,12 @@ The **Technical (T)** pillar distinguishes between **Absolute Truth** (Hardware 
 *   **The "Sandwich" Proof:** By successfully persisting unknown tags (e.g., `Sandwhich: True`), the system demonstrates its ability to act as a **Deterministic Data Bridge** for both real-world sensors and simulated metadata.
 *   **Namespace Scoping:** Data is scoped (e.g., `Telemetry.*` for Truth vs. `Qi.*` for Simulation). This ensures the PSTA system only assesses risk based on physical telemetry while maintaining the gamified simulation.
 
-### 3.3 Automated Discovery Layer (Vision Integration)
+### 3.4 Automated Discovery Layer (Vision Integration)
 To mitigate the "Labor of Labeling," the Sovereign Framework integrates with spatial sensors (Computer Vision/Lidar):
 *   **Semantic Transcription:** Objects identified via Image Recognition (e.g., a "High-Voltage Hazard") are automatically registered as $x_{ij}$ factors in the **Administrative (A)** or **Technical (T)** dimensions.
 *   **Autonomous Priority Mapping:** Known visual archetypes carry pre-defined impact weights, allowing the system to scale its risk assessment without manual human input.
 
-### 3.3 Classification and Threshold Mapping
+### 3.5 Classification and Threshold Mapping
 The system maps the continuous VSS score to a discrete operational status.
 
 | Status | Range | Logic with "Unknown" Discovery |
