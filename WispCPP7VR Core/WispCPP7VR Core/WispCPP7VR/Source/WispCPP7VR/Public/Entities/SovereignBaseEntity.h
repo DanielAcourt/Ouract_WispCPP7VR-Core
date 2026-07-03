@@ -26,7 +26,11 @@ class UStaticMeshComponent;
 // But not the mating and more Advance options
 
 UCLASS()
+<<<<<<< Updated upstream
 class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
+=======
+class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public ISovereignEntityInterface
+>>>>>>> Stashed changes
 {
 	GENERATED_BODY()
 
