@@ -5,32 +5,25 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
-#include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
+#include "SaveSystem/SovereignGameData.h"
+#include "DataTables/SovereignSpeciesData.h"
 
-#include "GameplayTagContainer.h" //Lets us read Gameplay tags
+#include "GameplayTagContainer.h"
 #include "GameplayTagAssetInterface.h" 
 
-#include "interaction/SovereignEntityInterface.h"
+#include "Interaction/SovereignEntityInterface.h"
 
-#include "SovereignBaseEntity.generated.h" //Must be last
+#include "SovereignBaseEntity.generated.h"
 
-// Forward declarations to keep compile times fast
 class USovereignSaveableEntityComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
 
-
-//The problem with this current approach is i start by inheriting from ACharacter,
-// what we reaslly need is a base which is AActor and APawn and has this interaction.
-// But not the mating and more Advance options
-
+/**
+ * ASovereignBaseEntity: Base class for all possessable simulation entities.
+ */
 UCLASS()
-<<<<<<< Updated upstream
-class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
-=======
 class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public ISovereignEntityInterface
->>>>>>> Stashed changes
 {
 	GENERATED_BODY()
 
@@ -78,7 +71,7 @@ protected:
 	bool bCanBePossessed = true;
 
 	/** Calculates the float delay based on the UpdateFrequency enum */
-	float GetHeartbeatInterval() const; // Add this line!
+	float GetHeartbeatInterval() const;
 
 	// --- Components ---
 
@@ -94,7 +87,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
 	TArray<UStaticMesh*> GrowthMeshes;
 
-	// Add the TrustSignature back here if you want to solve that C2039 error properly
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
 	int32 TrustSignature = 0;
 
@@ -119,7 +111,6 @@ protected:
 
 	/** The 'Passport' for this entity's species and trust level */
 	/** The "Advanced" data asset defining growth stages, health, and species attributes */
-	// Note: class keyword here handles the forward declaration inline
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data", meta = (AllowPrivateAccess = "true"))
 	class USovereignSpeciesData* SpeciesData;
 

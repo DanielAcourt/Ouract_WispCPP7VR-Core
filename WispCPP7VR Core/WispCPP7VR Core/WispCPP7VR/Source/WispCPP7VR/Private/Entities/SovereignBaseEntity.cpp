@@ -558,13 +558,11 @@ float ASovereignBaseEntity::GetHeartbeatInterval() const
     }
 }
 
-/*
 USovereignSaveableEntityComponent* ASovereignBaseEntity::GetSovereignSoul_Implementation() const
 {
     // Simply return the component we already have!
     return SaveDataComponent;
 }
-*/
 
 //Put end at the bottem makes sense?
 void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)

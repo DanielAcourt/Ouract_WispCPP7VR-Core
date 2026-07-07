@@ -10,63 +10,72 @@
 #include "Interfaces/IHttpResponse.h"
 #include "SovereignBridgeSubsystem.generated.h"
 
+// Forward declaration for entity registration tracking
+class USovereignSaveableEntityComponent;
+
 /**
- * FSovereignChatLog: Represents a single tool execution log entry.
+ * FSovereignChatLog: Represents a single tool execution log entry returned by the Iron Officer.
  */
 USTRUCT(BlueprintType)
 struct FSovereignChatLog
 {
     GENERATED_BODY()
 
+    /** The name of the tool executed (e.g., "get_system_telemetry") */
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
     FString ToolName;
 
+    /** A snippet of the tool's execution result for UI display */
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
     FString ResultSnippet;
 };
 
 /**
- * FSovereignChatResponse: Data returned from the Iron Officer Bridge in response to a chat message.
+ * FSovereignChatResponse: Data returned from the Iron Officer Bridge in response to a simulation chat.
  */
 USTRUCT(BlueprintType)
 struct FSovereignChatResponse
 {
     GENERATED_BODY()
 
+    /** The text response from the AI */
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
     FString Content;
 
+    /** Diagnostic logs for any tools the AI executed to fulfill the request */
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
     TArray<FSovereignChatLog> ToolLogs;
 };
 
 /**
- * FSovereignChatMessage: Represents a message in the chat history.
+ * FSovereignChatMessage: Represents a single message in the chat history.
  */
 USTRUCT(BlueprintType)
 struct FSovereignChatMessage
 {
     GENERATED_BODY()
 
+    /** Role of the messenger: "user" or "assistant" */
     UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
-    FString Role; // "user" or "assistant"
+    FString Role;
 
+    /** Content of the message */
     UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
     FString Content;
 
+    /** Optional name/persona of the sender (e.g., SIM_MyActor) */
     UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
     FString Name;
 };
 
+/** Delegate broadcasted when the bridge responds to a chat request */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSovereignChatResponse&, Response);
 
 /**
  * USovereignBridgeSubsystem: Manages communication between Unreal and the Iron Officer Bridge.
- * Implements the 07 Check-In and Telemetry protocols.
+ * Implements the 07 Protocol, Telemetry pipelines, and Simulation Chat.
  */
 UCLASS()
-class USovereignSaveableEntityComponent;
-
 class WISPCPP7VR_API USovereignBridgeSubsystem : public UWorldSubsystem
 {
     GENERATED_BODY()
@@ -127,6 +136,7 @@ private:
         FString BlackBoxJson;
     };
 
+    /** Queue for telemetry data sent before the initial handshake completes */
     TArray<FPendingTelemetry> TelemetryQueue;
 
     /** Active entities currently registered in the simulation */

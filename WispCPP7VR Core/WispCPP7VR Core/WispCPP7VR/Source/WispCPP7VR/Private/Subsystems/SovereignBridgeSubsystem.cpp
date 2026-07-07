@@ -3,6 +3,7 @@
 // // [J] Tactical Implementation of the 07 Handshake and Telemetry Pipeline. 2025-06-18
 
 #include "Subsystems/SovereignBridgeSubsystem.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -15,6 +16,7 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Initializing..."));
     LoadConfiguration();
 
     // Auto-initiate 07 Check-In upon world start
@@ -23,6 +25,9 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void USovereignBridgeSubsystem::Deinitialize()
 {
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Deinitializing. Clearing %d registered entities."), RegisteredSovereignEntities.Num());
+    RegisteredSovereignEntities.Empty();
+
     Super::Deinitialize();
 }
 
@@ -82,6 +87,8 @@ void USovereignBridgeSubsystem::Perform07CheckIn()
 void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
 {
     // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Outgoing Chat from Simulation Actor [%s]."), *ActorName);
+
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->OnProcessRequestComplete().BindUObject(this, &USovereignBridgeSubsystem::OnChatResponse);
     Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/chat"));
@@ -265,7 +272,7 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
             FSovereignChatResponse ChatResponse;
             ChatResponse.Content = JsonObject->GetStringField(TEXT("response"));
 
-            // Parse tool logs for diagnostics
+            // // [J] Parsing diagnostic tool logs returned from the Iron Officer Bridge. 2025-06-18
             const TArray<TSharedPtr<FJsonValue>>* ToolLogsArray;
             if (JsonObject->TryGetArrayField(TEXT("tool_logs"), ToolLogsArray))
             {
@@ -275,19 +282,18 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
                     if (LogObj.IsValid())
                     {
                         FSovereignChatLog LogEntry;
-                        // tool_outputs can be complex objects, so we serialize them to string snippets
                         FString OutputStr;
                         TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputStr);
                         FJsonSerializer::Serialize(LogObj.ToSharedRef(), Writer);
 
-                        LogEntry.ToolName = TEXT("Tool"); // Default if not found in chain
+                        LogEntry.ToolName = TEXT("Tool");
                         LogEntry.ResultSnippet = OutputStr.Left(200);
                         ChatResponse.ToolLogs.Add(LogEntry);
                     }
                 }
             }
 
-            // Cross-reference with tool_chain to get tool names
+            // Cross-reference with tool_chain to resolve functional names
             const TArray<TSharedPtr<FJsonValue>>* ToolChainArray;
             if (JsonObject->TryGetArrayField(TEXT("tool_chain"), ToolChainArray))
             {
@@ -300,16 +306,19 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
                         if (FuncObj.IsValid())
                         {
                             ChatResponse.ToolLogs[i].ToolName = FuncObj->GetStringField(TEXT("name"));
+                            UE_LOG(LogTemp, Log, TEXT("SovereignBridge: AI Executed Tool: %s"), *ChatResponse.ToolLogs[i].ToolName);
                         }
                     }
                 }
             }
 
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Chat Response Received (%d tools executed)"), ChatResponse.ToolLogs.Num());
             OnChatResponseReceived.Broadcast(ChatResponse);
         }
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Chat request failed."));
+        FString ErrorDetail = Response.IsValid() ? FString::Printf(TEXT("Code: %d"), Response->GetResponseCode()) : TEXT("Network Error");
+        UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Simulation Chat FAILED. %s"), *ErrorDetail);
     }
 }

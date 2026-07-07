@@ -33,20 +33,18 @@ void USovereignSaveableEntityComponent::BeginPlay()
 		{
 			Registry->RegisterActor(EntityID, GetOwner());
 		}
+
+		// Register with the Bridge Subsystem for simulation-wide tracking
+		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Component BeginPlay - Requesting Bridge Registration for %s"), *EntityID.ToString());
+			Bridge->RegisterEntity(this);
+		}
 	}
 
 	if (!BirthTimestamp.GetTicks())
 	{
 		BirthTimestamp = FDateTime::Now(); // Only set if this is a brand new soul
-	}
-
-	// Register with the Bridge Subsystem for simulation-wide tracking
-	if (World)
-	{
-		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
-		{
-			Bridge->RegisterEntity(this);
-		}
 	}
 }
 

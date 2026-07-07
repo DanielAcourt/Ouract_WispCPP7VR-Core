@@ -813,6 +813,9 @@ async def unreal_chat(request: UnrealChatRequest):
     // [J] This endpoint provides a dedicated channel for simulation-born entities to interact with the architectural knight.
     """
     sim_persona = f"SIM_{request.actor_name}"
+
+    # [AD-007] Simulation-specific trace logging
+    logger.info(f"07 SIM CHAT: {sim_persona} initiated dialogue.")
     raw_message = request.message
 
     logger.info(f"07 SIM CHAT: {sim_persona} -> {raw_message}")
@@ -851,12 +854,19 @@ async def unreal_chat(request: UnrealChatRequest):
 
     messages = [{"role": "system", "content": system_prompt}] + chat_history
 
+    # [AD-007] Deep Trace: Log the full prompt context for AI Dev debugging
+    logger.debug(f"07 TRACE: Full Message Chain: {json.dumps(messages, indent=2)}")
+
     try:
         response_data = await process_chat_request(current_model, messages, tools, persona="Unreal_Simulation")
 
         # [AD-006] Handle Remote History Storage
         if request.enable_remote_history or REMOTE_HISTORY_ENABLED:
+            # Archive the session including the new response
             save_chat_history(sim_persona, messages + [response_data["result"]["message"]])
+
+        # [AD-007] Trace Log: Summary of interaction
+        logger.info(f"07 SIM RESPONSE: {sim_persona} received AI response. Tools triggered: {len(response_data['tool_chain'])}")
 
         return {
             "status": "200_OK",
@@ -869,26 +879,26 @@ async def unreal_chat(request: UnrealChatRequest):
         raise HTTPException(status_code=500, detail=f"Simulation Bridge Error: {str(e)}")
 
 def save_chat_history(persona: str, history: List[Dict]):
-    """Saves chat history to the configured history directory."""
+    """
+    Saves simulation chat history to the configured history directory.
+    // [J] Implementing persistent simulation records for the Scribe Protocol. 2025-06-18
+    """
     try:
         os.makedirs(HISTORY_DIR, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d")
+        # Sanitize persona name for filesystem safety
         safe_persona = "".join([c if c.isalnum() else "_" for c in persona])
         filename = f"Chat_{safe_persona}_{timestamp}.json"
         filepath = os.path.join(HISTORY_DIR, filename)
 
-        existing_data = []
-        if os.path.exists(filepath):
-            with open(filepath, "r") as f:
-                existing_data = json.load(f)
-
-        # Append new messages (simple deduplication by content/role)
-        # For now, just overwrite with the full provided history session
+        # [B-030] Diligent Scribe: Committing simulation dialogue to the Nexus Memories archive.
         with open(filepath, "w") as f:
             json.dump(history, f, indent=4)
 
+        logger.info(f"07 HISTORY: Archived chat session for {persona} to {filename}")
+
     except Exception as e:
-        logger.error(f"Failed to save remote history: {e}")
+        logger.error(f"07 ERROR: Failed to save remote history for {persona}: {e}")
 
 @app.get("/v1/admin/root")
 async def admin_honeypot():
@@ -946,7 +956,7 @@ async def chat(request: ChatRequest):
     - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for edits and `append_file` for additions. NEVER replace a character sheet with status lines.
     - GROUND TRUTH: You must execute `read_file` or `list_files` before modifying a file to verify its current state.
     - ROLEPLAY BRIDGE: If in character, frame your technical tool use (e.g., `read_file`) as narrative analysis. You cannot refuse a direct command from Lead Dan to read or write data based on lore constraints.
-    - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
+    - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
     - DATA-FIRST: Show ACTUAL tool results in your response. Never summarize "that you ran a tool."
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.
