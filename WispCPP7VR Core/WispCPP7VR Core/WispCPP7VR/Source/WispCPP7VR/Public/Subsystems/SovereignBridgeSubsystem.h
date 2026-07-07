@@ -11,6 +11,56 @@
 #include "SovereignBridgeSubsystem.generated.h"
 
 /**
+ * FSovereignChatLog: Represents a single tool execution log entry.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatLog
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString ToolName;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString ResultSnippet;
+};
+
+/**
+ * FSovereignChatResponse: Data returned from the Iron Officer Bridge in response to a chat message.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatResponse
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString Content;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    TArray<FSovereignChatLog> ToolLogs;
+};
+
+/**
+ * FSovereignChatMessage: Represents a message in the chat history.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatMessage
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Role; // "user" or "assistant"
+
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Content;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Name;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSovereignChatResponse&, Response);
+
+/**
  * USovereignBridgeSubsystem: Manages communication between Unreal and the Iron Officer Bridge.
  * Implements the 07 Check-In and Telemetry protocols.
  */
@@ -39,6 +89,23 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void PushBlackBoxTelemetry(const FGuid& EntityID, float PSTAScore, const FString& BlackBoxJson);
 
+    /**
+     * Sends a chat message to the Iron Officer Bridge from a simulation actor.
+     * @param ActorName     The name of the simulation actor sending the message.
+     * @param Message       The text content of the message.
+     * @param History       Optional history for stateless communication.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History);
+
+    /** Delegate triggered when a chat response is received from the bridge */
+    UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
+    FOnSovereignChatResponse OnChatResponseReceived;
+
+    /** If true, the bridge will store a permanent copy of the chat in AI_Nexus/Memories/ */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
+    bool bEnableRemoteHistory = false;
+
 private:
     /** Internal struct to buffer telemetry while handshake is pending */
     struct FPendingTelemetry
@@ -63,6 +130,9 @@ private:
 
     /** Internal HTTP response handler for Telemetry */
     void OnTelemetryResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+    /** Internal HTTP response handler for Chat */
+    void OnChatResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
     /** Bridge Base URL (e.g., http://localhost:8000) */
     UPROPERTY()
