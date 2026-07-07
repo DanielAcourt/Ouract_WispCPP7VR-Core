@@ -22,7 +22,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// ISovereignSaveInterface Implementation
+	// ISovereignSaveInterface Implementation (LEGACY)
 	virtual TMap<FString, FString> GetSaveData() override { return TMap<FString, FString>(); }
 	virtual void RestoreSaveData(const TMap<FString, FString>& Data) override { /* Base: Do nothing */ }
 	

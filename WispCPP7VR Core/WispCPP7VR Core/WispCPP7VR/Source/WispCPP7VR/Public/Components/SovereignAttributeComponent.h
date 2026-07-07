@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Components/SovereignBaseComponent.h"
+#include "Entities/SovereignBrokerInterface.h"
 #include "SovereignAttributeComponent.generated.h"
 
 /**
@@ -15,7 +16,7 @@
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class WISPCPP7VR_API USovereignAttributeComponent : public USovereignBaseComponent
+class WISPCPP7VR_API USovereignAttributeComponent : public USovereignBaseComponent, public ISovereignBrokerInterface
 {
 	GENERATED_BODY()
 
@@ -113,13 +114,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Sovereign|Calculations")
 	float GetMaxHealth() const;
 
-	// Sovereign Save Interface Overrides (triggers the saving of data on this componet really important but i though tit inherited this fromt he parent class,)
-	virtual TMap<FString, FString> GetSaveData() override;
-	virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
+	/** ISovereignBrokerInterface Implementation */
+	virtual void OnSave(TSharedPtr<FJsonObject>& OutJson) override;
+	virtual void OnLoad(const TSharedPtr<FJsonObject>& InJson) override;
+	virtual void OnProcessData(const TMap<FString, FString>& Data) override;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	// Called every frame

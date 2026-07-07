@@ -5,6 +5,7 @@
 #include "Entities/SovereignBaseEntity.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Components/SovereignControllerComponent.h"
+#include "Dom/JsonObject.h"
 #include "GameFramework/Actor.h"
 
 USovereignAttributeComponent::USovereignAttributeComponent()
@@ -36,6 +37,15 @@ void USovereignAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Auto-register with the Soul Hub
+	if (AActor* Owner = GetOwner())
+	{
+		if (USovereignSaveableEntityComponent* SoulHub = Owner->FindComponentByClass<USovereignSaveableEntityComponent>())
+		{
+			SoulHub->RegisterBroker(this);
+		}
+	}
+
 	// Automatically sync when the game starts
 	SyncStatsFromEntity();
 
@@ -43,6 +53,18 @@ void USovereignAttributeComponent::BeginPlay()
 	CurrentHealth = GetMaxHealth();
 
 	//CurrentStamina = GetMaxStamina();
+}
+
+void USovereignAttributeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (AActor* Owner = GetOwner())
+	{
+		if (USovereignSaveableEntityComponent* SoulHub = Owner->FindComponentByClass<USovereignSaveableEntityComponent>())
+		{
+			SoulHub->UnregisterBroker(this);
+		}
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void USovereignAttributeComponent::SyncStatsFromEntity()
@@ -172,81 +194,56 @@ void USovereignAttributeComponent::TickComponent(float DeltaTime, ELevelTick Tic
 */
 
 
-TMap<FString, FString> USovereignAttributeComponent::GetSaveData()
+void USovereignAttributeComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
 {
-	TMap<FString, FString> Data;
+	TSharedPtr<FJsonObject> AttrObj = MakeShareable(new FJsonObject());
 
-	// Core Physical based Stats
-	Data.Add(TEXT("STR"), FString::FromInt(Strength));
-	Data.Add(TEXT("DEX"), FString::FromInt(Dexterity));
-	Data.Add(TEXT("CON"), FString::FromInt(Constitution));
+	AttrObj->SetNumberField(TEXT("Strength"), Strength);
+	AttrObj->SetNumberField(TEXT("Dexterity"), Dexterity);
+	AttrObj->SetNumberField(TEXT("Constitution"), Constitution);
+	AttrObj->SetNumberField(TEXT("Intelligence"), Intelligence);
+	AttrObj->SetNumberField(TEXT("Wisdom"), Wisdom);
+	AttrObj->SetNumberField(TEXT("Charisma"), Charisma);
+	AttrObj->SetNumberField(TEXT("Luck"), Luck);
+	AttrObj->SetNumberField(TEXT("ArmourClass"), ArmourClass);
 
-	//Core Magical and Ai logic level based stats
-	Data.Add(TEXT("INT"), FString::FromInt(Intelligence));
-	Data.Add(TEXT("WIS"), FString::FromInt(Wisdom));
-	Data.Add(TEXT("CHA"), FString::FromInt(Charisma));
+	AttrObj->SetNumberField(TEXT("CurrentHealth"), CurrentHealth);
 
-	//bonus stats to improve gameplay drop rate level up rolls etc
-	Data.Add(TEXT("LCK"), FString::FromInt(Luck));
+	AttrObj->SetNumberField(TEXT("PhysicalResistance"), PhysicalResistance);
+	AttrObj->SetNumberField(TEXT("MagicalResistance"), MagicalResistance);
+	AttrObj->SetNumberField(TEXT("MentalResistance"), MentalResistance);
+	AttrObj->SetNumberField(TEXT("PoisonResistance"), PoisonResistance);
+	AttrObj->SetNumberField(TEXT("SlowResistance"), SlowResistance);
 
-	//basic Armour defens// before any gear
-	Data.Add(TEXT("AC"), FString::FromInt(ArmourClass));
-
-
-	//Moved to bio
-	/*
-	// Vitals
-	Data.Add(TEXT("HP"), FString::SanitizeFloat(CurrentHealth));
-	Data.Add(TEXT("STM"), FString::SanitizeFloat(CurrentStamina));
-
-	Data.Add(TEXT("HGR"), FString::SanitizeFloat(Hunger));
-	Data.Add(TEXT("HYD"), FString::SanitizeFloat(Hydration));
-	Data.Add(TEXT("FTG"), FString::SanitizeFloat(Fatigue));
-	Data.Add(TEXT("TRD"), FString::SanitizeFloat(Tiredness));
-	*/
-
-	// Resistances
-	Data.Add(TEXT("R_PHY"), FString::SanitizeFloat(PhysicalResistance));
-	Data.Add(TEXT("R_MAG"), FString::SanitizeFloat(MagicalResistance));
-	Data.Add(TEXT("R_MEN"), FString::SanitizeFloat(MentalResistance));
-
-	return Data;
+	OutJson->SetObjectField(TEXT("Attributes"), AttrObj);
 }
 
-void USovereignAttributeComponent::RestoreSaveData(const TMap<FString, FString>& Data)
+void USovereignAttributeComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
 {
-	// Local Lambda for clean extraction
-	auto GetInt = [&](FString Key, int32& Target) { if (Data.Contains(Key)) Target = FCString::Atoi(*Data[Key]); };
-	auto GetFlt = [&](FString Key, float& Target) { if (Data.Contains(Key)) Target = FCString::Atof(*Data[Key]); };
-	
+	const TSharedPtr<FJsonObject>* AttrObj;
+	if (InJson->TryGetObjectField(TEXT("Attributes"), AttrObj))
+	{
+		double Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Strength"), Val)) Strength = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Dexterity"), Val)) Dexterity = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Constitution"), Val)) Constitution = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Intelligence"), Val)) Intelligence = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Wisdom"), Val)) Wisdom = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Charisma"), Val)) Charisma = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("Luck"), Val)) Luck = (int32)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("ArmourClass"), Val)) ArmourClass = (int32)Val;
 
-	// Use the exact strings from your JSON file
-	FString P = TEXT("AttributeComponent.");
+		if ((*AttrObj)->TryGetNumberField(TEXT("CurrentHealth"), Val)) CurrentHealth = (float)Val;
 
-	//Core Stats
-	GetInt(P + TEXT("STR"), Strength);
-	GetInt(P + TEXT("DEX"), Dexterity);
-	GetInt(P + TEXT("CON"), Constitution);
-	GetInt(P + TEXT("INT"), Intelligence);
-	GetInt(P + TEXT("WIS"), Wisdom);
-	GetInt(P + TEXT("CHA"), Charisma);
-	GetInt(P + TEXT("LCK"), Luck);
-	GetInt(P + TEXT("AC"), ArmourClass);
+		if ((*AttrObj)->TryGetNumberField(TEXT("PhysicalResistance"), Val)) PhysicalResistance = (float)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("MagicalResistance"), Val)) MagicalResistance = (float)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("MentalResistance"), Val)) MentalResistance = (float)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("PoisonResistance"), Val)) PoisonResistance = (float)Val;
+		if ((*AttrObj)->TryGetNumberField(TEXT("SlowResistance"), Val)) SlowResistance = (float)Val;
+	}
+}
 
-	//Vitals - moving to bio component
-	/*
-	GetFlt(P + TEXT("HP"), CurrentHealth);
-	GetFlt(P + TEXT("STM"), CurrentStamina);
-	GetFlt(P + TEXT("HGR"), Hunger);
-	GetFlt(P + TEXT("HYD"), Hydration);
-	GetFlt(P + TEXT ("FTG"), Fatigue);
-	GetFlt(P + TEXT("TRD"), Tiredness);
-	*/
-
-	//ressistances
-	GetFlt(P + TEXT("PHY"), PhysicalResistance);
-	GetFlt(P + TEXT("MAG"), MagicalResistance);
-	GetFlt(P + TEXT("MEN"), MentalResistance);
-
-
+void USovereignAttributeComponent::OnProcessData(const TMap<FString, FString>& Data)
+{
+	// Process attribute data
 }

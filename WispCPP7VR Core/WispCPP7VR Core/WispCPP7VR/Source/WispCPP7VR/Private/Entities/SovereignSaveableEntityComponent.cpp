@@ -1,16 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 
 #include "Entities/SovereignSaveableEntityComponent.h"
-#include "Entities/SovereignBaseEntity.h" // Essential for the Evolve() call
-#include "SaveSystem/SovereignActorRegistry.h" // <--- Updated to match your Registry header
 #include "Entities/SovereignBrokerInterface.h"
 #include "Subsystems/SovereignBridgeSubsystem.h"
-
+#include "SaveSystem/SovereignActorRegistry.h"
 #include "JsonObjectConverter.h"
-#include "GameplayTagContainer.h"
-#include "GameplayTagAssetInterface.h"
-
+#include "Serialization/JsonSerializer.h"
 #include "Engine/World.h"
 
 USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
@@ -29,43 +24,36 @@ void USovereignSaveableEntityComponent::BeginPlay()
 
 	if (UWorld* World = GetWorld())
 	{
+		// 1. Register with the Global Actor Registry
 		if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
 		{
 			Registry->RegisterActor(EntityID, GetOwner());
 		}
 
-		// Register with the Bridge Subsystem for simulation-wide tracking
+		// 2. Register with the Bridge Subsystem for simulation tracking
 		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Sovereign: Component BeginPlay - Requesting Bridge Registration for %s"), *EntityID.ToString());
 			Bridge->RegisterEntity(this);
 		}
 	}
 
 	if (!BirthTimestamp.GetTicks())
 	{
-		BirthTimestamp = FDateTime::Now(); // Only set if this is a brand new soul
+		BirthTimestamp = FDateTime::Now();
 	}
 }
 
 void USovereignSaveableEntityComponent::InitializeSoul()
 {
-	// 1. IDENTITY CHECK
+	// 1. IDENTITY & BIRTHRIGHT
 	if (!EntityID.IsValid()) { EntityID = FGuid::NewGuid(); }
 
-	// 2. BIRTHRIGHT DETERMINATION
 	if (BirthTimestamp.GetTicks() == 0)
 	{
 		if (bUseManualBirthDate)
 		{
-			// Attempt to parse your specific date: March 23, 2017, 4:00 PM
-			if (FDateTime::Parse(ManualBirthDateStr, BirthTimestamp))
+			if (!FDateTime::Parse(ManualBirthDateStr, BirthTimestamp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Sovereign: Ancestral Soul manifested. Birth set to: %s"), *BirthTimestamp.ToString());
-			}
-			else
-			{
-				// Fallback if the string is typed wrong
 				BirthTimestamp = FDateTime::Now();
 				UE_LOG(LogTemp, Error, TEXT("Sovereign: Failed to parse ManualBirthDateStr! Defaulting to Now."));
 			}
@@ -76,34 +64,15 @@ void USovereignSaveableEntityComponent::InitializeSoul()
 		}
 	}
 
-	// 3. THE TIME DILATION CALCULATION
-	FTimespan RealWorldAge = FDateTime::Now() - BirthTimestamp;
-
-	// Total days since 2017 is roughly 3,260+ days
-	float TotalRealDays = RealWorldAge.GetTotalDays();
-
-	// In our logic: 5.6 Real Days = 1 Sovereign Year
-	float SovereignYearsOld = TotalRealDays / 5.6f;
-
-	// Change 'Success' to 'Warning' or 'Log'
-	UE_LOG(LogTemp, Warning, TEXT("Sovereign ID [%s] is %f Sovereign Years old."),
-		*EntityID.ToString(), SovereignYearsOld);
-
-	// 4. 07 CHECK-IN TELEMETRY TEST
+	// 2. 07 CHECK-IN TELEMETRY
 	if (UWorld* World = GetWorld())
 	{
 		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
 		{
-			TSharedPtr<FJsonObject> TestPayload = MakeShareable(new FJsonObject());
-			TestPayload->SetStringField(TEXT("Event"), TEXT("CheckIn_Handshake_Test"));
-			TestPayload->SetStringField(TEXT("SensorSource"), TEXT("Fishtank_Simulation_Wisp"));
-			TestPayload->SetStringField(TEXT("Timestamp"), FDateTime::Now().ToString());
+			TSharedPtr<FJsonObject> State = CaptureFullEntityState();
+			State->SetStringField(TEXT("Event"), TEXT("07_CheckIn_Initialize"));
 
-			FString JsonString;
-			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
-			FJsonSerializer::Serialize(TestPayload.ToSharedRef(), Writer);
-
-			// Push a test telemetry packet with a baseline PSTA score of 1.0 (Authorized)
+			FString JsonString = SerializeJsonToString(State);
 			Bridge->PushBlackBoxTelemetry(EntityID, 1.0f, JsonString);
 		}
 	}
@@ -126,113 +95,151 @@ void USovereignSaveableEntityComponent::EndPlay(const EEndPlayReason::Type EndPl
 	Super::EndPlay(EndPlayReason);
 }
 
-// --- ENERGY & EVOLUTION ---
-void USovereignSaveableEntityComponent::ReceiveElementalEnergy(ESovereignElement EnergyType, float RawAmount)
+void USovereignSaveableEntityComponent::RegisterBroker(TScriptInterface<ISovereignBrokerInterface> Broker)
 {
-	// 1. AXIS LOGIC: Shift the correct influence (0-100)
-
-	// Check if this is Alignment Energy (Light/Dark)
-	if (EnergyType == ESovereignElement::Light || EnergyType == ESovereignElement::Dark)
+	if (Broker.GetInterface() && !RegisteredBrokers.Contains(Broker))
 	{
-		if (EnergyType == AlignmentSocket)
-		{
-			AlignmentInfluence = FMath::Clamp(AlignmentInfluence + (RawAmount * 5.0f), 0.0f, 100.0f);
-		}
-		else
-		{
-			AlignmentInfluence -= (RawAmount * 2.0f);
-			if (AlignmentInfluence <= 0.0f)
-			{
-				AlignmentSocket = EnergyType;
-				AlignmentInfluence = 1.0f;
-			}
-		}
-	}
-	// Check if this is Body Energy (Nature/Fire/Water/Earth/Air)
-	else if (EnergyType != ESovereignElement::Grey && EnergyType != ESovereignElement::Fairy && EnergyType != ESovereignElement::Dragon)
-	{
-		if (EnergyType == BodySocket)
-		{
-			BodyInfluence = FMath::Clamp(BodyInfluence + (RawAmount * 5.0f), 0.0f, 100.0f);
-		}
-		else
-		{
-			BodyInfluence -= (RawAmount * 2.0f);
-			if (BodyInfluence <= 0.0f)
-			{
-				BodySocket = EnergyType;
-				BodyInfluence = 1.0f;
-			}
-		}
-	}
+		RegisteredBrokers.Add(Broker);
+		UE_LOG(LogTemp, Log, TEXT("Sovereign: Registered Module [%s] to Soul Hub."), *Broker.GetObject()->GetName());
 
-	// 2. YIELD LOGIC: Calculate growth using the 5-way cycle
-	float Modifier = GetElementalMultiplier(EnergyType);
-	MaturityProgress += (RawAmount * Modifier);
-
-	UE_LOG(LogTemp, Log, TEXT("Sovereign: %s received %f %s energy. New Maturity: %f"),
-		*GetOwner()->GetName(), RawAmount, *UEnum::GetValueAsString(EnergyType), MaturityProgress);
-
-	// 3. EVOLUTION CHECK
-	if (MaturityProgress >= 1.0f)
-	{
-		if (ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(GetOwner()))
-		{
-			MyEntity->Evolve();
-		}
+		// Notify listeners that the architecture has changed
+		OnStateChanged.Broadcast(this);
 	}
 }
 
-float USovereignSaveableEntityComponent::GetElementalMultiplier(ESovereignElement IncomingType)
+void USovereignSaveableEntityComponent::UnregisterBroker(TScriptInterface<ISovereignBrokerInterface> Broker)
 {
-	float Multiplier = 1.0f;
-
-	// --- 1. SPECIAL/MAGIC (Fairy/Dragon) ---
-	if (IncomingType == ESovereignElement::Fairy || IncomingType == ESovereignElement::Dragon) return 1000.0f;
-
-	// --- 2. THE 5-WAY BATTLE CYCLE (Body) ---
-	if (BodySocket == ESovereignElement::Nature) {
-		if (IncomingType == ESovereignElement::Water) Multiplier = 2.0f;
-		if (IncomingType == ESovereignElement::Fire)  Multiplier = 0.5f;
-	}
-	else if (BodySocket == ESovereignElement::Earth) {
-		if (IncomingType == ESovereignElement::Nature) Multiplier = 0.5f;
-		if (IncomingType == ESovereignElement::Water)  Multiplier = 2.0f;
-	}
-	else if (BodySocket == ESovereignElement::Water) {
-		if (IncomingType == ESovereignElement::Fire)   Multiplier = 2.0f;
-		if (IncomingType == ESovereignElement::Nature) Multiplier = 0.5f;
-	}
-	else if (BodySocket == ESovereignElement::Fire) {
-		if (IncomingType == ESovereignElement::Nature) Multiplier = 2.0f;
-		if (IncomingType == ESovereignElement::Water)  Multiplier = 0.5f;
-	}
-	else if (BodySocket == ESovereignElement::Air) {
-		if (IncomingType == ESovereignElement::Fire)   Multiplier = 2.0f;
-		if (IncomingType == ESovereignElement::Earth)  Multiplier = 0.5f;
-	}
-
-	// --- 3. ALIGNMENT DUALITY ---
-	if ((AlignmentSocket == ESovereignElement::Light && IncomingType == ESovereignElement::Dark) ||
-		(AlignmentSocket == ESovereignElement::Dark && IncomingType == ESovereignElement::Light))
+	if (RegisteredBrokers.Contains(Broker))
 	{
-		Multiplier *= 0.25f;
+		RegisteredBrokers.Remove(Broker);
+		OnStateChanged.Broadcast(this);
+	}
+}
+
+TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityState()
+{
+	TSharedPtr<FJsonObject> RootObj = MakeShareable(new FJsonObject());
+
+	// 1. IDENTITY CATEGORY
+	TSharedPtr<FJsonObject> IdentityObj = MakeShareable(new FJsonObject());
+	IdentityObj->SetStringField(TEXT("GUID"), EntityID.ToString());
+	IdentityObj->SetStringField(TEXT("BirthTimestamp"), BirthTimestamp.ToString());
+	IdentityObj->SetBoolField(TEXT("bIsBeingPossessed"), bIsBeingPossessed);
+	IdentityObj->SetNumberField(TEXT("ParadoxDensity"), ParadoxDensity);
+	RootObj->SetObjectField(TEXT("Identity"), IdentityObj);
+
+	// 2. UNKNOWN TAGS CATEGORY
+	if (UnknownMetaTags.Num() > 0)
+	{
+		TSharedPtr<FJsonObject> TagsObj = MakeShareable(new FJsonObject());
+		for (const auto& Elem : UnknownMetaTags)
+		{
+			TagsObj->SetStringField(Elem.Key, Elem.Value);
+		}
+		RootObj->SetObjectField(TEXT("UnknownTags"), TagsObj);
 	}
 
-	return Multiplier;
+	// 3. MODULAR BROKER CATEGORIES
+	for (auto& Broker : RegisteredBrokers)
+	{
+		if (Broker.GetInterface())
+		{
+			// Each broker adds its own named object to the root
+			Broker->OnSave(RootObj);
+		}
+	}
+
+	return RootObj;
+}
+
+void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData)
+{
+	if (!JsonData.IsValid()) return;
+
+	// 1. RESTORE IDENTITY
+	const TSharedPtr<FJsonObject>* IdentityObj;
+	if (JsonData->TryGetObjectField(TEXT("Identity"), IdentityObj))
+	{
+		FString IdStr;
+		if ((*IdentityObj)->TryGetStringField(TEXT("GUID"), IdStr)) FGuid::Parse(IdStr, EntityID);
+
+		FString BirthStr;
+		if ((*IdentityObj)->TryGetStringField(TEXT("BirthTimestamp"), BirthStr)) FDateTime::Parse(BirthStr, BirthTimestamp);
+
+		(*IdentityObj)->TryGetBoolField(TEXT("bIsBeingPossessed"), bIsBeingPossessed);
+
+		double ParadoxVal;
+		if ((*IdentityObj)->TryGetNumberField(TEXT("ParadoxDensity"), ParadoxVal)) ParadoxDensity = (float)ParadoxVal;
+	}
+
+	// 2. RESTORE UNKNOWN TAGS
+	const TSharedPtr<FJsonObject>* TagsObj;
+	if (JsonData->TryGetObjectField(TEXT("UnknownTags"), TagsObj))
+	{
+		UnknownMetaTags.Empty();
+		for (auto& Elem : (*TagsObj)->Values)
+		{
+			UnknownMetaTags.Add(Elem.Key, Elem.Value->AsString());
+		}
+	}
+
+	// 3. RESTORE MODULES
+	for (auto& Broker : RegisteredBrokers)
+	{
+		if (Broker.GetInterface())
+		{
+			Broker->OnLoad(JsonData);
+		}
+	}
+
+	OnStateChanged.Broadcast(this);
+}
+
+void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> LoadedTags)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
+
+	for (auto& Elem : LoadedTags)
+	{
+		// 1. DNA FILTER: If it uses dot-notation (e.g., "Identity.Species.Wisp")
+		if (Elem.Key.Contains(TEXT(".")))
+		{
+			// If it's a component-specific tag from an old save, we might want to skip it here
+			// but for Legacy DNA, we try to ingest it.
+			continue;
+		}
+
+		// 2. ELEMENTAL SOCKETS (Legacy fallback)
+		// These should ideally be handled by the specialized components now.
+		// For now, we just add them as Unknown Tags which will be processed by brokers.
+		AddUnknownTag(Elem.Key, Elem.Value);
+	}
+}
+
+FString USovereignSaveableEntityComponent::GetCategoryStateJson(FString CategoryName)
+{
+	TSharedPtr<FJsonObject> FullState = CaptureFullEntityState();
+	const TSharedPtr<FJsonObject>* CategoryObj;
+
+	if (FullState->TryGetObjectField(CategoryName, CategoryObj))
+	{
+		return SerializeJsonToString(*CategoryObj);
+	}
+
+	return TEXT("{}");
 }
 
 void USovereignSaveableEntityComponent::AddUnknownTag(FString Key, FString Value)
 {
 	UnknownMetaTags.Add(Key, Value);
 
-	// Paradox Density: If we encounter 'Paradox' or 'Conflict' tags, or unverified 'Unknown' values, increase density.
 	if (Key.Contains(TEXT("Paradox")) || Key.Contains(TEXT("Conflict")) || Value.Equals(TEXT("Unknown"), ESearchCase::IgnoreCase))
 	{
 		ParadoxDensity = FMath::Clamp(ParadoxDensity + 0.1f, 0.0f, 1.0f);
 	}
 
-	// Delegate to brokers for real-time processing (e.g. Lidar Manifest)
+	// Notify brokers of the new "Truth"
 	TMap<FString, FString> SingleTagMap;
 	SingleTagMap.Add(Key, Value);
 
@@ -243,271 +250,17 @@ void USovereignSaveableEntityComponent::AddUnknownTag(FString Key, FString Value
 			Broker->OnProcessData(SingleTagMap);
 		}
 	}
+
+	OnStateChanged.Broadcast(this);
 }
 
-void USovereignSaveableEntityComponent::RegisterBroker(TScriptInterface<ISovereignBrokerInterface> Broker)
+FString USovereignSaveableEntityComponent::SerializeJsonToString(TSharedPtr<FJsonObject> JsonObj)
 {
-	if (Broker.GetInterface() && !RegisteredBrokers.Contains(Broker))
-	{
-		RegisteredBrokers.Add(Broker);
-	}
+	FString JsonString;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
+	FJsonSerializer::Serialize(JsonObj.ToSharedRef(), Writer);
+	return JsonString;
 }
-
-// --- META TAG HANDLING ---
-TMap<FString, FString> USovereignSaveableEntityComponent::GetUnknownMetaTags() const
-{
-	TMap<FString, FString> FoundTags;
-	if (AActor* Owner = GetOwner())
-	{
-		for (const FName& TagName : Owner->Tags)
-		{
-			FString TagString = TagName.ToString();
-			FString Key, Value;
-
-			// Split only on the first colon to support values with colons
-			if (TagString.Split(TEXT(":"), &Key, &Value, ESearchCase::CaseSensitive, ESearchDir::FromStart))
-			{
-				FoundTags.Add(Key.TrimStartAndEnd(), Value.TrimStartAndEnd());
-			}
-			else // If no colon is found, treat the whole tag as a key with a value of "True"
-			{
-				FoundTags.Add(TagString.TrimStartAndEnd(), TEXT("True"));
-			}
-		}
-	}
-	return FoundTags;
-}
-
-// Note: This function is now primarily used for the hybrid/clone spawning logic.
-// For loading from save files, see ApplyStateFromJsonObject.
-void USovereignSaveableEntityComponent::ApplyMetaTags(TMap<FString, FString> LoadedTags)
-{
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
-
-	UEnum* EnumPtr = StaticEnum<ESovereignElement>();
-	ASovereignBaseEntity* MyEntity = Cast<ASovereignBaseEntity>(Owner);
-
-	// 1. CLEANUP: Only remove old "Legacy" colon-tags.
-	for (int32 i = Owner->Tags.Num() - 1; i >= 0; --i)
-	{
-		if (Owner->Tags[i].ToString().Contains(TEXT(":")))
-		{
-			Owner->Tags.RemoveAt(i);
-		}
-	}
-
-	for (auto& Elem : LoadedTags)
-	{
-		// 2. DNA FILTER: If the key contains "Component.", it is physical data.
-		// We skip it here because ApplyStateFromJsonObject handles this via the ISovereignSaveInterface.
-		if (Elem.Key.Contains(TEXT("Component.")))
-		{
-			continue;
-		}
-
-		// 3. ID CARD (Gameplay Tags): If it uses dot-notation (e.g., "Identity.Species.Wisp")
-		// We ingest it into the formal GameplayTagContainer for system-wide logic.
-		if (MyEntity && Elem.Key.Contains(TEXT(".")))
-		{
-			MyEntity->IngestSovereignTag(Elem.Key);
-			continue;
-		}
-
-		// 4. ELEMENTAL SOCKETS (The Soul's Alignment)
-		if (EnumPtr)
-		{
-			int64 Val = EnumPtr->GetValueByNameString(Elem.Value);
-			if (Val != INDEX_NONE)
-			{
-				if (Elem.Key.Equals(TEXT("Alignment"), ESearchCase::IgnoreCase)) AlignmentSocket = static_cast<ESovereignElement>(Val);
-				else if (Elem.Key.Equals(TEXT("Body"), ESearchCase::IgnoreCase)) BodySocket = static_cast<ESovereignElement>(Val);
-				else if (Elem.Key.Equals(TEXT("Magic"), ESearchCase::IgnoreCase)) MagicSocket = static_cast<ESovereignElement>(Val);
-				continue;
-			}
-		}
-
-		// 5. LEGACY/STRING FALLBACK: Add to standard AActor::Tags array
-		if (Elem.Value.Equals(TEXT("True"), ESearchCase::IgnoreCase))
-		{
-			// Simple boolean tag (e.g., "Terminal.Active")
-			Owner->Tags.Add(FName(*Elem.Key));
-		}
-		else
-		{
-			// Key:Value pair tag (e.g., "Door.Code:1234")
-			FString ReconstructedTag = FString::Printf(TEXT("%s:%s"), *Elem.Key, *Elem.Value);
-			Owner->Tags.Add(FName(*ReconstructedTag));
-		}
-	}
-}
-
-
-
-TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityState()
-{
-	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
-	AActor* Owner = GetOwner();
-	if (!Owner)
-	{
-		return JsonObject;
-	}
-
-	// --- PASS A (ID CARD) ---
-
-	// Part 1: Scrape AActor::Tags (e.g., "Terminal.Active:True") via helper function
-	TMap<FString, FString> LegacyTags = GetUnknownMetaTags();
-	for (const auto& Elem : LegacyTags)
-	{
-		JsonObject->SetStringField(Elem.Key, Elem.Value);
-	}
-
-	// Part 2: Upgraded Gameplay Tag Scraper (Interface-based)
-		// This finds ALL hierarchical tags set in Blueprints
-	if (IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Owner))
-	{
-		FGameplayTagContainer AllTags;
-		TagInterface->GetOwnedGameplayTags(AllTags);
-
-		TArray<FGameplayTag> TagArray;
-		AllTags.GetGameplayTagArray(TagArray);
-
-		for (const FGameplayTag& Tag : TagArray)
-		{
-			JsonObject->SetStringField(Tag.ToString(), TEXT("True"));
-		}
-	}
-
-	// --- PASS B (DNA) ---
-
-	// Part 1: Scrape Owner Actor (The Vessel) if it implements the save interface
-	// This is where Telemetry/Physical state lives.
-	if (ISovereignSaveInterface* ActorInterface = Cast<ISovereignSaveInterface>(Owner))
-	{
-		TMap<FString, FString> ActorData = ActorInterface->GetSaveData();
-		for (const auto& Elem : ActorData)
-		{
-			// Actor data usually uses its own namespaces (like Telemetry.), so we don't prefix with actor name
-			JsonObject->SetStringField(Elem.Key, Elem.Value);
-		}
-	}
-
-	// Part 2: Scrape Component Data (e.g., "QiComponent.CurrentQi", "AttributeComponent.Strength")
-	TArray<UActorComponent*> InterfaceComps;
-	Owner->GetComponents(InterfaceComps);
-
-	for (UActorComponent* Comp : InterfaceComps)
-	{
-		if (Comp == this) continue;
-
-		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
-		{
-			TMap<FString, FString> ComponentData = SaveInterface->GetSaveData();
-			FString ComponentName = Comp->GetName();
-
-			for (const auto& Elem : ComponentData)
-			{
-				// Prefix component data to prevent key collisions, e.g., "Qi.Current"
-				FString PrefixedKey = FString::Printf(TEXT("%s.%s"), *ComponentName, *Elem.Key);
-				JsonObject->SetStringField(PrefixedKey, Elem.Value);
-			}
-		}
-	}
-
-	// --- PASS C (REALITY-TRUTH ENGINE) ---
-	for (auto& Broker : RegisteredBrokers)
-	{
-		if (Broker.GetInterface())
-		{
-			// Magic Layer filter
-			bool bIsMagic = Broker.GetObject()->GetClass()->GetName().Contains(TEXT("Cultivation"));
-			if (bIsMagic && !bMagicLayerActive) continue;
-
-			Broker->OnSave(JsonObject);
-		}
-	}
-
-	return JsonObject;
-}
-//new feature add qi components and attribute components to the save file
-void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPtr<FJsonObject>& JsonData)
-{
-	if (!JsonData.IsValid()) return;
-
-	AActor* Owner = GetOwner();
-	if (!Owner) return;
-
-	// 1. Convert the entire JsonObject into a flat string map.
-	// This "Suitcase" now contains everything: Tags, Stats, and Enums.
-	TMap<FString, FString> AllData;
-	for (const auto& Elem : JsonData->Values)
-	{
-		// We process everything as strings to maintain the Flat JSON standard
-		if (Elem.Value.IsValid() && Elem.Value->Type == EJson::String)
-		{
-			AllData.Add(Elem.Key, Elem.Value->AsString());
-		}
-	}
-
-	// If there's nothing to restore, exit early
-	if (AllData.Num() == 0) return;
-
-	// 2. APPLY IDENTITY (The ID Card Pass)
-	// This processes Sockets (Alignment/Body), Ingests Gameplay Tags, 
-	// and handles standard Actor Tags.
-	ApplyMetaTags(AllData);
-
-	// 3. APPLY VESSEL DATA (The Physical Pass)
-	// Restore state to the Actor itself (e.g., Telemetry)
-	if (ISovereignSaveInterface* ActorInterface = Cast<ISovereignSaveInterface>(Owner))
-	{
-		ActorInterface->RestoreSaveData(AllData);
-	}
-
-	// 4. APPLY COMPONENT DATA (The DNA Pass)
-	// Find all components that implement the Save Interface (Qi, Attributes, etc.)
-	TArray<UActorComponent*> InterfaceComps;
-	Owner->GetComponents(InterfaceComps);
-
-	for (UActorComponent* Comp : InterfaceComps)
-	{
-		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Comp))
-		{
-			// The component scans AllData for keys starting with its name 
-			// (e.g., "AttributeComponent.STR") and restores itself.
-			UE_LOG(LogTemp, Warning, TEXT("SaveableEntityComponent: Passing entire %d-key suitcase to %s for restore."), AllData.Num(), *Comp->GetName());
-			SaveInterface->RestoreSaveData(AllData);
-		}
-	}
-
-	// 5. APPLY BROKER DATA (The Reality Pass)
-	for (auto& Broker : RegisteredBrokers)
-	{
-		if (Broker.GetInterface())
-		{
-			Broker->OnLoad(JsonData);
-		}
-	}
-}
-
-//Version 3.0 Added
-// Inside the Heartbeat or Action trigger
-void USovereignSaveableEntityComponent::TrainAttribute(float& Attribute, float GainAmount, float ClassDifficulty)
-{
-	// ClassDifficulty: 1.0 for Chicken, 10.0 for Dragon, 5.0 for Glass-Willow
-	// The more complex the entity, the smaller the gain per action.
-	float ActualGain = GainAmount / ClassDifficulty;
-
-	Attribute += ActualGain;
-
-	// Check if the integer part has changed (Dungeon Siege style level up)
-	if (FMath::FloorToInt(Attribute) > FMath::FloorToInt(Attribute - ActualGain))
-	{
-		//OnAttributeLevelUp(Attribute);
-	}
-}
-
-
 
 #if WITH_EDITOR
 void USovereignSaveableEntityComponent::PostEditImport() { Super::PostEditImport(); EntityID = FGuid::NewGuid(); }
@@ -517,6 +270,3 @@ void USovereignSaveableEntityComponent::PostDuplicate(bool bDuplicateForPIE)
 	if (!bDuplicateForPIE) { EntityID = FGuid::NewGuid(); }
 }
 #endif
-
-
-

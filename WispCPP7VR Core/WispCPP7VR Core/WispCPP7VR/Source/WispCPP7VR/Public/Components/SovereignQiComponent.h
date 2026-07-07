@@ -1,119 +1,82 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
 #include "Components/SovereignBaseComponent.h"
+#include "Entities/SovereignBrokerInterface.h"
 #include "SovereignQiComponent.generated.h"
 
-
 /**
- * USovereignQiComponent
- * Handles the "Spiritual" energy of the entity.
- * Manages Qi levels, Purity (quality), and Density (experience/evolution).
+ * USovereignQiComponent: Handles the "Spiritual" energy and Alignment of the entity.
+ * Part of the Triple-Axis system (Alignment Socket).
  */
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class WISPCPP7VR_API USovereignQiComponent : public USovereignBaseComponent
+UCLASS(ClassGroup = (Sovereign), meta = (BlueprintSpawnableComponent))
+class WISPCPP7VR_API USovereignQiComponent : public USovereignBaseComponent, public ISovereignBrokerInterface
 {
 	GENERATED_BODY()
+
 public:
 	USovereignQiComponent();
 
-	// --- 1. CORE ENERGY STATS ---
+	/** --- 1. THE TRIPLE-AXIS (SPIRITUAL LAYER) --- */
 
-	/** Current usable Qi in the pool */
+	/** The spiritual alignment (Grey, Light, Dark) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
+	ESovereignElement AlignmentSocket = ESovereignElement::Grey;
+
+	/** Influence level for the spiritual axis (0-100) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
+	float AlignmentInfluence = 100.0f;
+
+	/** The magic essence (Fairy, Dragon, Electric) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
+	ESovereignElement MagicSocket = ESovereignElement::None;
+
+	/** Influence level for the magic axis (0-100) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
+	float MagicInfluence = 0.0f;
+
+
+	/** --- 2. QI POOL --- */
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	float CurrentQi;
 
-	/** Maximum amount of Qi this vessel can hold */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi")
 	float MaxQiCapacity;
 
-	/** * Qi Purity (0.0 to 1.0).
-	 * Higher purity reduces the cost of spells and increases evolution speed.
-	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	float QiPurity;
 
-	/** * Qi Density / Accumulated Qi.
-	 * This is your "XP". When this hits a threshold, the owner Evolves.
-	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	float TotalQiAccumulated;
 
 
-	/** Periodic check for elemental friction and density refinement */
-	void SymmetryCheck(float DeltaTime);
+	/** --- 3. RESONANCE --- */
 
-
-
-	//qi Affinity pointing to light or dark. This needs to acts as a default affintiy
-	//also which element.
-	//Needs to be stored in an array with amounts for each Fire, Earth, Water, Wind, 
-	//0 is there default everything by its nature will have a dfark/light and a nature.
-
-	//Elemental Affinty
-	/** The spiritual alignment. Positive = Light, Negative = Dark. 0 = Neutral/Primal. */
-/** Spiritual Alignment: Positive = Light, Negative = Dark. 0 = Primal/Neutral. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi")
-	float SpiritualAlignment = 0.0f;
-
-	/** * Elemental Resonance.
-	 * Keys: "Fire", "Earth", "Water", "Wind"
-	 * Values: Resonance levels.
-	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	TMap<FName, float> ElementalResonance;
 
-	/** New function to handle specific elemental absorption */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
-	void AbsorbElementalQi(FName Element, float Amount, float SourcePurity);
 
+	/** --- 4. LOGIC --- */
 
-	/** Helper to initialize the default elements */
-	void InitializeElements();
-
-	// --- 2. LOGIC FUNCTIONS ---
-
-	/** * Adds Qi to the pool. Mixing different purities will shift the overall QiPurity.
-	 * @param Amount The amount of Qi to add.
-	 * @param SourcePurity The purity of the Qi being absorbed.
-	 */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
 	void AbsorbQi(float Amount, float SourcePurity);
 
-	/** * Spends Qi for actions.
-	 * @param Amount The raw cost. Purity will be applied to reduce this cost.
-	 * @return True if the entity had enough Qi to perform the action.
-	 */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
 	bool SpendQi(float Amount);
 
-	/** Resets the accumulated density (usually called after an Evolution) */
-	UFUNCTION(BlueprintCallable, Category = "Sovereign|Qi")
-	void ResetDensity();
-
+	/** ISovereignBrokerInterface Implementation */
+	virtual void OnSave(TSharedPtr<FJsonObject>& OutJson) override;
+	virtual void OnLoad(const TSharedPtr<FJsonObject>& InJson) override;
+	virtual void OnProcessData(const TMap<FString, FString>& Data) override;
 
 
 protected:
 	virtual void BeginPlay() override;
-
-	/** Internal: Creates a "Residual" tag when two elements clash violently */
-	void GenerateConflictTag(FName ElementA, FName ElementB);
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	/** * Override the ability to save the component data to the save slot or json file
-	 */
-	virtual TMap<FString, FString> GetSaveData() override;
-	virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
-
-
-	/** * Internal tick called by the Character's Heartbeat.
- * @param DeltaTime Time since last tick.
- * @param WisdomStat The Wisdom attribute from the physical body to boost regen.
- */
 	void ProcessQiFlow(float DeltaTime, int32 WisdomStat);
-
 };
-

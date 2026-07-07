@@ -16,6 +16,10 @@
 #include "SovereignBaseEntity.generated.h"
 
 class USovereignSaveableEntityComponent;
+class USovereignBioComponent;
+class USovereignQiComponent;
+class USovereignElementComponent;
+class USovereignAttributeComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
 
@@ -83,9 +87,25 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
 	UStaticMeshComponent* EntityMesh;
 
-	/** The Soul of the Actor: Contains the GUID and Metadata tags (Isla's unknown tags) */
+	/** The Soul of the Actor: Contains the GUID and Metadata tags */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
 	USovereignSaveableEntityComponent* SaveDataComponent;
+
+	/** The Biological engine: Health, Stamina, Lineage */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignBioComponent* BioComponent;
+
+	/** The Spiritual engine: Magic, Alignment, Qi */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignQiComponent* QiComponent;
+
+	/** The Physical nature: Elemental resistances and sockets */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignElementComponent* ElementComponent;
+
+	/** The Attribute engine: Strength, Intelligence, HP */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignAttributeComponent* AttributeComponent;
 
 	/** Array of 8 meshes representing the growth stages (0-7) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
