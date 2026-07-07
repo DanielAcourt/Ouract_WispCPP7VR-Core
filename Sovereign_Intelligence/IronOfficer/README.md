@@ -1,7 +1,7 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7-Knight-AAS. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-18
 # Iron Officer: Local Sovereign Bridge (GTX 5090)
 
-This is the Python-based bridge for the **Iron Officer** (AD-001). It connects the local Unreal simulation and Raspberry Pi hardware to a high-parameter LLM (Llama 3 70B) running on the GTX 5090.
+This is the Python-based bridge for the **Iron Officer** (AD-001/AD-002/AD-004). It connects the local Unreal simulation and Raspberry Pi hardware to a high-parameter LLM (Llama 3.1 70B) running on the GTX 5090, governed by the **Agency Arbitration Schema (AAS)**.
 
 ## 🚀 "One-Click" Setup (Recommended)
 
@@ -10,27 +10,45 @@ This is the Python-based bridge for the **Iron Officer** (AD-001). It connects t
 
 ---
 
+## 🏛️ Architectural Sentinel (v36.4.7)
+The Iron Officer has been hardened into a **Knight-Class Architectural Sentinel**. It no longer just "passes text"—it arbitrates every request using the **PSTA (Psychological, Social, Technical, Administrative)** viability framework.
+
+### AAS Protocol (v1.3.3)
+Every mutation to the repository or simulation state is audited:
+- **Conflict Gates:** If your request lacks authority (VSS < 0.7), the bridge will return a `409_CONFLICT_GATE`.
+- **Diligence Scribe:** Every file write triggers an automatic `.bak` creation and a data-loss check.
+- **Handshake:** Use the `/v1/aas/handshake` endpoint to gain a temporary authority boost.
+
+---
+
+## 📡 Simulation & 07 Protocol
+The bridge implements the **07 Simulation Bridge** to sync Virtual Truth with Physical Hardware.
+
+### Unreal Chat Bridge (AD-002)
+Unreal simulation entities can now communicate directly with the Officer:
+- **Endpoint:** `POST /v1/unreal/chat`
+- **Persona Mapping:** Actors are mapped to `SIM_ActorName` and inherit `Unreal_Simulation` authority.
+- **Tool Tracing:** AI tool execution (reading files, checking GPU) is returned to Unreal as a diagnostic trace.
+- **Remote History:** Chats can be archived to `AI_Nexus/Memories/ChatHistory` by enabling `remote_history_enabled` in `config.json`.
+
+### Core API Endpoints
+- `GET /v1/psta/salute`: Returns the full 07 Protocol Salute (P, S, T, A pillars).
+- `POST /v1/unreal/checkin`: Handshake for Unreal Engine world start.
+- `POST /v1/unreal/telemetry`: Truth Ingest for simulation BlackBox data.
+- `POST /v1/chat`: Standard chat interface (used by the **Chat Vessel** terminal).
+
+---
+
 ## 🛠️ Troubleshooting
-
-### Autodiscovery
-Our batch files automatically search for Python in `%LocalAppData%\Programs\Python` and `%ProgramFiles%\Python`. If the bridge still fails to start, proceed with the manual fixes below.
-
-### "Python was not found" / Microsoft Store Prompt
-If Windows tries to open the Microsoft Store:
-1.  **Search:** Type "App execution aliases" in your Windows Start menu.
-2.  **Disable:** Find the entries for `python.exe` and `python3.exe` and switch them **OFF**.
-3.  **Path Fix:** Re-install Python from [python.org](https://www.python.org/) and ensure "Add Python to PATH" is checked.
 
 ### Windows Path Spaces
 The provided batch files handle spaces (like `Unreal Projects`) automatically. If running manually, wrap your path in double quotes:
 `cd "C:\Users\Danie\Unreal Projects\..."`
 
+### Symmetrical Guard (Hallucination Control)
+If the AI reports technical status (T=) or environment state (Files) without running an Engineer/Librarian tool, the bridge will trigger a **[07 SECURITY VIOLATION]** and force the AI to retry with grounded data.
+
 ---
 
-## 📡 API Endpoints
--   `GET /`: Health check.
--   `POST /v1/safety/evaluate`: PSTA telemetry evaluation.
--   `POST /v1/nexus/query`: AI Nexus research query.
-
 ## 🏛️ Strategic Role
-The Iron Officer acts as the **Administrative (A)** brain. It interprets **Technical (T)** truth and provides "Command" decisions locally on the 5090, ensuring absolute data sovereignty.
+The Iron Officer acts as the **Administrative (A)** brain. It interprets **Technical (T)** truth and provides "Command" decisions locally on the 5090, ensuring absolute data sovereignty and preventing systemic drift.
