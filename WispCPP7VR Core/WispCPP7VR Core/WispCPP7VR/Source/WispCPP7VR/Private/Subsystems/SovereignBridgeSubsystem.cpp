@@ -278,13 +278,13 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
             {
                 for (auto& LogValue : *ToolLogsArray)
                 {
-                    TSharedPtr<FJsonObject> LogObj = LogValue->AsObject();
-                    if (LogObj.IsValid())
+                    TSharedPtr<FJsonObject> ToolLogObj = LogValue->AsObject();
+                    if (ToolLogObj.IsValid())
                     {
                         FSovereignChatLog LogEntry;
                         FString OutputStr;
                         TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputStr);
-                        FJsonSerializer::Serialize(LogObj.ToSharedRef(), Writer);
+                        FJsonSerializer::Serialize(ToolLogObj.ToSharedRef(), Writer);
 
                         LogEntry.ToolName = TEXT("Tool");
                         LogEntry.ResultSnippet = OutputStr.Left(200);

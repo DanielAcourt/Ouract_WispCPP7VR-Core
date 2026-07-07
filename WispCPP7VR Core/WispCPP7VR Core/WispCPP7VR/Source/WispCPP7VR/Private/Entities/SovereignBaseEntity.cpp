@@ -558,6 +558,7 @@ float ASovereignBaseEntity::GetHeartbeatInterval() const
     }
 }
 
+UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 USovereignSaveableEntityComponent* ASovereignBaseEntity::GetSovereignSoul_Implementation() const
 {
     // Simply return the component we already have!

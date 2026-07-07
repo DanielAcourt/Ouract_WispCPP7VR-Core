@@ -33,6 +33,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
 
+	/** Returns the Sovereign Soul component for this entity */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
+	USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const;
+
 	/** Returns the unique Save System ID for this specific entity */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
 	FGuid GetSovereignID() const;
