@@ -154,6 +154,29 @@ void USovereignBridgeSubsystem::PushBlackBoxTelemetry(const FGuid& EntityID, flo
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::RegisterEntity(USovereignSaveableEntityComponent* Soul)
+{
+    if (Soul && !RegisteredSovereignEntities.Contains(Soul))
+    {
+        RegisteredSovereignEntities.Add(Soul);
+        UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Registered Entity %s. Total: %d"), *Soul->EntityID.ToString(), RegisteredSovereignEntities.Num());
+    }
+}
+
+void USovereignBridgeSubsystem::UnregisterEntity(USovereignSaveableEntityComponent* Soul)
+{
+    if (Soul)
+    {
+        RegisteredSovereignEntities.Remove(Soul);
+        UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Unregistered Entity %s. Total: %d"), *Soul->EntityID.ToString(), RegisteredSovereignEntities.Num());
+    }
+}
+
+int32 USovereignBridgeSubsystem::GetRegisteredEntityCount() const
+{
+    return RegisteredSovereignEntities.Num();
+}
+
 void USovereignBridgeSubsystem::FlushTelemetryQueue()
 {
     UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Flushing %d queued telemetry packets..."), TelemetryQueue.Num());

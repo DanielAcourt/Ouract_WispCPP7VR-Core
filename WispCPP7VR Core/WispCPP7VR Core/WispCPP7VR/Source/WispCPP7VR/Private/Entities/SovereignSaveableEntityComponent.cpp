@@ -39,6 +39,15 @@ void USovereignSaveableEntityComponent::BeginPlay()
 	{
 		BirthTimestamp = FDateTime::Now(); // Only set if this is a brand new soul
 	}
+
+	// Register with the Bridge Subsystem for simulation-wide tracking
+	if (World)
+	{
+		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
+		{
+			Bridge->RegisterEntity(this);
+		}
+	}
 }
 
 void USovereignSaveableEntityComponent::InitializeSoul()
@@ -109,6 +118,11 @@ void USovereignSaveableEntityComponent::EndPlay(const EEndPlayReason::Type EndPl
 		if (UActorRegistry* Registry = World->GetSubsystem<UActorRegistry>())
 		{
 			Registry->UnregisterActor(EntityID);
+		}
+
+		if (USovereignBridgeSubsystem* Bridge = World->GetSubsystem<USovereignBridgeSubsystem>())
+		{
+			Bridge->UnregisterEntity(this);
 		}
 	}
 	Super::EndPlay(EndPlayReason);

@@ -299,6 +299,7 @@ class SovereignBridge:
     async def arbitrate(self, payload: AgentCommandPayload) -> Dict[str, Any]:
         # [AD-007] Simulation Persona Mapping
         # If the persona starts with SIM_, it inherits Unreal_Simulation precedence
+    # // [J] Mapping simulation-specific identities to a baseline authority level ensures AAS security while preserving context.
         original_persona = payload.persona
         if payload.persona.startswith("SIM_"):
             payload.persona = "Unreal_Simulation"
@@ -809,6 +810,7 @@ async def unreal_chat(request: UnrealChatRequest):
     """
     [07] Simulation Chat Endpoint.
     Parses SIM_ActorName format and handles stateful/stateless chat with tool logging.
+    // [J] This endpoint provides a dedicated channel for simulation-born entities to interact with the architectural knight.
     """
     sim_persona = f"SIM_{request.actor_name}"
     raw_message = request.message

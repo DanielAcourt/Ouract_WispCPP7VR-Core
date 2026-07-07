@@ -65,6 +65,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSov
  * Implements the 07 Check-In and Telemetry protocols.
  */
 UCLASS()
+class USovereignSaveableEntityComponent;
+
 class WISPCPP7VR_API USovereignBridgeSubsystem : public UWorldSubsystem
 {
     GENERATED_BODY()
@@ -106,6 +108,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
     bool bEnableRemoteHistory = false;
 
+    /** Registers a Sovereign Soul with the bridge for simulation-wide tracking */
+    void RegisterEntity(USovereignSaveableEntityComponent* Soul);
+
+    /** Unregisters a Sovereign Soul */
+    void UnregisterEntity(USovereignSaveableEntityComponent* Soul);
+
+    /** Debugging: Returns the number of registered Sovereign Entities */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Debug")
+    int32 GetRegisteredEntityCount() const;
+
 private:
     /** Internal struct to buffer telemetry while handshake is pending */
     struct FPendingTelemetry
@@ -116,6 +128,10 @@ private:
     };
 
     TArray<FPendingTelemetry> TelemetryQueue;
+
+    /** Active entities currently registered in the simulation */
+    UPROPERTY()
+    TArray<TWeakObjectPtr<USovereignSaveableEntityComponent>> RegisteredSovereignEntities;
 
     /** Flushes buffered telemetry to the bridge */
     void FlushTelemetryQueue();
