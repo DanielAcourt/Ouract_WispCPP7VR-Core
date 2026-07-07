@@ -499,8 +499,19 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 							SaveDataComponent->ApplyMetaTags(ChildDNA);
 
 							float CurrentTime = World->GetTimeSeconds();
-							MomComp->LastMatingTimestamp = CurrentTime;
-							DadComp->LastMatingTimestamp = CurrentTime;
+							
+							// Access LastMatingTimestamp from Bio components instead
+							auto* MomBio = Mother->FindComponentByClass<USovereignBioComponent>();
+							auto* DadBio = Father->FindComponentByClass<USovereignBioComponent>();
+							
+							if (MomBio)
+							{
+								MomBio->LastMatingTimestamp = CurrentTime;
+							}
+							if (DadBio)
+							{
+								DadBio->LastMatingTimestamp = CurrentTime;
+							}
 
 							UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *Mother->GetName(), *Father->GetName());
 						}

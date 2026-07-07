@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SovereignBaseComponent.h"
 #include "Entities/SovereignBrokerInterface.h"
+#include "SaveSystem/SovereignGameData.h"
 #include "SovereignQiComponent.generated.h"
 
 /**
@@ -23,7 +24,7 @@ public:
 
 	/** The spiritual alignment (Grey, Light, Dark) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
-	ESovereignElement AlignmentSocket = ESovereignElement::Grey;
+	ESovereignElement AlignmentSocket;
 
 	/** Influence level for the spiritual axis (0-100) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
@@ -31,7 +32,7 @@ public:
 
 	/** The magic essence (Fairy, Dragon, Electric) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics")
-	ESovereignElement MagicSocket = ESovereignElement::None;
+	ESovereignElement MagicSocket;
 
 	/** Influence level for the magic axis (0-100) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Genetics", meta = (ClampMin = "0", ClampMax = "100"))
