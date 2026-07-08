@@ -19,7 +19,7 @@ class WISPCPP7VR_API USovereignBaseWidget : public UUserWidget
 
 public:
     /** The Soul Hub this widget is currently observing */
-    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|UI", meta = (ExposeOnSpawn = "true"))
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|UI", meta = (ExposeOnSpawn = "true"))
     USovereignSaveableEntityComponent* SoulHub;
 
     /** The category this widget represents (e.g., "Bio", "Qi", "Attributes") */

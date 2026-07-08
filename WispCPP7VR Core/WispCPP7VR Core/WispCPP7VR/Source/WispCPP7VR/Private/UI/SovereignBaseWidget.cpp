@@ -18,9 +18,10 @@ void USovereignBaseWidget::InitializeWidget(USovereignSaveableEntityComponent* I
     if (SoulHub)
     {
         SoulHub->OnStateChanged.AddDynamic(this, &USovereignBaseWidget::HandleStateChanged);
-        UpdateWidgetVisibility();
-        HandleStateChanged(SoulHub);
     }
+
+    UpdateWidgetVisibility();
+    HandleStateChanged(SoulHub);
 }
 
 void USovereignBaseWidget::HandleStateChanged(USovereignSaveableEntityComponent* UpdatedHub)

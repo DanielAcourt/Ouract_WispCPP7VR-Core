@@ -20,7 +20,12 @@ void USovereignMasterHUD::NativeConstruct()
 
 void USovereignMasterHUD::InitializeMasterHUD(AActor* Target)
 {
-    if (!Target) return;
+    if (!Target)
+    {
+        SoulHub = nullptr;
+        InjectSoulHubToChildren();
+        return;
+    }
 
     // Use the interface to find the Soul Hub
     if (Target->GetClass()->ImplementsInterface(USovereignEntityInterface::StaticClass()))
@@ -40,7 +45,7 @@ void USovereignMasterHUD::InitializeMasterHUD(AActor* Target)
 
 void USovereignMasterHUD::InjectSoulHubToChildren()
 {
-    if (!SoulHub || !WidgetTree) return;
+    if (!WidgetTree) return;
 
     WidgetTree->ForEachWidget([this](UWidget* Widget)
     {

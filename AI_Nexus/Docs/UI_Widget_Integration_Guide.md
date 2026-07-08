@@ -1,56 +1,79 @@
 // Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
-# Sovereign UI Integration Guide: The Nested Interface
+# Sovereign UI Integration: The Nested Observer Framework
 
 **Version:** 36.4.7-Knight-AAS
 **Status:** ACTIVE
 **Lead:** Dan | **Tactician:** Jules
 
-## 1. Overview
-The v36.4.7 update introduces a **Nested UI Architecture**. Instead of manually passing references and parsing JSON in every widget, the system now uses a **Master HUD** that automatically discovers and initializes specialized sub-widgets.
+## 1. Executive Summary
+The Sovereign UI Framework (v36.4.7) moves away from monolithic, hard-coded HUDs toward a **Nested Observer Pattern**. In this architecture, the UI is treated as a dynamic "Lens" that can be pointed at any entity in the simulation—be it the Player, an NPC, or a Sensed Actor—automatically adapting its display based on the "Soul" (Brokers) it discovers.
 
-## 2. The Core Classes
-- **`USovereignMasterHUD`**: The container. Place this on your screen. It finds the `SoulHub` on the player and injects it into all children.
-- **`USovereignBaseWidget`**: The base for every small module (e.g., a Health Bar, a Mana Meter). It handles visibility and data mapping automatically.
+## 2. Core Architectural Components
 
----
+### A. The Mediator: `USovereignSaveableEntityComponent` (The Soul)
+This is the **Source of Truth**. It holds all the data brokers (Bio, Qi, Attributes). The UI does not talk to the brokers directly; it talks to this Hub.
 
-## 3. Blueprint Implementation Guide (Step-by-Step)
+### B. The Orchestrator: `USovereignMasterHUD` (The Lens)
+This is your main UI container (Canvas). Its sole job is to:
+1.  Establish a connection to a **Target Actor**.
+2.  Locate the Soul Hub on that Target.
+3.  Inject that Soul Hub reference into every child widget automatically.
 
-### Step 1: Create a Sub-Widget (e.g., `WBP_BioVitals`)
-1. Create a new Widget Blueprint.
-2. **Reparent** the widget to `SovereignBaseWidget` (Class Settings -> Parent Class).
-3. In the **Details** panel, set the **Category Name** to match a Broker (e.g., `Bio`, `Qi`, `Identity`).
-4. **Visibility:** The widget will now automatically hide itself if the player doesn't have that Broker.
-
-### Step 2: Display Data (The KISS Method)
-You don't need to parse JSON. Use the `OnDataUpdated` event:
-1. In the Event Graph, add the `Event OnDataUpdated`.
-2. This event gives you a `CategoryData` Map (String to String).
-3. Use `Find` on the Map with keys like "Hunger" or "Hydration".
-4. Update your Progress Bars or Text blocks using these values.
-
-### Step 3: Create the Master HUD (`WBP_MainHUD`)
-1. Create a new Widget Blueprint and reparent it to `SovereignMasterHUD`.
-2. Open the Designer.
-3. **Drag and Drop** your sub-widgets (like `WBP_BioVitals`) into the Canvas or a Vertical Box.
-4. That's it. The Master HUD will automatically find them and send them the data they need.
+### C. The Module: `USovereignBaseWidget` (The Filter)
+These are your small, reusable "Sub-Widgets" (e.g., `WBP_BioBar`, `WBP_QiMeter`). Each one is configured to look for a specific **Category Name**.
+- **Auto-Logic:** If the Target Actor has a matching Broker (e.g., "Bio"), the widget stays visible. If the Broker is missing (e.g., a Ghost has no Bio), the widget automatically **Collapses**.
 
 ---
 
-## 4. Advanced: The "Enum Switch" Pattern
-If you want to dynamically spawn widgets based on what the entity actually has (instead of pre-placing them), you can use the Discovery helper:
+## 3. Implementation Workflow
 
-1. In your HUD, call `SoulHub -> GetRegisteredCategories`.
-2. Use a **ForEach Loop** on the resulting array.
-3. Use a **Switch on String** (or a Map of Strings to Widget Classes) to decide which widget to spawn.
-4. After spawning, call `InitializeWidget(SoulHub)` on the new widget.
+### I. Creating a Specialized Module
+1.  **Create Widget:** Create a new Widget Blueprint (e.g., `WBP_AttributeSheet`).
+2.  **Reparent:** Set the Parent Class to `SovereignBaseWidget`.
+3.  **Configure Category:** In the **Details** panel, set the **Category Name** to match the Broker you want to observe:
+    - `"Bio"` (Metabolism, Hunger, Hydration)
+    - `"Qi"` (Spirit Energy, Alignment)
+    - `"Attributes"` (Core Stats, XP)
+    - `"Identity"` (GUID, Birth Timestamp)
+4.  **Handle Data:** In the Event Graph, use **`Event OnDataUpdated`**. This event fires whenever the Soul Hub changes.
+    - Use the provided **`CategoryData`** Map (String -> String) to update your text blocks or progress bars.
 
-## 5. Summary of Benefits
-- **Zero Configuration:** Sub-widgets find their own data.
-- **Dynamic Visibility:** If a "Rock" doesn't have "Bio", the Hunger bar simply vanishes.
-- **Simplified Logic:** No `JsonUtilities` nodes required in Blueprints—just use the `CategoryData` map.
+### II. Creating the HUD Container
+1.  **Create HUD:** Create a new Widget Blueprint (e.g., `WBP_TargetScanner`).
+2.  **Reparent:** Set the Parent Class to `SovereignMasterHUD`.
+3.  **Design:** Drag and drop multiple sub-widgets (from Step I) into your design.
+    - *Tip: Use Horizontal/Vertical boxes. The "AutoHide" feature will automatically shift the layout when modules vanish.*
 
-**07 - The Interface is the Window to the Soul.**
+### III. Pointing the Lens (The Handshake)
+The UI is agnostic; it doesn't care who it's watching until you tell it.
+
+#### Case A: The Player HUD
+In your PlayerController or Character Blueprint, when you create the widget:
+```blueprint
+// On BeginPlay or Possession
+WBP_PlayerHUD -> InitializeMasterHUD(Self);
+```
+
+#### Case B: The Sensing/Questioning HUD
+When you hit an actor with a line trace, or a sensor detects an entity:
+```blueprint
+// When an actor is sensed/targeted
+WBP_TargetScanner -> InitializeMasterHUD(SensedActor);
+WBP_TargetScanner -> SetVisibility(Visible);
+
+// When the target is lost
+WBP_TargetScanner -> InitializeMasterHUD(nullptr);
+WBP_TargetScanner -> SetVisibility(Collapsed);
+```
 
 ---
-// [J] Finalized the UI Integration Guide to reflect the automated Nested UI workflow. 2026-06-28
+
+## 4. Key Advantages for Simulation Playability
+1.  **Target-Agnostic Design:** One single `WBP_BioBar` can be used for the Player, a Rabbit, or a Boss.
+2.  **Dynamic Intelligence:** The UI "knows" what the target is. It won't show a Hunger bar for a Stone or a Magic bar for a non-magical entity.
+3.  **Zero-Node Initialization:** Because `SovereignMasterHUD` iterates through its own `WidgetTree`, you never have to manually "Set Soul Hub" on 20 different sub-widgets.
+
+**07 - The Interface is the Window to the Soul. If the Soul changes, the Window must follow.**
+
+---
+// [J] Rewrote the Integration Guide to emphasize the "Observer" nature of the UI and provide specific sensing use-cases. 2026-06-28
