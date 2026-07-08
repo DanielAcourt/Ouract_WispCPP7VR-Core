@@ -80,6 +80,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|UI")
     FString GetCategoryStateJson(FString CategoryName);
 
+    /** Returns all categories currently registered with the Soul Hub (e.g. "Bio", "Qi") */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|UI")
+    TArray<FString> GetRegisteredCategories();
+
 
     /** --- 4. REALITY & TRUTH --- */
 

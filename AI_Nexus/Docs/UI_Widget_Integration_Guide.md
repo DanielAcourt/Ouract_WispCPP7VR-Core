@@ -1,107 +1,56 @@
 // Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
-# Sovereign UI Integration Guide: The Modular Interface
+# Sovereign UI Integration Guide: The Nested Interface
 
 **Version:** 36.4.7-Knight-AAS
-**Status:** DRAFT / PROPOSAL
+**Status:** ACTIVE
 **Lead:** Dan | **Tactician:** Jules
 
 ## 1. Overview
-With the transition to the **Modular Soul Hub** (`USovereignSaveableEntityComponent`), UI widgets no longer need to scrape raw data from multiple scattered components. The Hub acts as the **Mediator**, providing a unified gateway for all simulation data.
+The v36.4.7 update introduces a **Nested UI Architecture**. Instead of manually passing references and parsing JSON in every widget, the system now uses a **Master HUD** that automatically discovers and initializes specialized sub-widgets.
 
-## 2. Core Communication Patterns
-
-### A. Push: The Event-Driven UI (`OnStateChanged`)
-For performance-critical UI (e.g., Vitals bars), widgets should **Subscribe** to the Hub's delegate.
-- **When to use:** Health bars, Qi levels, real-time feedback.
-- **Blueprint Logic:**
-  1. `Event Construct`: Get the Actor's `USovereignSaveableEntityComponent`.
-  2. `Bind Event to OnStateChanged`: Create a custom event to refresh the UI.
-  3. `Refresh UI`: Pull the specific data needed (see below).
-
-### B. Pull: The Categorized Query (`GetCategoryStateJson`)
-The Hub provides a helper to get specific module data as a JSON string.
-- **When to use:** Character sheets, detailed attribute menus, resonance charts.
-- **Blueprint Logic:**
-  1. Call `GetCategoryStateJson(CategoryName)` (e.g., "Bio", "Qi", "Attributes").
-  2. Use Unreal's `Json Utilities` to parse the string into a Blueprint Struct or Map.
+## 2. The Core Classes
+- **`USovereignMasterHUD`**: The container. Place this on your screen. It finds the `SoulHub` on the player and injects it into all children.
+- **`USovereignBaseWidget`**: The base for every small module (e.g., a Health Bar, a Mana Meter). It handles visibility and data mapping automatically.
 
 ---
 
-## 3. Recommended Widget Architecture
+## 3. Blueprint Implementation Guide (Step-by-Step)
 
-To maintain the modularity of the system, we recommend a **Nested Widget** approach:
+### Step 1: Create a Sub-Widget (e.g., `WBP_BioVitals`)
+1. Create a new Widget Blueprint.
+2. **Reparent** the widget to `SovereignBaseWidget` (Class Settings -> Parent Class).
+3. In the **Details** panel, set the **Category Name** to match a Broker (e.g., `Bio`, `Qi`, `Identity`).
+4. **Visibility:** The widget will now automatically hide itself if the player doesn't have that Broker.
 
-### Level 1: The Master Sovereign HUD
-A global container that finds the currently possessed or targeted entity. It doesn't know *how* to display Bio or Qi; it just holds the references.
+### Step 2: Display Data (The KISS Method)
+You don't need to parse JSON. Use the `OnDataUpdated` event:
+1. In the Event Graph, add the `Event OnDataUpdated`.
+2. This event gives you a `CategoryData` Map (String to String).
+3. Use `Find` on the Map with keys like "Hunger" or "Hydration".
+4. Update your Progress Bars or Text blocks using these values.
 
-### Level 2: Specialized Module Widgets
-Small, reusable widgets designed for specific categories:
-- `WBP_BioVitals`: Listens for `OnStateChanged`, pulls "Bio" category, updates Hunger/Hydration bars.
-- `WBP_AttributeSheet`: Pulls "Attributes" JSON on-demand when the player opens the menu.
-- `WBP_QiResonance`: Visualizes the `Resonance` map found within the "Qi" category.
-
----
-
-## 4. Playability Features (Proposals)
-
-### 1. The "Stability Meter" (Paradox Density)
-Visualize the `ParadoxDensity` (Ξ) as a glitch effect or a status bar.
-- **High Ξ:** Distorted UI, shifting colors, "Unknown" labels on certain stats.
-- **Implementation:** Bind to `OnStateChanged` and read `1.0 - GetSystemConfidence()`.
-
-### 2. Live Attribute "Training" Feedback
-Since attributes now accumulate experience, the UI should show "XP Progress" for stats like Strength or Wisdom.
-- **Implementation:** Pull the "Attributes" category and display the decimal part of the experience as a progress bar.
-
-### 3. Soul Identity Card
-A "flavor" widget that shows the `BirthTimestamp` and `EntityID`, translated into "Sovereign Years" using the logic already in the Hub.
-
-### 4. Direct Bridge Interaction (Chat)
-Use the `SendSimulationChat` function in the `USovereignBridgeSubsystem` to feed the ChatWindow. The Hub's `bIsBeingPossessed` flag can be used to toggle the UI style between "Observer" and "Pilot" modes.
+### Step 3: Create the Master HUD (`WBP_MainHUD`)
+1. Create a new Widget Blueprint and reparent it to `SovereignMasterHUD`.
+2. Open the Designer.
+3. **Drag and Drop** your sub-widgets (like `WBP_BioVitals`) into the Canvas or a Vertical Box.
+4. That's it. The Master HUD will automatically find them and send them the data they need.
 
 ---
 
-## 5. Best Practices for Nested Widgets (UMG Implementation)
+## 4. Advanced: The "Enum Switch" Pattern
+If you want to dynamically spawn widgets based on what the entity actually has (instead of pre-placing them), you can use the Discovery helper:
 
-To make a truly flexible and playable experience, you should use **Composition**. Instead of one giant widget, build small modules and nest them.
+1. In your HUD, call `SoulHub -> GetRegisteredCategories`.
+2. Use a **ForEach Loop** on the resulting array.
+3. Use a **Switch on String** (or a Map of Strings to Widget Classes) to decide which widget to spawn.
+4. After spawning, call `InitializeWidget(SoulHub)` on the new widget.
 
-### A. The "Reference Injection" Pattern
-The biggest challenge with nested widgets is making sure every sub-widget has the correct Soul Hub reference.
-
-1.  **Expose on Spawn:** In your sub-widgets (e.g., `WBP_BioBar`), create a variable `SoulHub` of type `USovereignSaveableEntityComponent`. Mark it as **Instance Editable** and **Expose on Spawn**.
-2.  **The Parent Handshake:** In the Master HUD's `Construct` or `OnPossession` event:
-    - Get the `SoulHub` from the player.
-    - Set the `SoulHub` variable on all child widgets.
-    - Call a "Initialize" function on the children to trigger their internal binding logic.
-
-### B. Dynamic Module Loading (The "Module Slot" Pattern)
-If you want the UI to change based on what components the entity actually has:
-
-1.  **Named Slots:** In your Master HUD, use **Named Slots** instead of hardcoded widgets.
-2.  **Component Discovery:**
-    - On BeginPlay, the Master HUD asks the `SoulHub` for its `RegisteredBrokers`.
-    - For each Broker (Bio, Qi, etc.), the HUD spawns the corresponding Widget and drops it into a Vertical/Horizontal Box.
-    - This way, a "Rock" (which has no Bio) won't show a Hunger bar, but a "Bird" will.
-
-### C. UI Polling vs. Events
-- **Events (Efficient):** Use the `OnStateChanged` delegate for bars that change frequently.
-- **Polling (Playable):** For text fields (like "Level" or "Name"), simply use a **Widget Binding** or a slow timer (0.1s) to pull data. This is often "good enough" for simulation-style UIs and easier to debug.
-
----
-
-## 6. Blueprint Example: Refreshing Bio Vitals
-```blueprint
-// Inside WBP_BioVitals
-Event RefreshVitals(USovereignSaveableEntityComponent* SoulHub)
-{
-    FString BioJson = SoulHub->GetCategoryStateJson("Bio");
-    // Parse JSON...
-    float CurrentHunger = JsonData.GetNumberField("Hunger");
-    ProgressBar_Hunger->SetPercent(CurrentHunger / 100.0f);
-}
-```
+## 5. Summary of Benefits
+- **Zero Configuration:** Sub-widgets find their own data.
+- **Dynamic Visibility:** If a "Rock" doesn't have "Bio", the Hunger bar simply vanishes.
+- **Simplified Logic:** No `JsonUtilities` nodes required in Blueprints—just use the `CategoryData` map.
 
 **07 - The Interface is the Window to the Soul.**
 
 ---
-// [J] Drafted the UI Integration Guide to enable the transition from structural code to a playable experience. 2026-06-28
+// [J] Finalized the UI Integration Guide to reflect the automated Nested UI workflow. 2026-06-28

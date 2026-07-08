@@ -230,6 +230,19 @@ FString USovereignSaveableEntityComponent::GetCategoryStateJson(FString Category
 	return TEXT("{}");
 }
 
+TArray<FString> USovereignSaveableEntityComponent::GetRegisteredCategories()
+{
+	TArray<FString> Categories;
+	TSharedPtr<FJsonObject> FullState = CaptureFullEntityState();
+
+	for (auto& Elem : FullState->Values)
+	{
+		Categories.Add(Elem.Key);
+	}
+
+	return Categories;
+}
+
 void USovereignSaveableEntityComponent::AddUnknownTag(FString Key, FString Value)
 {
 	UnknownMetaTags.Add(Key, Value);
