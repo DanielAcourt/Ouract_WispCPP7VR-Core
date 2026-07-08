@@ -17,6 +17,10 @@ public:
 	// Sets default values for this component's properties
 	USovereignBaseComponent();
 
+	/** If false, this component will not register with the Soul Hub or show up in the UI. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Architecture")
+	bool bRegisterAsBroker = true;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

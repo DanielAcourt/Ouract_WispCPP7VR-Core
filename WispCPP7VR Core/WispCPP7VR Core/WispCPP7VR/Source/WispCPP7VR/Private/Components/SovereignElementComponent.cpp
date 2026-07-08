@@ -17,6 +17,8 @@ void USovereignElementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!bRegisterAsBroker) return;
+
 	if (AActor* Owner = GetOwner())
 	{
 		if (USovereignSaveableEntityComponent* SoulHub = Owner->FindComponentByClass<USovereignSaveableEntityComponent>())

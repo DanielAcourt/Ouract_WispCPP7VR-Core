@@ -24,6 +24,8 @@ void USovereignBioComponent::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (!bRegisterAsBroker) return;
+
     // Auto-register with the Soul Hub
     if (AActor* Owner = GetOwner())
     {
