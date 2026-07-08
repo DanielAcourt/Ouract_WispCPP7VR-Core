@@ -6,15 +6,12 @@
 #include "Dom/JsonObject.h"
 
 USovereignQiComponent::USovereignQiComponent()
-	: AlignmentInfluence(100.0f)
-	, MagicInfluence(0.0f)
-	, CurrentQi(0.0f)
-	, MaxQiCapacity(100.0f)
-	, QiPurity(1.0f)
 {
-	AlignmentSocket = ESovereignElement::Grey;
-	MagicSocket = ESovereignElement::None;
-	PrimaryComponentTick.TickInterval = 0.1f;
+	PrimaryComponentTick.bCanEverTick = false;
+	CurrentQi = 0.0f;
+	MaxQiCapacity = 100.0f;
+	QiPurity = 0.1f;
+	TotalQiAccumulated = 0.0f;
 }
 
 void USovereignQiComponent::BeginPlay()
