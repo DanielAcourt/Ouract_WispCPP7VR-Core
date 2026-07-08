@@ -1,7 +1,7 @@
 ﻿{
 	"Entities": [
 		{
-			"GUID": "65735A194F3FB859BF7D599BFD9E5294",
+			"GUID": "92F349C44FFD6B1A0DECD1810D5D42BC",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/BP_PlayerWisp.BP_PlayerWisp_C",
 			"Transform": "-200.000000,0.000000,92.000100|0.000000,180.000000,0.000000|1.000000,1.000000,1.000000",
@@ -9,8 +9,8 @@
 			{
 				"Identity":
 				{
-					"GUID": "65735A194F3FB859BF7D599BFD9E5294",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "92F349C44FFD6B1A0DECD1810D5D42BC",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
@@ -46,7 +46,7 @@
 					"AlignmentInfluence": 100,
 					"MagicSocket": "ESovereignElement::None",
 					"MagicInfluence": 0,
-					"CurrentQi": 498.26138305664062,
+					"CurrentQi": 499.48565673828125,
 					"MaxQiCapacity": 500,
 					"QiPurity": 0.80000001192092896,
 					"TotalQiAccumulated": 0,
@@ -57,157 +57,7 @@
 			}
 		},
 		{
-			"GUID": "DCF822FC48EB13E1A47BFCBDA2387A1D",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/Items/BP_Eriris.BP_Eriris_C",
-			"Transform": "-1530.000000,170.000000,-100.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"Identity":
-				{
-					"GUID": "DCF822FC48EB13E1A47BFCBDA2387A1D",
-					"BirthTimestamp": "2026.07.07-14.15.52",
-					"bIsBeingPossessed": false,
-					"ParadoxDensity": 0
-				},
-				"Bio":
-				{
-					"Hunger": 47.563583374023438,
-					"Hydration": 47.073867797851562,
-					"Fatigue": 0,
-					"Tiredness": 0,
-					"Toxicity": 0,
-					"WasteLevel": 1.2195919752120972,
-					"Mass": 1,
-					"MassExperience": 1,
-					"MaturityProgress": 0.0099999997764825821,
-					"Entropy": 0,
-					"bIsFemale": false,
-					"ParentID": "00000000000000000000000000000000",
-					"MotherID": "00000000000000000000000000000000",
-					"FatherID": "00000000000000000000000000000000",
-					"OffspringCount": 0,
-					"MatingHistory": []
-				},
-				"Qi":
-				{
-					"AlignmentSocket": "ESovereignElement::Grey",
-					"AlignmentInfluence": 100,
-					"MagicSocket": "ESovereignElement::None",
-					"MagicInfluence": 0,
-					"CurrentQi": 10,
-					"MaxQiCapacity": 100,
-					"QiPurity": 1,
-					"TotalQiAccumulated": 0,
-					"Resonance":
-					{
-					}
-				},
-				"Elements":
-				{
-					"BodySocket": "ESovereignElement::Nature",
-					"BodyInfluence": 100,
-					"FireAffinity": 0,
-					"EarthAffinity": 0,
-					"WindAffinity": 0,
-					"WaterAffinity": 0
-				},
-				"Attributes":
-				{
-					"Strength": 10,
-					"Dexterity": 10,
-					"Constitution": 10,
-					"Intelligence": 10,
-					"Wisdom": 10,
-					"Charisma": 10,
-					"Luck": 10,
-					"ArmourClass": 10,
-					"CurrentHealth": 100,
-					"PhysicalResistance": 0,
-					"MagicalResistance": 0,
-					"MentalResistance": 0,
-					"PoisonResistance": 0,
-					"SlowResistance": 0
-				}
-			}
-		},
-		{
-			"GUID": "69C40E1F42943CC39D567793CEA9B38D",
-			"ParentID": "00000000000000000000000000000000",
-			"Class": "/Game/Blueprint/Actors/Items/BP_Eriris.BP_Eriris_C",
-			"Transform": "-1530.000000,170.000000,-100.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
-			"MetaTags": 
-			{
-				"Identity":
-				{
-					"GUID": "DCF822FC48EB13E1A47BFCBDA2387A1D",
-					"BirthTimestamp": "2026.07.07-14.15.52",
-					"bIsBeingPossessed": false,
-					"ParadoxDensity": 0
-				},
-				"Bio":
-				{
-					"Hunger": 47.563583374023438,
-					"Hydration": 47.073867797851562,
-					"Fatigue": 0,
-					"Tiredness": 0,
-					"Toxicity": 0,
-					"WasteLevel": 1.2195919752120972,
-					"Mass": 1,
-					"MassExperience": 1,
-					"MaturityProgress": 0.0099999997764825821,
-					"Entropy": 0,
-					"bIsFemale": false,
-					"ParentID": "00000000000000000000000000000000",
-					"MotherID": "00000000000000000000000000000000",
-					"FatherID": "00000000000000000000000000000000",
-					"OffspringCount": 0,
-					"MatingHistory": []
-				},
-				"Qi":
-				{
-					"AlignmentSocket": "ESovereignElement::Grey",
-					"AlignmentInfluence": 100,
-					"MagicSocket": "ESovereignElement::None",
-					"MagicInfluence": 0,
-					"CurrentQi": 10,
-					"MaxQiCapacity": 100,
-					"QiPurity": 1,
-					"TotalQiAccumulated": 0,
-					"Resonance":
-					{
-					}
-				},
-				"Elements":
-				{
-					"BodySocket": "ESovereignElement::Nature",
-					"BodyInfluence": 100,
-					"FireAffinity": 0,
-					"EarthAffinity": 0,
-					"WindAffinity": 0,
-					"WaterAffinity": 0
-				},
-				"Attributes":
-				{
-					"Strength": 10,
-					"Dexterity": 10,
-					"Constitution": 10,
-					"Intelligence": 10,
-					"Wisdom": 10,
-					"Charisma": 10,
-					"Luck": 10,
-					"ArmourClass": 10,
-					"CurrentHealth": 100,
-					"PhysicalResistance": 0,
-					"MagicalResistance": 0,
-					"MentalResistance": 0,
-					"PoisonResistance": 0,
-					"SlowResistance": 0
-				}
-			}
-		},
-		{
-			"GUID": "79F76E48494CE0604C09D09BC9B468E5",
+			"GUID": "864E12ED4B42DAE97029D8B93D7FE0B4",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/Actors/Living/BP_Antelope.BP_Antelope_C",
 			"Transform": "-2080.000000,-600.000000,-9.850001|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -215,8 +65,8 @@
 			{
 				"Identity":
 				{
-					"GUID": "79F76E48494CE0604C09D09BC9B468E5",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "864E12ED4B42DAE97029D8B93D7FE0B4",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
@@ -263,7 +113,7 @@
 			}
 		},
 		{
-			"GUID": "39CDECB24B824A853D09799A801B5A8C",
+			"GUID": "27A7F3E241350D435C4DF8BF2F3B75F1",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/Actors/Living/BP_Antelope.BP_Antelope_C",
 			"Transform": "-2080.000000,-600.000000,-9.850001|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -271,8 +121,8 @@
 			{
 				"Identity":
 				{
-					"GUID": "79F76E48494CE0604C09D09BC9B468E5",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "864E12ED4B42DAE97029D8B93D7FE0B4",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
@@ -319,7 +169,7 @@
 			}
 		},
 		{
-			"GUID": "7452BB7144301707331D6A94450167BC",
+			"GUID": "FA04113E4EF5BD924D7ACF960A75690C",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Script/WispCPP7VR.SovereignSaveTerminal",
 			"Transform": "-2400.000000,-710.000000,-100.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -327,22 +177,22 @@
 			{
 				"Identity":
 				{
-					"GUID": "7452BB7144301707331D6A94450167BC",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "FA04113E4EF5BD924D7ACF960A75690C",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
 				"Bio":
 				{
-					"Hunger": 47.163604736328125,
-					"Hydration": 46.593883514404297,
+					"Hunger": 49.174411773681641,
+					"Hydration": 49.008674621582031,
 					"Fatigue": 0,
 					"Tiredness": 0,
 					"Toxicity": 0,
-					"WasteLevel": 1.4196071624755859,
+					"WasteLevel": 0.41313642263412476,
 					"Mass": 1,
 					"MassExperience": 1,
-					"MaturityProgress": 0.13999998569488525,
+					"MaturityProgress": 0.039999999105930328,
 					"Entropy": 0,
 					"bIsFemale": false,
 					"ParentID": "00000000000000000000000000000000",
@@ -357,7 +207,7 @@
 					"AlignmentInfluence": 100,
 					"MagicSocket": "ESovereignElement::None",
 					"MagicInfluence": 0,
-					"CurrentQi": 14,
+					"CurrentQi": 4,
 					"MaxQiCapacity": 100,
 					"QiPurity": 1,
 					"TotalQiAccumulated": 0,
@@ -394,7 +244,7 @@
 			}
 		},
 		{
-			"GUID": "A6BFCA914B34156D091076A5DE023007",
+			"GUID": "1A936CE6411C31FF82B2DF81E31E5FBA",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Script/WispCPP7VR.SovereignSaveTerminal",
 			"Transform": "-2400.000000,-710.000000,-100.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -402,22 +252,22 @@
 			{
 				"Identity":
 				{
-					"GUID": "7452BB7144301707331D6A94450167BC",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "FA04113E4EF5BD924D7ACF960A75690C",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
 				"Bio":
 				{
-					"Hunger": 47.163604736328125,
-					"Hydration": 46.593883514404297,
+					"Hunger": 49.174411773681641,
+					"Hydration": 49.008674621582031,
 					"Fatigue": 0,
 					"Tiredness": 0,
 					"Toxicity": 0,
-					"WasteLevel": 1.4196071624755859,
+					"WasteLevel": 0.41313642263412476,
 					"Mass": 1,
 					"MassExperience": 1,
-					"MaturityProgress": 0.13999998569488525,
+					"MaturityProgress": 0.039999999105930328,
 					"Entropy": 0,
 					"bIsFemale": false,
 					"ParentID": "00000000000000000000000000000000",
@@ -432,7 +282,7 @@
 					"AlignmentInfluence": 100,
 					"MagicSocket": "ESovereignElement::None",
 					"MagicInfluence": 0,
-					"CurrentQi": 14,
+					"CurrentQi": 4,
 					"MaxQiCapacity": 100,
 					"QiPurity": 1,
 					"TotalQiAccumulated": 0,
@@ -469,7 +319,7 @@
 			}
 		},
 		{
-			"GUID": "D90A9F2A414BFEA485E33E811135747F",
+			"GUID": "E17945654650FE9998704880E64039A2",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/MySovereignBaseInteractableTest1.MySovereignBaseInteractableTest1_C",
 			"Transform": "710.000000,-90.000000,70.000000|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -477,22 +327,22 @@
 			{
 				"Identity":
 				{
-					"GUID": "D90A9F2A414BFEA485E33E811135747F",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "E17945654650FE9998704880E64039A2",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
 				"Bio":
 				{
-					"Hunger": 47.163604736328125,
-					"Hydration": 46.593883514404297,
+					"Hunger": 49.174411773681641,
+					"Hydration": 49.008674621582031,
 					"Fatigue": 0,
 					"Tiredness": 0,
 					"Toxicity": 0,
-					"WasteLevel": 1.4196071624755859,
+					"WasteLevel": 0.41313642263412476,
 					"Mass": 1,
 					"MassExperience": 1,
-					"MaturityProgress": 0.13999998569488525,
+					"MaturityProgress": 0.039999999105930328,
 					"Entropy": 0,
 					"bIsFemale": false,
 					"ParentID": "00000000000000000000000000000000",
@@ -507,7 +357,7 @@
 					"AlignmentInfluence": 100,
 					"MagicSocket": "ESovereignElement::None",
 					"MagicInfluence": 0,
-					"CurrentQi": 14,
+					"CurrentQi": 4,
 					"MaxQiCapacity": 100,
 					"QiPurity": 1,
 					"TotalQiAccumulated": 0,
@@ -552,22 +402,22 @@
 			{
 				"Identity":
 				{
-					"GUID": "D90A9F2A414BFEA485E33E811135747F",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "E17945654650FE9998704880E64039A2",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
 				"Bio":
 				{
-					"Hunger": 47.163604736328125,
-					"Hydration": 46.593883514404297,
+					"Hunger": 49.174411773681641,
+					"Hydration": 49.008674621582031,
 					"Fatigue": 0,
 					"Tiredness": 0,
 					"Toxicity": 0,
-					"WasteLevel": 1.4196071624755859,
+					"WasteLevel": 0.41313642263412476,
 					"Mass": 1,
 					"MassExperience": 1,
-					"MaturityProgress": 0.13999998569488525,
+					"MaturityProgress": 0.039999999105930328,
 					"Entropy": 0,
 					"bIsFemale": false,
 					"ParentID": "00000000000000000000000000000000",
@@ -582,7 +432,7 @@
 					"AlignmentInfluence": 100,
 					"MagicSocket": "ESovereignElement::None",
 					"MagicInfluence": 0,
-					"CurrentQi": 14,
+					"CurrentQi": 4,
 					"MaxQiCapacity": 100,
 					"QiPurity": 1,
 					"TotalQiAccumulated": 0,
@@ -619,7 +469,7 @@
 			}
 		},
 		{
-			"GUID": "6D9C6DD8463B4CA197E4CF87276F33F7",
+			"GUID": "9DAEC47C4AA6B55311C907BF0827B2B9",
 			"ParentID": "00000000000000000000000000000000",
 			"Class": "/Game/Blueprint/Actors/Living/BP_PPC.BP_PPC_C",
 			"Transform": "1540.000000,1430.000000,-9.850001|0.000000,0.000000,-0.000000|1.000000,1.000000,1.000000",
@@ -627,8 +477,8 @@
 			{
 				"Identity":
 				{
-					"GUID": "6D9C6DD8463B4CA197E4CF87276F33F7",
-					"BirthTimestamp": "2026.07.07-14.15.52",
+					"GUID": "9DAEC47C4AA6B55311C907BF0827B2B9",
+					"BirthTimestamp": "2026.07.08-14.34.02",
 					"bIsBeingPossessed": false,
 					"ParadoxDensity": 0
 				},
