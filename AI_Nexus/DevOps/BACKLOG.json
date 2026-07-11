@@ -268,5 +268,14 @@
     "Node": "Admin/DevOps",
     "Why": "Mirror the Iron Officer persona inside the Unreal simulation.",
     "What": "High-fidelity 3D agent manifestation responding to live PSTA telemetry."
+  },
+  {
+    "ID": "AD-008",
+    "Task": "Onboard Maria (Developer Handshake)",
+    "Complexity": "2",
+    "Status": "Todo",
+    "Node": "Admin",
+    "Why": "Onboard Maria to the Sovereign Framework, aligning with AAS and PSTA standards.",
+    "What": "Active repository access, local development environment setup, and successful boot salute verification."
   }
 ]

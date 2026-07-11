@@ -46,6 +46,7 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-023 | Tool: `cross_protocol_analyzer` | 13 | Todo | Research | Facilitate semantic translation between disparate system outputs and standards. | Semantic mapping engine with Constraint-Optimized Transformation (COTE) matrix. |
 | B-024 | CFL: Temporal Paradox Mitigation | 8 | Todo | Research | Address Ticket #934-Temporal. Prevent logic violations of linear time in the SDK. | Implement a 'Causality Dampener' component handling temporal gradient differentials. |
 | B-025 | CFL: Adaptive Field Interpolator | 13 | Todo | Research | Address Ticket #102-Dynamic. Handle 'Unknown' abilities on runtime via interpolation. | Unreal component that reconciles incompatible data streams into emergent VFX/Physics. |
+| AD-008 | Onboard Maria (Developer Handshake) | 2 | Todo | Admin | Onboard Maria to the Sovereign Framework, aligning with AAS and PSTA standards. | Active repository access, local development environment setup, and successful boot salute verification. |
 
 ---
 
