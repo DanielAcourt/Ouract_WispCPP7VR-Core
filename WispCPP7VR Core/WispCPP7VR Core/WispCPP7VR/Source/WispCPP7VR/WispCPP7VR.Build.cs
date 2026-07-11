@@ -14,7 +14,7 @@ public class WispCPP7VR : ModuleRules
             "Engine",
             "InputCore",
             "EnhancedInput",
-            "Http",
+            "HTTP",
             "Json",
             "JsonUtilities",
             "GameplayTags",

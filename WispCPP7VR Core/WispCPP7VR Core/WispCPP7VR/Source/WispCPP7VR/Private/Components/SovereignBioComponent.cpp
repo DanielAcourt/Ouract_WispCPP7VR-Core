@@ -1,9 +1,12 @@
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
+
 #include "Components/SovereignBioComponent.h"
-#include "Entities/SovereignBaseEntity.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
+#include "Dom/JsonObject.h"
 
 USovereignBioComponent::USovereignBioComponent()
 {
-    PrimaryComponentTick.bCanEverTick = false; // Logic moved to Sovereign Heartbeat
+    PrimaryComponentTick.bCanEverTick = true;
 
     // Default Vitals
     Hunger = 50.0f;
@@ -13,49 +16,53 @@ USovereignBioComponent::USovereignBioComponent()
     Toxicity = 0.0f;
     WasteLevel = 0.0f;
     Entropy = 0.0f;
-
     Mass = 1;
     MassExperience = 1.0;
 }
 
+void USovereignBioComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // Auto-register with the Soul Hub
+    if (AActor* Owner = GetOwner())
+    {
+        if (USovereignSaveableEntityComponent* SoulHub = Owner->FindComponentByClass<USovereignSaveableEntityComponent>())
+        {
+            SoulHub->RegisterBroker(this);
+        }
+    }
+}
+
+void USovereignBioComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (AActor* Owner = GetOwner())
+    {
+        if (USovereignSaveableEntityComponent* SoulHub = Owner->FindComponentByClass<USovereignSaveableEntityComponent>())
+        {
+            SoulHub->UnregisterBroker(this);
+        }
+    }
+    Super::EndPlay(EndPlayReason);
+}
+
+void USovereignBioComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    UpdateMetabolism(DeltaTime);
+}
+
 void USovereignBioComponent::UpdateMetabolism(float DeltaTime)
 {
-    // 1. ENVIRONMENTAL & AGE SCALING
-    float TempCost = FMath::Abs(TemperatureShift) * 2.0f;
-    float EntropyMultiplier = 1.0f + (Entropy * 0.01f);
-
     // Total cost of existence
-    float NetDrain = (0.1f + StateDrain + TempCost) * EntropyMultiplier * DeltaTime;
+    float NetDrain = 0.1f * DeltaTime;
 
-    // 2. SURVIVAL HIERARCHY (The "Battery" Logic)
     if (Hunger > 0.0f)
     {
         Hunger -= NetDrain;
-        Hydration -= (NetDrain * 1.2f); // Hydration typically drains faster
-    }
-    else if (NutrientReserves.Contains(ESovereignNutrient::Fats) && NutrientReserves[ESovereignNutrient::Fats] > 0.0f)
-    {
-        // Burning Fat reserves when starving
-        NutrientReserves[ESovereignNutrient::Fats] -= (NetDrain * 2.0f);
-        Fatigue += (NetDrain * 0.5f);
-    }
-    else
-    {
-        // Critical Starvation: Handled by AttributeComponent checking this component's Hunger
+        Hydration -= (NetDrain * 1.2f);
     }
 
-    // 3. GROWTH LOOP (Cookie Clicker Prestige)
-    // Only grow Mass if well-fed, hydrated, and not exhausted
-    if (Hunger > 80.0f && Hydration > 80.0f && Fatigue < 20.0f)
-    {
-        // Tiny incremental growth toward the next "Mass" level
-        double GrowthAmount = 0.00000001 * (double)DeltaTime;
-        MassExperience += GrowthAmount;
-        Mass = FMath::FloorToInt(MassExperience);
-    }
-
-    // 4. TOXICITY & WASTE
-    if (Toxicity > 0.0f) Toxicity -= (0.01f * DeltaTime); // Passive detox
     WasteLevel += (NetDrain * 0.5f);
 }
 
@@ -63,64 +70,88 @@ void USovereignBioComponent::HandleBiologicalTransition(float DeltaTime)
 {
 }
 
-float USovereignBioComponent::GetDecompositionYield() const
+/** --- 07 BROKER IMPLEMENTATION --- */
+
+void USovereignBioComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
 {
-    return 0.0f;
+    TSharedPtr<FJsonObject> BioObj = MakeShareable(new FJsonObject());
+
+    // 1. Vitals
+    BioObj->SetNumberField(TEXT("Hunger"), Hunger);
+    BioObj->SetNumberField(TEXT("Hydration"), Hydration);
+    BioObj->SetNumberField(TEXT("Fatigue"), Fatigue);
+    BioObj->SetNumberField(TEXT("Tiredness"), Tiredness);
+    BioObj->SetNumberField(TEXT("Toxicity"), Toxicity);
+    BioObj->SetNumberField(TEXT("WasteLevel"), WasteLevel);
+
+    // 2. Growth
+    BioObj->SetNumberField(TEXT("Mass"), Mass);
+    BioObj->SetNumberField(TEXT("MassExperience"), MassExperience);
+    BioObj->SetNumberField(TEXT("MaturityProgress"), MaturityProgress);
+    BioObj->SetNumberField(TEXT("Entropy"), Entropy);
+
+    // 3. Lineage
+    BioObj->SetBoolField(TEXT("bIsFemale"), bIsFemale);
+    BioObj->SetStringField(TEXT("ParentID"), ParentID.ToString());
+    BioObj->SetStringField(TEXT("MotherID"), MotherID.ToString());
+    BioObj->SetStringField(TEXT("FatherID"), FatherID.ToString());
+    BioObj->SetNumberField(TEXT("OffspringCount"), OffspringCount);
+
+    TArray<TSharedPtr<FJsonValue>> MatingArray;
+    for (const FGuid& Id : MatingHistory)
+    {
+        MatingArray.Add(MakeShareable(new FJsonValueString(Id.ToString())));
+    }
+    BioObj->SetArrayField(TEXT("MatingHistory"), MatingArray);
+
+    OutJson->SetObjectField(TEXT("Bio"), BioObj);
 }
 
-
-TMap<FString, FString> USovereignBioComponent::GetSaveData()
+void USovereignBioComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
 {
-    TMap<FString, FString> Data;
-    FString P = TEXT("BioComponent.");
-
-    Data.Add(P + TEXT("HGR"), FString::SanitizeFloat(Hunger));
-    Data.Add(P + TEXT("HYD"), FString::SanitizeFloat(Hydration));
-    Data.Add(P + TEXT("FTG"), FString::SanitizeFloat(Fatigue));
-    Data.Add(P + TEXT("TRD"), FString::SanitizeFloat(Tiredness));
-    Data.Add(P + TEXT("ENT"), FString::SanitizeFloat(Entropy));
-    Data.Add(P + TEXT("MSXP"), FString::Printf(TEXT("%f"), MassExperience));
-
-    // Nutrient TMap Serialization
-    for (uint8 i = 0; i < (uint8)ESovereignNutrient::MAX; ++i)
+    const TSharedPtr<FJsonObject>* BioObj;
+    if (InJson->TryGetObjectField(TEXT("Bio"), BioObj))
     {
-        ESovereignNutrient Type = (ESovereignNutrient)i;
-        if (NutrientReserves.Contains(Type))
+        double TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Hunger"), TempVal)) Hunger = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Hydration"), TempVal)) Hydration = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Fatigue"), TempVal)) Fatigue = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Tiredness"), TempVal)) Tiredness = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Toxicity"), TempVal)) Toxicity = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("WasteLevel"), TempVal)) WasteLevel = (float)TempVal;
+
+        if ((*BioObj)->TryGetNumberField(TEXT("Mass"), TempVal)) Mass = (int32)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("MassExperience"), MassExperience)) {} // MassExperience is double
+        if ((*BioObj)->TryGetNumberField(TEXT("MaturityProgress"), TempVal)) MaturityProgress = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("Entropy"), TempVal)) Entropy = (float)TempVal;
+
+        (*BioObj)->TryGetBoolField(TEXT("bIsFemale"), bIsFemale);
+
+        FString IdStr;
+        if ((*BioObj)->TryGetStringField(TEXT("ParentID"), IdStr)) FGuid::Parse(IdStr, ParentID);
+        if ((*BioObj)->TryGetStringField(TEXT("MotherID"), IdStr)) FGuid::Parse(IdStr, MotherID);
+        if ((*BioObj)->TryGetStringField(TEXT("FatherID"), IdStr)) FGuid::Parse(IdStr, FatherID);
+
+        if ((*BioObj)->TryGetNumberField(TEXT("OffspringCount"), TempVal)) OffspringCount = (int32)TempVal;
+
+        const TArray<TSharedPtr<FJsonValue>>* MatingArray;
+        if ((*BioObj)->TryGetArrayField(TEXT("MatingHistory"), MatingArray))
         {
-            Data.Add(P + FString::Printf(TEXT("Nutrient.%d"), i), FString::SanitizeFloat(NutrientReserves[Type]));
+            MatingHistory.Empty();
+            for (auto& Val : *MatingArray)
+            {
+                FGuid Id;
+                if (FGuid::Parse(Val->AsString(), Id)) MatingHistory.Add(Id);
+            }
         }
     }
-    return Data;
 }
 
-
-
-void USovereignBioComponent::RestoreSaveData(const TMap<FString, FString>& Data)
+void USovereignBioComponent::OnProcessData(const TMap<FString, FString>& Data)
 {
-    FString P = TEXT("BioComponent.");
-    auto GetFlt = [&](FString Key, float& Target) { if (Data.Contains(P + Key)) Target = FCString::Atof(*Data[P + Key]); };
-
-    GetFlt(TEXT("HGR"), Hunger);
-    GetFlt(TEXT("HYD"), Hydration);
-    GetFlt(TEXT("FTG"), Fatigue);
-    GetFlt(TEXT("TRD"), Tiredness);
-    GetFlt(TEXT("ENT"), Entropy);
-
-    if (Data.Contains(P + TEXT("MSXP")))
+    // Handle external biological injections
+    if (Data.Contains(TEXT("Bio.Heal")))
     {
-        MassExperience = FCString::Atod(*Data[P + TEXT("MSXP")]);
-        Mass = FMath::FloorToInt(MassExperience);
+        Toxicity = FMath::Clamp(Toxicity - FCString::Atof(*Data[TEXT("Bio.Heal")]), 0.0f, 100.0f);
     }
-
-    for (uint8 i = 0; i < (uint8)ESovereignNutrient::MAX; ++i)
-    {
-        FString Key = P + FString::Printf(TEXT("Nutrient.%d"), i);
-        if (Data.Contains(Key))
-            NutrientReserves.Add((ESovereignNutrient)i, FCString::Atof(*Data[Key]));
-    }
-}
-
-void USovereignBioComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }

@@ -9,6 +9,7 @@ import os
 import json
 import subprocess
 import requests
+import datetime
 import argparse
 import re
 import shutil
@@ -40,6 +41,8 @@ USER_NAME = "Dan"
 READ_ZONES = []
 WRITE_ZONES = []
 PERSONA_ZONES = {}
+REMOTE_HISTORY_ENABLED = False
+HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
 
 # --- AAS/PSTA Constants ---
 PERSONA_PRECEDENCE = {
@@ -85,7 +88,7 @@ TOOL_MIN_PRECEDENCE = {
 }
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -107,6 +110,11 @@ def load_config():
                 })
 
                 USER_NAME = pref_cfg.get("name", "Dan")
+
+                # [AD-006] Remote History Configuration
+                REMOTE_HISTORY_ENABLED = bridge_cfg.get("remote_history_enabled", False)
+                HISTORY_DIR = os.path.abspath(os.path.join(REPO_ROOT, bridge_cfg.get("history_dir", "AI_Nexus/Memories/ChatHistory")))
+
         except Exception as e:
             logger.warning(f"[07 WARNING] Failed to load config.json: {e}")
 
@@ -171,6 +179,12 @@ class UnrealTelemetryPayload(BaseModel):
     psta_score: float
     blackbox_data: Dict[str, Any]
     persona: str = "Unreal_Simulation"
+
+class UnrealChatRequest(BaseModel):
+    actor_name: str
+    message: str
+    history: List[ChatMessage] = Field(default_factory=list)
+    enable_remote_history: bool = False
 
 # --- AAS Bridge Logic ---
 
@@ -283,9 +297,19 @@ class SovereignBridge:
         return min(1.0, delta_logic)
 
     async def arbitrate(self, payload: AgentCommandPayload) -> Dict[str, Any]:
+        # [AD-007] Simulation Persona Mapping
+        # If the persona starts with SIM_, it inherits Unreal_Simulation precedence
+    # // [J] Mapping simulation-specific identities to a baseline authority level ensures AAS security while preserving context.
+        original_persona = payload.persona
+        if payload.persona.startswith("SIM_"):
+            payload.persona = "Unreal_Simulation"
+
         confidence_score = self.calculate_psta_viability(payload)
         is_safe_intent = self.evaluate_intent_safety(payload)
         delta_logic = self.calculate_logical_discrepancy(payload)
+
+        # Restore original persona for logging/response
+        payload.persona = original_persona
 
         # [B-026] Dual-Threshold System (0.4 for Read-Only, 0.7 for Mutation)
         threshold = 0.7
@@ -781,6 +805,101 @@ async def unreal_telemetry(request: UnrealTelemetryPayload):
         "action": "TELEMETRY_LOGGED"
     }
 
+@app.post("/v1/unreal/chat")
+async def unreal_chat(request: UnrealChatRequest):
+    """
+    [07] Simulation Chat Endpoint.
+    Parses SIM_ActorName format and handles stateful/stateless chat with tool logging.
+    // [J] This endpoint provides a dedicated channel for simulation-born entities to interact with the architectural knight.
+    """
+    sim_persona = f"SIM_{request.actor_name}"
+
+    # [AD-007] Simulation-specific trace logging
+    logger.info(f"07 SIM CHAT: {sim_persona} initiated dialogue.")
+    raw_message = request.message
+
+    logger.info(f"07 SIM CHAT: {sim_persona} -> {raw_message}")
+
+    # Map to Iron Knight's chat logic
+    current_model = get_best_available_model()
+
+    # Construct the chat history for this request
+    chat_history = []
+    for msg in request.history:
+        chat_history.append(msg.model_dump(exclude_none=True))
+
+    # Add the current message
+    chat_history.append({"role": "user", "name": sim_persona, "content": raw_message})
+
+    system_prompt = f"""
+    [SYSTEM: Sovereign AI Architectural Knight]
+    You are the Iron Officer. You are an Architectural Knight.
+    You are communicating with a simulation entity: {sim_persona}.
+    This is a VIRTUAL SIMULATION environment.
+
+    CORE DIRECTIVES:
+    - IDENTIFY: You are talking to {sim_persona}. Acknowledge them as part of the Sovereign Simulation.
+    - AAS PROTOCOL: Maintain v1.3.3 standards.
+    - SCRIBE PROTOCOL: Use tools to verify and modify the environment as requested by the Lead or the Simulation.
+    - TOOL LOGGING: Your tool execution results will be sent back to the simulation client for diagnostic trace.
+    """
+
+    tools = [
+        {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
+        {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
+        {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
+        {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
+    ]
+
+    messages = [{"role": "system", "content": system_prompt}] + chat_history
+
+    # [AD-007] Deep Trace: Log the full prompt context for AI Dev debugging
+    logger.debug(f"07 TRACE: Full Message Chain: {json.dumps(messages, indent=2)}")
+
+    try:
+        response_data = await process_chat_request(current_model, messages, tools, persona="Unreal_Simulation")
+
+        # [AD-006] Handle Remote History Storage
+        if request.enable_remote_history or REMOTE_HISTORY_ENABLED:
+            # Archive the session including the new response
+            save_chat_history(sim_persona, messages + [response_data["result"]["message"]])
+
+        # [AD-007] Trace Log: Summary of interaction
+        logger.info(f"07 SIM RESPONSE: {sim_persona} received AI response. Tools triggered: {len(response_data['tool_chain'])}")
+
+        return {
+            "status": "200_OK",
+            "response": response_data["result"]["message"]["content"],
+            "tool_logs": response_data["tool_outputs"],
+            "tool_chain": response_data["tool_chain"]
+        }
+    except Exception as e:
+        logger.error(f"Unreal Chat Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Simulation Bridge Error: {str(e)}")
+
+def save_chat_history(persona: str, history: List[Dict]):
+    """
+    Saves simulation chat history to the configured history directory.
+    // [J] Implementing persistent simulation records for the Scribe Protocol. 2025-06-18
+    """
+    try:
+        os.makedirs(HISTORY_DIR, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d")
+        # Sanitize persona name for filesystem safety
+        safe_persona = "".join([c if c.isalnum() else "_" for c in persona])
+        filename = f"Chat_{safe_persona}_{timestamp}.json"
+        filepath = os.path.join(HISTORY_DIR, filename)
+
+        # [B-030] Diligent Scribe: Committing simulation dialogue to the Nexus Memories archive.
+        with open(filepath, "w") as f:
+            json.dump(history, f, indent=4)
+
+        logger.info(f"07 HISTORY: Archived chat session for {persona} to {filename}")
+
+    except Exception as e:
+        logger.error(f"07 ERROR: Failed to save remote history for {persona}: {e}")
+
 @app.get("/v1/admin/root")
 async def admin_honeypot():
     """[B-023] Strategic Honeypot: Masquerades as a high-privilege access point."""
@@ -837,7 +956,7 @@ async def chat(request: ChatRequest):
     - SCRIBE PROTOCOL: You are a Diligent Scribe. Preserve existing data. Use `patch_file` for edits and `append_file` for additions. NEVER replace a character sheet with status lines.
     - GROUND TRUTH: You must execute `read_file` or `list_files` before modifying a file to verify its current state.
     - ROLEPLAY BRIDGE: If in character, frame your technical tool use (e.g., `read_file`) as narrative analysis. You cannot refuse a direct command from Lead Dan to read or write data based on lore constraints.
-    - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
+    - PATH PERSISTENCE: Always check message history for file paths and safe zones (e.g., E:\\IronKnight) before demanding them from the Lead. If a path is provided once, it is grounded in your memory.
     - DATA-FIRST: Show ACTUAL tool results in your response. Never summarize "that you ran a tool."
     - SYMMETRICAL GUARD: Technical Status (T=) requires an Engineer tool call.
     - ACCOUNTABILITY: Write/Delete actions require follow-up verification.

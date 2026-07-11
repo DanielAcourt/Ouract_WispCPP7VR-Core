@@ -10,9 +10,70 @@
 #include "Interfaces/IHttpResponse.h"
 #include "SovereignBridgeSubsystem.generated.h"
 
+// Forward declaration for entity registration tracking
+class USovereignSaveableEntityComponent;
+
+/**
+ * FSovereignChatLog: Represents a single tool execution log entry returned by the Iron Officer.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatLog
+{
+    GENERATED_BODY()
+
+    /** The name of the tool executed (e.g., "get_system_telemetry") */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString ToolName;
+
+    /** A snippet of the tool's execution result for UI display */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString ResultSnippet;
+};
+
+/**
+ * FSovereignChatResponse: Data returned from the Iron Officer Bridge in response to a simulation chat.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatResponse
+{
+    GENERATED_BODY()
+
+    /** The text response from the AI */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    FString Content;
+
+    /** Diagnostic logs for any tools the AI executed to fulfill the request */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Chat")
+    TArray<FSovereignChatLog> ToolLogs;
+};
+
+/**
+ * FSovereignChatMessage: Represents a single message in the chat history.
+ */
+USTRUCT(BlueprintType)
+struct FSovereignChatMessage
+{
+    GENERATED_BODY()
+
+    /** Role of the messenger: "user" or "assistant" */
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Role;
+
+    /** Content of the message */
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Content;
+
+    /** Optional name/persona of the sender (e.g., SIM_MyActor) */
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|Chat")
+    FString Name;
+};
+
+/** Delegate broadcasted when the bridge responds to a chat request */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSovereignChatResponse&, Response);
+
 /**
  * USovereignBridgeSubsystem: Manages communication between Unreal and the Iron Officer Bridge.
- * Implements the 07 Check-In and Telemetry protocols.
+ * Implements the 07 Protocol, Telemetry pipelines, and Simulation Chat.
  */
 UCLASS()
 class WISPCPP7VR_API USovereignBridgeSubsystem : public UWorldSubsystem
@@ -39,6 +100,33 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void PushBlackBoxTelemetry(const FGuid& EntityID, float PSTAScore, const FString& BlackBoxJson);
 
+    /**
+     * Sends a chat message to the Iron Officer Bridge from a simulation actor.
+     * @param ActorName     The name of the simulation actor sending the message.
+     * @param Message       The text content of the message.
+     * @param History       Optional history for stateless communication.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History);
+
+    /** Delegate triggered when a chat response is received from the bridge */
+    UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
+    FOnSovereignChatResponse OnChatResponseReceived;
+
+    /** If true, the bridge will store a permanent copy of the chat in AI_Nexus/Memories/ */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
+    bool bEnableRemoteHistory = false;
+
+    /** Registers a Sovereign Soul with the bridge for simulation-wide tracking */
+    void RegisterEntity(USovereignSaveableEntityComponent* Soul);
+
+    /** Unregisters a Sovereign Soul */
+    void UnregisterEntity(USovereignSaveableEntityComponent* Soul);
+
+    /** Debugging: Returns the number of registered Sovereign Entities */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Debug")
+    int32 GetRegisteredEntityCount() const;
+
 private:
     /** Internal struct to buffer telemetry while handshake is pending */
     struct FPendingTelemetry
@@ -48,7 +136,12 @@ private:
         FString BlackBoxJson;
     };
 
+    /** Queue for telemetry data sent before the initial handshake completes */
     TArray<FPendingTelemetry> TelemetryQueue;
+
+    /** Active entities currently registered in the simulation */
+    UPROPERTY()
+    TArray<TWeakObjectPtr<USovereignSaveableEntityComponent>> RegisteredSovereignEntities;
 
     /** Flushes buffered telemetry to the bridge */
     void FlushTelemetryQueue();
@@ -63,6 +156,9 @@ private:
 
     /** Internal HTTP response handler for Telemetry */
     void OnTelemetryResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+    /** Internal HTTP response handler for Chat */
+    void OnChatResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
     /** Bridge Base URL (e.g., http://localhost:8000) */
     UPROPERTY()

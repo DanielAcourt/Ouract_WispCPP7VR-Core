@@ -3,6 +3,7 @@
 // // [J] Tactical Implementation of the 07 Handshake and Telemetry Pipeline. 2025-06-18
 
 #include "Subsystems/SovereignBridgeSubsystem.h"
+#include "Entities/SovereignSaveableEntityComponent.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -15,6 +16,7 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Initializing..."));
     LoadConfiguration();
 
     // Auto-initiate 07 Check-In upon world start
@@ -23,6 +25,9 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void USovereignBridgeSubsystem::Deinitialize()
 {
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Deinitializing. Clearing %d registered entities."), RegisteredSovereignEntities.Num());
+    RegisteredSovereignEntities.Empty();
+
     Super::Deinitialize();
 }
 
@@ -79,6 +84,45 @@ void USovereignBridgeSubsystem::Perform07CheckIn()
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
+{
+    // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Outgoing Chat from Simulation Actor [%s]."), *ActorName);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindUObject(this, &USovereignBridgeSubsystem::OnChatResponse);
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/chat"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("actor_name"), ActorName);
+    JsonPayload->SetStringField(TEXT("message"), Message);
+    JsonPayload->SetBoolField(TEXT("enable_remote_history"), bEnableRemoteHistory);
+
+    // Serialize History
+    TArray<TSharedPtr<FJsonValue>> HistoryArray;
+    for (const FSovereignChatMessage& Msg : History)
+    {
+        TSharedPtr<FJsonObject> MsgObj = MakeShareable(new FJsonObject());
+        MsgObj->SetStringField(TEXT("role"), Msg.Role);
+        MsgObj->SetStringField(TEXT("content"), Msg.Content);
+        if (!Msg.Name.IsEmpty())
+        {
+            MsgObj->SetStringField(TEXT("name"), Msg.Name);
+        }
+        HistoryArray.Add(MakeShareable(new FJsonValueObject(MsgObj)));
+    }
+    JsonPayload->SetArrayField(TEXT("history"), HistoryArray);
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
+}
+
 void USovereignBridgeSubsystem::PushBlackBoxTelemetry(const FGuid& EntityID, float PSTAScore, const FString& BlackBoxJson)
 {
     if (!bHandshakeActive)
@@ -115,6 +159,29 @@ void USovereignBridgeSubsystem::PushBlackBoxTelemetry(const FGuid& EntityID, flo
 
     Request->SetContentAsString(RequestBody);
     Request->ProcessRequest();
+}
+
+void USovereignBridgeSubsystem::RegisterEntity(USovereignSaveableEntityComponent* Soul)
+{
+    if (Soul && !RegisteredSovereignEntities.Contains(Soul))
+    {
+        RegisteredSovereignEntities.Add(Soul);
+        UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Registered Entity %s. Total: %d"), *Soul->EntityID.ToString(), RegisteredSovereignEntities.Num());
+    }
+}
+
+void USovereignBridgeSubsystem::UnregisterEntity(USovereignSaveableEntityComponent* Soul)
+{
+    if (Soul)
+    {
+        RegisteredSovereignEntities.Remove(Soul);
+        UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Unregistered Entity %s. Total: %d"), *Soul->EntityID.ToString(), RegisteredSovereignEntities.Num());
+    }
+}
+
+int32 USovereignBridgeSubsystem::GetRegisteredEntityCount() const
+{
+    return RegisteredSovereignEntities.Num();
 }
 
 void USovereignBridgeSubsystem::FlushTelemetryQueue()
@@ -190,5 +257,68 @@ void USovereignBridgeSubsystem::OnTelemetryResponse(FHttpRequestPtr Request, FHt
     else
     {
         UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Telemetry push failed. Network error."));
+    }
+}
+
+void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (bWasSuccessful && Response.IsValid() && EHttpResponseCodes::IsOk(Response->GetResponseCode()))
+    {
+        TSharedPtr<FJsonObject> JsonObject;
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+        if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+        {
+            FSovereignChatResponse ChatResponse;
+            ChatResponse.Content = JsonObject->GetStringField(TEXT("response"));
+
+            // // [J] Parsing diagnostic tool logs returned from the Iron Officer Bridge. 2025-06-18
+            const TArray<TSharedPtr<FJsonValue>>* ToolLogsArray;
+            if (JsonObject->TryGetArrayField(TEXT("tool_logs"), ToolLogsArray))
+            {
+                for (auto& LogValue : *ToolLogsArray)
+                {
+                    TSharedPtr<FJsonObject> ToolLogObj = LogValue->AsObject();
+                    if (ToolLogObj.IsValid())
+                    {
+                        FSovereignChatLog LogEntry;
+                        FString OutputStr;
+                        TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputStr);
+                        FJsonSerializer::Serialize(ToolLogObj.ToSharedRef(), Writer);
+
+                        LogEntry.ToolName = TEXT("Tool");
+                        LogEntry.ResultSnippet = OutputStr.Left(200);
+                        ChatResponse.ToolLogs.Add(LogEntry);
+                    }
+                }
+            }
+
+            // Cross-reference with tool_chain to resolve functional names
+            const TArray<TSharedPtr<FJsonValue>>* ToolChainArray;
+            if (JsonObject->TryGetArrayField(TEXT("tool_chain"), ToolChainArray))
+            {
+                for (int32 i = 0; i < ToolChainArray->Num() && i < ChatResponse.ToolLogs.Num(); ++i)
+                {
+                    TSharedPtr<FJsonObject> ToolObj = (*ToolChainArray)[i]->AsObject();
+                    if (ToolObj.IsValid())
+                    {
+                        TSharedPtr<FJsonObject> FuncObj = ToolObj->GetObjectField(TEXT("function"));
+                        if (FuncObj.IsValid())
+                        {
+                            ChatResponse.ToolLogs[i].ToolName = FuncObj->GetStringField(TEXT("name"));
+                            UE_LOG(LogTemp, Log, TEXT("SovereignBridge: AI Executed Tool: %s"), *ChatResponse.ToolLogs[i].ToolName);
+                        }
+                    }
+                }
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Chat Response Received (%d tools executed)"), ChatResponse.ToolLogs.Num());
+            OnChatResponseReceived.Broadcast(ChatResponse);
+        }
+    }
+    else
+    {
+        FString ErrorDetail = Response.IsValid() ? FString::Printf(TEXT("Code: %d"), Response->GetResponseCode()) : TEXT("Network Error");
+        UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Simulation Chat FAILED. %s"), *ErrorDetail);
     }
 }

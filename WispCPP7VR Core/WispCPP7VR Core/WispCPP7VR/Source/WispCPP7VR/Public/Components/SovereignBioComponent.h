@@ -1,12 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/SovereignBaseComponent.h"
+#include "Entities/SovereignBrokerInterface.h"
 #include "SovereignBioComponent.generated.h"
 
-// --- GLOBAL SCOPE: Defined for engine-wide visibility ---
 UENUM(BlueprintType)
 enum class ESovereignNutrient : uint8
 {
@@ -19,25 +19,41 @@ enum class ESovereignNutrient : uint8
 };
 
 /**
- * The Biological Engine of the Sovereign Soul.
- * Handles metabolism, growth (Mass/Density), and survival vitals.
+ * USovereignBioComponent: Handles metabolism, growth, and reproduction.
+ * Now acts as a specialized Broker for the Sovereign Soul Hub.
  */
 UCLASS(ClassGroup = (Sovereign), meta = (BlueprintSpawnableComponent))
-class WISPCPP7VR_API USovereignBioComponent : public USovereignBaseComponent
+class WISPCPP7VR_API USovereignBioComponent : public USovereignBaseComponent, public ISovereignBrokerInterface
 {
     GENERATED_BODY()
 
 public:
     USovereignBioComponent();
 
-    //Timestamp of creation
-
-
-    // --- NUTRITION SYSTEM ---
+    /** --- 1. VITALS --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
     TMap<ESovereignNutrient, float> NutrientReserves;
 
-    // --- BIOLOGICAL ATTRIBUTES (The Growth Loop) ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float Hunger;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float Hydration;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float Fatigue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float Tiredness;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float Toxicity;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
+    float WasteLevel;
+
+
+    /** --- 2. GROWTH & EVOLUTION --- */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Core")
     int32 Mass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Core")
@@ -49,50 +65,54 @@ public:
     double DensityExperience;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Core")
-    int32 CurrentStaminaRegen;
+    float MaturityProgress = 0.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Core")
-    double CurrentStaminaRegenExperience;
+    float MaturityRate = 0.01f;
 
-    // --- SURVIVAL VITALS (0.0 to 100.0) ---
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float Hunger; //Take Nutrients from soil, Animals or plants. It consumes dead or dying mass basically.
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Core")
+    float Entropy;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float Hydration; // Takes liquids not just water
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float Fatigue; //Physical drain higher levels means more wearin, idling brings this to 0
+    /** --- 3. REPRODUCTION & LINEAGE --- */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    bool bIsFemale;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float Tiredness; // sleeping reduces this
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    FGuid ParentID;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float Toxicity; // Damge over time
-    //Needs  a way to wear down the posien over time with healing, rest anitdotes. Version 3.5
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    FGuid MotherID;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float WasteLevel; // Reduces this by pooing or peeing. Can be magical and boost fetility of plants and soil, Posiibly even work in a way to fossil carbon to make diamonds
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    FGuid FatherID;
 
-    // --- METABOLIC MODIFIERS ---
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float StateDrain; // 0 = Idle, >0 = Action-based burn
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    int32 OffspringCount = 0;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Vitals")
-    float TemperatureShift; // -1 (Freezing) to 1 (Burning)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    TArray<FGuid> MatingHistory;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Nature Cycle")
-    float Entropy; // Biological age
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Bio Lineage")
+    float LastMatingTimestamp = -100.0f;
 
-    // --- ENGINE FUNCTIONS ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    float MatingCooldownDuration = 60.0f;
+
+
+    /** --- 4. ENGINE FUNCTIONS --- */
     void UpdateMetabolism(float DeltaTime);
-
     void HandleBiologicalTransition(float DeltaTime);
 
-    float GetDecompositionYield() const;
+    /** ISovereignBrokerInterface Implementation */
+    virtual void OnSave(TSharedPtr<FJsonObject>& OutJson) override;
+    virtual void OnLoad(const TSharedPtr<FJsonObject>& InJson) override;
+    virtual void OnProcessData(const TMap<FString, FString>& Data) override;
 
-    // --- SAVE SYSTEM INTERFACE ---
-    virtual TMap<FString, FString> GetSaveData() override;
-    virtual void RestoreSaveData(const TMap<FString, FString>& Data) override;
+protected:
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 };

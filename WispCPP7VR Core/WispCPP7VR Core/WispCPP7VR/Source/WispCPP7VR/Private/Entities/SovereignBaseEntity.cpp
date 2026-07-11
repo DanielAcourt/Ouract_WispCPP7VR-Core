@@ -12,6 +12,9 @@
 #include "Components/CapsuleComponent.h" // Add this include!
 #include "Components/StaticMeshComponent.h"
 #include "Components/SovereignBioComponent.h"
+#include "Components/SovereignQiComponent.h"
+#include "Components/SovereignElementComponent.h"
+#include "Components/SovereignAttributeComponent.h"
 
 #include "GameplayTagsManager.h"
 
@@ -44,8 +47,14 @@ ASovereignBaseEntity::ASovereignBaseEntity()
     }
     */
     // 2. THE SOUL (SAVE SYSTEM)
-    // This component handles the GUID and the metadata tags (Isla's unknown tags)
+    // This component handles the GUID and the metadata tags
     SaveDataComponent = CreateDefaultSubobject<USovereignSaveableEntityComponent>(TEXT("SaveDataComponent"));
+
+    // 2b. SPECIALIZED MODULES
+    BioComponent = CreateDefaultSubobject<USovereignBioComponent>(TEXT("BioComponent"));
+    QiComponent = CreateDefaultSubobject<USovereignQiComponent>(TEXT("QiComponent"));
+    ElementComponent = CreateDefaultSubobject<USovereignElementComponent>(TEXT("ElementComponent"));
+    AttributeComponent = CreateDefaultSubobject<USovereignAttributeComponent>(TEXT("AttributeComponent"));
 
     // 3. PHYSICAL MESH
     // We create a StaticMeshComponent to visualize the 8 growth stages (Seed to Tree)
@@ -189,23 +198,25 @@ void ASovereignBaseEntity::OnSovereignHeartbeat()
 {
     if (SaveDataComponent)
     {
-        // 1. SOUL GROWTH
-        // Increment Maturity (This is how the Oak Seed eventually becomes a Sprout)
-        SaveDataComponent->MaturityProgress += (SaveDataComponent->MaturityRate);
+        float HeartbeatSeconds = GetWorldTimerManager().GetTimerRate(HeartbeatTimerHandle);
 
-        // 2. BIOLOGICAL CONSUMPTION
-        // We find the BioComponent and tell it to process one 'Heartbeat' of time
-        if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
+        // 1. BIOLOGICAL GROWTH & CONSUMPTION
+        if (BioComponent)
         {
-            // Calculate the actual seconds passed since last heartbeat
-            float HeartbeatSeconds = GetWorldTimerManager().GetTimerRate(HeartbeatTimerHandle);
-            Bio->UpdateMetabolism(HeartbeatSeconds);
+            BioComponent->MaturityProgress += (BioComponent->MaturityRate);
+            BioComponent->UpdateMetabolism(HeartbeatSeconds);
+        }
+
+        // 2. SPIRITUAL FLOW
+        if (QiComponent)
+        {
+            QiComponent->ProcessQiFlow(HeartbeatSeconds, 10); // Wisdom hardcoded for now
         }
 
         // 3. EVOLUTION CHECK
-        if (SaveDataComponent->MaturityProgress >= 1.0f)
+        if (BioComponent && BioComponent->MaturityProgress >= 1.0f)
         {
-            SaveDataComponent->MaturityProgress = 0.0f;
+            BioComponent->MaturityProgress = 0.0f;
             Evolve();
         }
 
@@ -257,28 +268,25 @@ void ASovereignBaseEntity::CheckForEvolution()
     //}
 }
 
-//version 3.2 Updated a fair bit to handshake with the biocomponent does this mean everything that a base enity has a bio component? ideally i would want its child to?
+//version 3.2 Updated for Modular Hub
 void ASovereignBaseEntity::Evolve()
 {
     // Evolution is a massive biological strain
-    if (USovereignBioComponent* Bio = FindComponentByClass<USovereignBioComponent>())
+    if (BioComponent)
     {
         // 1. BURN THE ENTIRE PHARMACY
-        // This clears all Carbs, Proteins, Fats, etc., to fuel the cellular shift.
-        Bio->NutrientReserves.Empty();
+        BioComponent->NutrientReserves.Empty();
 
-        // Optional: Re-initialize with 0s if your logic requires the keys to exist
-        // or just let the next 'Consume' call re-populate the keys.
-
-        Bio->Hunger = 0.0f;
-        Bio->Entropy += 10.0f; // Rapid aging occurs during evolution
+        BioComponent->Hunger = 0.0f;
+        BioComponent->Entropy += 10.0f; // Rapid aging occurs during evolution
 
         // The Mass is permanently increased (Physical Prestige)
-        Bio->MassExperience += 5.0;
-        Bio->Mass = FMath::FloorToInt(Bio->MassExperience);
+        BioComponent->MassExperience += 5.0;
+        BioComponent->Mass = FMath::FloorToInt(BioComponent->MassExperience);
     }
 
     // Trigger the Visual Shift (Mesh/Particle swap)
+    CurrentGrowthStage = FMath::Clamp(CurrentGrowthStage + 1, 0, 7);
     RefreshVisuals();
 }
 
@@ -457,8 +465,12 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 	if (SaveDataComponent)
 	{
 		SaveDataComponent->EntityID = FGuid::NewGuid();
-		SaveDataComponent->MotherID = InMotherID;
-		SaveDataComponent->FatherID = InFatherID;
+
+        if (BioComponent)
+        {
+            BioComponent->MotherID = InMotherID;
+            BioComponent->FatherID = InFatherID;
+        }
 
 		if (UWorld* World = GetWorld())
 		{
@@ -487,8 +499,19 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 							SaveDataComponent->ApplyMetaTags(ChildDNA);
 
 							float CurrentTime = World->GetTimeSeconds();
-							MomComp->LastMatingTimestamp = CurrentTime;
-							DadComp->LastMatingTimestamp = CurrentTime;
+							
+							// Access LastMatingTimestamp from Bio components instead
+							auto* MomBio = Mother->FindComponentByClass<USovereignBioComponent>();
+							auto* DadBio = Father->FindComponentByClass<USovereignBioComponent>();
+							
+							if (MomBio)
+							{
+								MomBio->LastMatingTimestamp = CurrentTime;
+							}
+							if (DadBio)
+							{
+								DadBio->LastMatingTimestamp = CurrentTime;
+							}
 
 							UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *Mother->GetName(), *Father->GetName());
 						}
@@ -558,13 +581,12 @@ float ASovereignBaseEntity::GetHeartbeatInterval() const
     }
 }
 
-/*
+UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 USovereignSaveableEntityComponent* ASovereignBaseEntity::GetSovereignSoul_Implementation() const
 {
     // Simply return the component we already have!
     return SaveDataComponent;
 }
-*/
 
 //Put end at the bottem makes sense?
 void ASovereignBaseEntity::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -5,32 +5,29 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "SaveSystem/SovereignGameData.h"  //Lets us add to the save game Data
-#include "DataTables/SovereignSpeciesData.h" // Add this if it's a separate file
+#include "SaveSystem/SovereignGameData.h"
+#include "DataTables/SovereignSpeciesData.h"
 
-#include "GameplayTagContainer.h" //Lets us read Gameplay tags
+#include "GameplayTagContainer.h"
 #include "GameplayTagAssetInterface.h" 
 
-#include "interaction/SovereignEntityInterface.h"
+#include "Interaction/SovereignEntityInterface.h"
 
-#include "SovereignBaseEntity.generated.h" //Must be last
+#include "SovereignBaseEntity.generated.h"
 
-// Forward declarations to keep compile times fast
 class USovereignSaveableEntityComponent;
+class USovereignBioComponent;
+class USovereignQiComponent;
+class USovereignElementComponent;
+class USovereignAttributeComponent;
 class USovereignSpeciesData;
 class UStaticMeshComponent;
 
-
-//The problem with this current approach is i start by inheriting from ACharacter,
-// what we reaslly need is a base which is AActor and APawn and has this interaction.
-// But not the mating and more Advance options
-
+/**
+ * ASovereignBaseEntity: Base class for all possessable simulation entities.
+ */
 UCLASS()
-<<<<<<< Updated upstream
-class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface 
-=======
 class WISPCPP7VR_API ASovereignBaseEntity : public APawn, public IGameplayTagAssetInterface, public ISovereignEntityInterface
->>>>>>> Stashed changes
 {
 	GENERATED_BODY()
 
@@ -39,6 +36,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
 	USovereignSaveableEntityComponent* GetSaveDataComponent() const { return SaveDataComponent; }
+
+	/** Returns the Sovereign Soul component for this entity */
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Soul")
+	USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const;
 
 	/** Returns the unique Save System ID for this specific entity */
 	UFUNCTION(BlueprintCallable, Category = "Sovereign|Entity")
@@ -78,7 +79,7 @@ protected:
 	bool bCanBePossessed = true;
 
 	/** Calculates the float delay based on the UpdateFrequency enum */
-	float GetHeartbeatInterval() const; // Add this line!
+	float GetHeartbeatInterval() const;
 
 	// --- Components ---
 
@@ -86,15 +87,30 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
 	UStaticMeshComponent* EntityMesh;
 
-	/** The Soul of the Actor: Contains the GUID and Metadata tags (Isla's unknown tags) */
+	/** The Soul of the Actor: Contains the GUID and Metadata tags */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
 	USovereignSaveableEntityComponent* SaveDataComponent;
+
+	/** The Biological engine: Health, Stamina, Lineage */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignBioComponent* BioComponent;
+
+	/** The Spiritual engine: Magic, Alignment, Qi */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignQiComponent* QiComponent;
+
+	/** The Physical nature: Elemental resistances and sockets */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignElementComponent* ElementComponent;
+
+	/** The Attribute engine: Strength, Intelligence, HP */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|SaveSystem")
+	USovereignAttributeComponent* AttributeComponent;
 
 	/** Array of 8 meshes representing the growth stages (0-7) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Visuals")
 	TArray<UStaticMesh*> GrowthMeshes;
 
-	// Add the TrustSignature back here if you want to solve that C2039 error properly
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Security")
 	int32 TrustSignature = 0;
 
@@ -119,7 +135,6 @@ protected:
 
 	/** The 'Passport' for this entity's species and trust level */
 	/** The "Advanced" data asset defining growth stages, health, and species attributes */
-	// Note: class keyword here handles the forward declaration inline
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sovereign|Data", meta = (AllowPrivateAccess = "true"))
 	class USovereignSpeciesData* SpeciesData;
 
