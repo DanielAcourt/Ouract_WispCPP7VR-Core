@@ -7,6 +7,7 @@
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "SaveSystem/SovereignJsonUtils.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Components/SovereignBioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h" // Requires "JsonUtilities" in Build.cs
@@ -80,12 +81,15 @@ void USaveManager::SaveWorldState(FString SlotName, bool bAsJson)
                 Data.MyGUID = Elem.Key;
 
                 // 2. LINEAGE: Who is my parent? (The Genetic Link)
-                Data.ParentID = SaveComp->ParentID;
-                Data.MotherID = SaveComp->MotherID;
-                Data.FatherID = SaveComp->FatherID;
-                Data.bIsFemale = SaveComp->bIsFemale;
-                Data.OffspringCount = SaveComp->OffspringCount;
-                Data.MatingHistory = SaveComp->MatingHistory;
+                if (auto* BioComp = TargetActor->FindComponentByClass<USovereignBioComponent>())
+                {
+                    Data.ParentID = BioComp->ParentID;
+                    Data.MotherID = BioComp->MotherID;
+                    Data.FatherID = BioComp->FatherID;
+                    Data.bIsFemale = BioComp->bIsFemale;
+                    Data.OffspringCount = BioComp->OffspringCount;
+                    Data.MatingHistory = BioComp->MatingHistory;
+                }
 
                 // 3. PHYSICALITY: Where am I and what am I?
                 Data.WorldTransform = TargetActor->GetActorTransform();
@@ -166,7 +170,12 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
                     {
                         // Restore Identity & Lineage immediately upon birth
                         SaveComp->EntityID = Data.MyGUID;
-                        SaveComp->ParentID = Data.ParentID; // The Genetic Link
+
+                        if (auto* BioComp = TargetActor->FindComponentByClass<USovereignBioComponent>())
+                        {
+                            BioComp->ParentID = Data.ParentID; // The Genetic Link
+                        }
+
                         Registry->RegisterActor(Data.MyGUID, TargetActor);
                     }
                 }
@@ -179,7 +188,10 @@ void USaveManager::LoadWorldState(FString SlotName, bool bAsJson)
             if (auto* SaveComp = TargetActor->FindComponentByClass<USovereignSaveableEntityComponent>())
             {
                 // Ensure ParentID is set even for existing actors to maintain symmetry
-                SaveComp->ParentID = Data.ParentID;
+                if (auto* BioComp = TargetActor->FindComponentByClass<USovereignBioComponent>())
+                {
+                    BioComp->ParentID = Data.ParentID;
+                }
 
                 // Restore [2025-12-20] Unknown Tags (Mutations, Qi levels, etc.)
                 if (Data.UnknownMetaTags.IsValid())

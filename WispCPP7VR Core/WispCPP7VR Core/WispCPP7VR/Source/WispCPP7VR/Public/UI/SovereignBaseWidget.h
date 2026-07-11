@@ -24,7 +24,7 @@ public:
 
     /** The category this widget represents (e.g., "Bio", "Qi", "Attributes") */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|UI")
-    FString CategoryName;
+    FString SovereignCategoryName;
 
     /** If true, the widget will automatically hide itself if the SoulHub does not have this category */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|UI")

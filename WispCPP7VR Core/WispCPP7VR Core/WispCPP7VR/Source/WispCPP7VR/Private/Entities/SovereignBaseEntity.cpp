@@ -353,12 +353,12 @@ void ASovereignBaseEntity::AttemptMating(AActor* PotentialPartner)
 
 bool ASovereignBaseEntity::IsReadyForMating() const
 {
-    if (!SaveDataComponent || !GetWorld()) return false;
+    if (!BioComponent || !GetWorld()) return false;
 
     float CurrentTime = GetWorld()->GetTimeSeconds();
-    float TimeSinceLastMating = CurrentTime - SaveDataComponent->LastMatingTimestamp;
+    float TimeSinceLastMating = CurrentTime - BioComponent->LastMatingTimestamp;
 
-    return TimeSinceLastMating >= SaveDataComponent->MatingCooldownDuration;
+    return TimeSinceLastMating >= BioComponent->MatingCooldownDuration;
 }
 */
 
@@ -491,16 +491,17 @@ void ASovereignBaseEntity::PostSpawnInitialize(const USovereignSpeciesData* InSp
 					AActor* Father = Registry->FindActor(InFatherID);
 					if (Mother && Father)
 					{
-						auto* MomComp = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
-						auto* DadComp = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
-						if (MomComp && DadComp)
+						auto* MomSoul = Mother->FindComponentByClass<USovereignSaveableEntityComponent>();
+						auto* DadSoul = Father->FindComponentByClass<USovereignSaveableEntityComponent>();
+						if (MomSoul && DadSoul)
 						{
-							TMap<FString, FString> ChildDNA = USovereignSpawnerUtils::RecombineDNA(MomComp->GetUnknownMetaTags(), DadComp->GetUnknownMetaTags(), 0.05f);
+							TMap<FString, FString> ChildDNA = USovereignSpawnerUtils::RecombineDNA(MomSoul->GetUnknownMetaTags(), DadSoul->GetUnknownMetaTags(), 0.05f);
 							SaveDataComponent->ApplyMetaTags(ChildDNA);
 
 							float CurrentTime = World->GetTimeSeconds();
-							MomComp->LastMatingTimestamp = CurrentTime;
-							DadComp->LastMatingTimestamp = CurrentTime;
+
+							if (auto* MomBio = Mother->FindComponentByClass<USovereignBioComponent>()) MomBio->LastMatingTimestamp = CurrentTime;
+							if (auto* DadBio = Father->FindComponentByClass<USovereignBioComponent>()) DadBio->LastMatingTimestamp = CurrentTime;
 
 							UE_LOG(LogTemp, Log, TEXT("Sovereign: Hybrid born between %s and %s!"), *Mother->GetName(), *Father->GetName());
 						}

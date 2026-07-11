@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SovereignBaseComponent.h"
 #include "Entities/SovereignBrokerInterface.h"
+#include "SaveSystem/SovereignGameData.h"
 #include "SovereignQiComponent.generated.h"
 
 /**

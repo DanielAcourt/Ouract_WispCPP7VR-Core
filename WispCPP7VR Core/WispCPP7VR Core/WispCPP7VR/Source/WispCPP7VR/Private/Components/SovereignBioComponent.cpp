@@ -18,6 +18,12 @@ USovereignBioComponent::USovereignBioComponent()
     Entropy = 0.0f;
     Mass = 1;
     MassExperience = 1.0;
+
+    ParentID = FGuid();
+    MotherID = FGuid();
+    FatherID = FGuid();
+    bIsFemale = false;
+    OffspringCount = 0;
 }
 
 void USovereignBioComponent::BeginPlay()

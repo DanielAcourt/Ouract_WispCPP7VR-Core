@@ -4,7 +4,6 @@
 #include "UI/SovereignBaseWidget.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Blueprint/WidgetTree.h"
-#include "Components/PanelWidget.h"
 #include "Interaction/SovereignEntityInterface.h"
 
 void USovereignMasterHUD::NativeConstruct()

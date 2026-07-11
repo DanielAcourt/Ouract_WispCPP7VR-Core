@@ -99,13 +99,13 @@ void USovereignBaseWidget::SyncDynamicPairs()
 
 void USovereignBaseWidget::UpdateWidgetVisibility()
 {
-    if (!bAutoHideIfMissingBroker || CategoryName.IsEmpty()) return;
+    if (!bAutoHideIfMissingBroker || SovereignCategoryName.IsEmpty()) return;
 
     if (SoulHub)
     {
         // We use GetCategoryStateJson to check if the category exists.
         // If it returns "{}" (empty object), the broker is likely missing.
-        FString Json = SoulHub->GetCategoryStateJson(CategoryName);
+        FString Json = SoulHub->GetCategoryStateJson(SovereignCategoryName);
 
         ESlateVisibility NewVisibility = (Json != TEXT("{}")) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
         SetVisibility(NewVisibility);
@@ -120,9 +120,9 @@ TMap<FString, FString> USovereignBaseWidget::GetCategoryDataAsMap()
 {
     TMap<FString, FString> DataMap;
 
-    if (SoulHub && !CategoryName.IsEmpty())
+    if (SoulHub && !SovereignCategoryName.IsEmpty())
     {
-        FString JsonString = SoulHub->GetCategoryStateJson(CategoryName);
+        FString JsonString = SoulHub->GetCategoryStateJson(SovereignCategoryName);
         TSharedPtr<FJsonObject> JsonObject;
         TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 
