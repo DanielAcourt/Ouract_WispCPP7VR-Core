@@ -73,6 +73,16 @@ WBP_TargetScanner -> SetVisibility(Collapsed);
 2.  **Dynamic Intelligence:** The UI "knows" what the target is. It won't show a Hunger bar for a Stone or a Magic bar for a non-magical entity.
 3.  **Zero-Node Initialization:** Because `SovereignMasterHUD` iterates through its own `WidgetTree`, you never have to manually "Set Soul Hub" on 20 different sub-widgets.
 
+## 5. R-010: Advanced Dynamic Attribute Mapping
+If you want your UI to automatically scale as we add new stats to components (e.g., adding a new nutrient to Bio), use the **Dynamic Pair** system:
+
+1.  **Create a Stat Pair Widget:** Create a simple widget (`WBP_StatPair`) with two text blocks.
+2.  **Add a "SetStatData" Function:** In `WBP_StatPair`, create a function called **`SetStatData`** with two String inputs: `Label` and `Value`. Have this function update your two text blocks.
+3.  **Configure the Module:** In your main module (e.g., `WBP_BioVitals`):
+    - Add a **Vertical Box** and name it `PairContainer`. In the Variables list, check **"Is Variable"**.
+    - In the Class Defaults, set the **Stat Pair Widget Class** to your `WBP_StatPair`.
+4.  **Result:** Every time the data updates, the module will automatically spawn one `WBP_StatPair` for every piece of data in the category (Hunger, Hydration, etc.) and fill in the text for you.
+
 **07 - The Interface is the Window to the Soul. If the Soul changes, the Window must follow.**
 
 ---

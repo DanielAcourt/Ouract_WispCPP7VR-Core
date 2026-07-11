@@ -49,4 +49,23 @@ protected:
     /** Hook for Blueprints to respond to data updates without manual JSON parsing */
     UFUNCTION(BlueprintImplementableEvent, Category = "Sovereign|UI")
     void OnDataUpdated(const TMap<FString, FString>& CategoryData);
+
+    /** --- R-010: DYNAMIC PAIRING --- */
+
+    /** The widget class to spawn for each data entry (must have Label and Value text slots) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|UI|Dynamic")
+    TSubclassOf<UUserWidget> StatPairWidgetClass;
+
+    /** The container (Vertical/Horizontal Box) where dynamic pairs will be added */
+    UPROPERTY(BlueprintReadWrite, Category = "Sovereign|UI|Dynamic", meta = (BindWidgetOptional))
+    class UPanelWidget* PairContainer;
+
+    /** Spawns/Updates widgets in the PairContainer based on current CategoryData */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|UI|Dynamic")
+    void SyncDynamicPairs();
+
+protected:
+    /** Cache of currently spawned pair widgets to prevent redundant spawning */
+    UPROPERTY()
+    TMap<FString, UUserWidget*> CachedPairWidgets;
 };
