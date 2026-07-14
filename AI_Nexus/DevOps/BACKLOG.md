@@ -34,8 +34,8 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin | Ensure the framework meets international safety and heritage standards. | Whitepaper/Audit document proving the Sovereign Framework's compliance. |
 | AD-001 | Iron Officer: Bridge Foundation | 13 | Done | Admin/DevOps | Establish a high-performance local AI node to handle long-term tasks. | Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Hardware Manifest. |
 | AD-002 | Iron Officer: HMI (User Medium) | 5 | Done | Admin/DevOps | Provide a way for the Lead to interact with the local AI locally. | Terminal-based Chat Vessel (vessel.py) with /report functionality and 07 Persona. |
-| AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Symmetrical Guard kernel with tiered Safe-Zone I/O authority and KnightCommand_SOP. |
 | AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
+| AD-004 | Iron Officer: Sovereign Authority | 5 | Done | Admin/Protocols | Formalize root/admin permissions for the local AI node. | Permission system where Administrative intent (A) overrides automated neural opinions. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
 | E-001 | Epic: Sovereign Soul – The Reality-Truth Engine | 34 | In Progress | Research/DevOps | Evolve the Soul into a high-performance Orchestrator separating "Truth" from "Magic". | ISovereignBroker system implemented with Mediator pattern in USovereignSaveableEntityComponent. |
 | B-016 | Soul: Diagnostic Broker (Truth) | 5 | In Progress | DevOps | Implement the raw scientific/historical data layer for Lidar/Museum ingestion. | UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry. |
@@ -46,6 +46,9 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | B-023 | Tool: `cross_protocol_analyzer` | 13 | Todo | Research | Facilitate semantic translation between disparate system outputs and standards. | Semantic mapping engine with Constraint-Optimized Transformation (COTE) matrix. |
 | B-024 | CFL: Temporal Paradox Mitigation | 8 | Todo | Research | Address Ticket #934-Temporal. Prevent logic violations of linear time in the SDK. | Implement a 'Causality Dampener' component handling temporal gradient differentials. |
 | B-025 | CFL: Adaptive Field Interpolator | 13 | Todo | Research | Address Ticket #102-Dynamic. Handle 'Unknown' abilities on runtime via interpolation. | Unreal component that reconciles incompatible data streams into emergent VFX/Physics. |
+| AD-005a | Spatial Sense: Save State Ingestion | 5 | Todo | Research/DevOps | Ingest the serialized component save packet during `/v1/unreal/chat` calls. | Map serialized JSON save payloads to the LLM's system context prompt framing. |
+| AD-005b | Spatial Sense: Unreal Agent Manifestation | 8 | Todo | DevOps | Create a 3D representation of the Iron Knight agent inside the levels. | Blueprint actor capable of requesting handshakes and rendering dynamic UI status. |
+| AD-005c | Spatial Sense: Paradox Visualizer (AFI) | 5 | Todo | Research | Reconcile local state discrepancy reports to drive visual particles. | Drive material parameters and Niagara particles based on live `ParadoxDensity` ($\Xi$). |
 
 ---
 
