@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7-Knight-AAS. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-06-18
+# Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7-Knight-AAS. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 # Iron Officer: Local Sovereign Bridge (GTX 5090)
 
 This is the Python-based bridge for the **Iron Officer** (AD-001/AD-002/AD-004). It connects the local Unreal simulation and Raspberry Pi hardware to a high-parameter LLM (Llama 3.1 70B) running on the GTX 5090, governed by the **Agency Arbitration Schema (AAS)**.
@@ -18,6 +18,7 @@ Every mutation to the repository or simulation state is audited:
 - **Conflict Gates:** If your request lacks authority (VSS < 0.7), the bridge will return a `409_CONFLICT_GATE`.
 - **Diligence Scribe:** Every file write triggers an automatic `.bak` creation and a data-loss check.
 - **Handshake:** Use the `/v1/aas/handshake` endpoint to gain a temporary authority boost.
+- **Non-Destructive Telemetry:** `push_telemetry` is classified as a non-destructive tool. This lowers its safety gate to `0.4` and prevents routine status updates from consuming and resetting your global handshake token, resolving world-initialization race conditions during concurrent entity spawning.
 
 ---
 
@@ -30,6 +31,7 @@ Unreal simulation entities can now communicate directly with the Officer:
 - **Persona Mapping:** Actors are mapped to `SIM_ActorName` and inherit `Unreal_Simulation` authority.
 - **Tool Tracing:** AI tool execution (reading files, checking GPU) is returned to Unreal as a diagnostic trace.
 - **Remote History:** Chats can be archived to `AI_Nexus/Memories/ChatHistory` by enabling `remote_history_enabled` in `config.json`.
+- **Blueprint Handshake Support:** Developers and designers can call the BlueprintCallable `ExecuteAASHandshake()` method in C++ from within Unreal to dynamically request a temporary `+0.5` VSS boost and clear conflict gates at-will. The private state of this connection is exposed to Blueprints as a Read-Only property `bHandshakeActive` for easy visual bindings.
 
 ### Core API Endpoints
 - `GET /v1/psta/salute`: Returns the full 07 Protocol Salute (P, S, T, A pillars).
