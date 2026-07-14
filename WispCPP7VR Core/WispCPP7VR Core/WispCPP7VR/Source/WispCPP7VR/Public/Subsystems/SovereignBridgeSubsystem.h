@@ -172,6 +172,6 @@ private:
     FString BridgeBaseUrl = TEXT("http://127.0.0.1:8000");
 
     /** Indicates if the handshake has been established */
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Bridge", meta = (AllowPrivateAccess = "true"))
     bool bHandshakeActive = false;
 };
