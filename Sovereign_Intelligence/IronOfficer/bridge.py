@@ -312,8 +312,9 @@ class SovereignBridge:
         payload.persona = original_persona
 
         # [B-026] Dual-Threshold System (0.4 for Read-Only, 0.7 for Mutation)
+        # // [J] Adding 'push_telemetry' to non-destructive tools lowers its threshold to 0.4 and prevents it from consuming the active handshake token.
         threshold = 0.7
-        non_destructive_tools = ["list_files", "read_file", "map_directory", "get_system_telemetry", "search_files"]
+        non_destructive_tools = ["list_files", "read_file", "map_directory", "get_system_telemetry", "search_files", "push_telemetry"]
         if payload.command in non_destructive_tools:
             threshold = 0.4
 

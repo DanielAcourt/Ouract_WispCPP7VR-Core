@@ -30,6 +30,7 @@ To support modular, decoupled rendering of this divided data:
 ### C. Blueprint Handshake Support (v36.4.7-Knight-AAS)
 To resolve the stasis loops caused by single-use handshake consumption during sequential telemetry ingestion:
 - **`USovereignBridgeSubsystem::ExecuteAASHandshake`:** Added a BlueprintCallable method that executes the `/v1/aas/handshake` request from Unreal to dynamically re-arm the global authority boost. This enables entities to resolve `409 CONFLICT` gates in-simulation during gameplay or custom editor events.
+- **`push_telemetry` Non-Destructive Reclassification:** Identified and resolved a critical world-initialization race condition where multiple spawned entities (e.g. Entity 1 and Entity 2) performing `InitializeSoul()` sequentially would cause Entity 1's telemetry payload to consume the global handshake token, causing Entity 2's subsequent payload to drop below the `0.7` mutation threshold and trigger a `409 CONFLICT` gate. Reclassifying `push_telemetry` as a non-destructive tool lowers its target threshold to `0.4`, allowing all concurrent entity telemetry to pass naturally without depleting active handshake tokens.
 
 ---
 
