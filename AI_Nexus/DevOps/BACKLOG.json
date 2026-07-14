@@ -1,23 +1,5 @@
 [
   {
-    "ID": "B-001",
-    "Task": "Actor Synchronization (Fish Tank Telemetry)",
-    "Complexity": "8",
-    "Status": "Done",
-    "Node": "DevOps",
-    "Why": "Enable Unreal to act as a Digital Twin for real-world IoT sensors.",
-    "What": "JSON/Binary telemetry correctly maps to ASovereignBaseInteractable properties."
-  },
-  {
-    "ID": "B-002",
-    "Task": "Data Survivability (Black Box Protocol)",
-    "Complexity": "5",
-    "Status": "Done (Hardened)",
-    "Node": "Research",
-    "Why": "Ensure mission data persists even if the simulation instance collapses.",
-    "What": "Atomic (.tmp -> move) write pattern for telemetry logs with guaranteed integrity."
-  },
-  {
     "ID": "B-003",
     "Task": "Lidar Intelligence (Matrix Museum Summoning)",
     "Complexity": "13",
@@ -135,15 +117,6 @@
     "What": "Standardized replay interface for scrubbing through historical PSTA sessions."
   },
   {
-    "ID": "R-000",
-    "Task": "PSTA Core: Unified Safety & VSS",
-    "Complexity": "8",
-    "Status": "Done",
-    "Node": "Research",
-    "Why": "Move from \"Weakest Link\" (PSS) to \"Non-Compensatory\" (VSS) safety logic.",
-    "What": "Formalized VSS formula implemented and verified in C++ core."
-  },
-  {
     "ID": "R-001",
     "Task": "PSTA Math: Exponential Trust Hysteresis",
     "Complexity": "5",
@@ -189,15 +162,6 @@
     "What": "Uncertainty Weight (Uw) formula that shifts safety bounds based on unknown tags."
   },
   {
-    "ID": "R-006",
-    "Task": "PSTA Math: Strategic vs Tactical Drift",
-    "Complexity": "5",
-    "Status": "Done",
-    "Node": "Research",
-    "Why": "Detect \"Normalization of Deviance\" by comparing current vs. factory baselines.",
-    "What": "Formalized Strategic/Tactical baseline comparison logic."
-  },
-  {
     "ID": "R-007",
     "Task": "PSTA Math: Common-Mode Failure Signatures",
     "Complexity": "8",
@@ -225,24 +189,6 @@
     "What": "Whitepaper/Audit document proving the Sovereign Framework's compliance."
   },
   {
-    "ID": "AD-001",
-    "Task": "Iron Officer: Bridge Foundation",
-    "Complexity": "13",
-    "Status": "Done",
-    "Node": "Admin/DevOps",
-    "Why": "Establish a high-performance local AI node to handle long-term tasks.",
-    "What": "Local LLM bridge with 07 Protocol handshake, 5090 acceleration, and Hardware Manifest."
-  },
-  {
-    "ID": "AD-002",
-    "Task": "Iron Officer: HMI (User Medium)",
-    "Complexity": "5",
-    "Status": "Done",
-    "Node": "Admin/DevOps",
-    "Why": "Provide a way for the Lead to interact with the local AI locally.",
-    "What": "Terminal-based Chat Vessel (vessel.py) with /report functionality and 07 Persona."
-  },
-  {
     "ID": "AD-003",
     "Task": "Iron Officer: Session & Local Memory",
     "Complexity": "8",
@@ -250,15 +196,6 @@
     "Node": "Admin/Research",
     "Why": "Enable the local AI to ingest the AI_Nexus research directly.",
     "What": "Local RAG or context window management for 12 years of project data."
-  },
-  {
-    "ID": "AD-004",
-    "Task": "Iron Officer: Sovereign Authority",
-    "Complexity": "5",
-    "Status": "Done",
-    "Node": "Admin/Protocols",
-    "Why": "Formalize root/admin permissions for the local AI node.",
-    "What": "Permission system where Administrative intent (A) overrides automated neural opinions."
   },
   {
     "ID": "AD-005",
@@ -303,7 +240,7 @@
     "Status": "Todo",
     "Node": "Research",
     "Why": "Stream Lidar data from Museum APIs into the Diagnostic Broker.",
-    "What": "Automated manifest ingestion mapping \"Unknown\" tags to high-fidelity mesh assets."
+    "What": "Automated manifestation ingestion mapping \"Unknown\" tags to high-fidelity mesh assets."
   },
   {
     "ID": "B-021",
@@ -375,6 +312,6 @@
     "Status": "Todo",
     "Node": "Research",
     "Why": "Reconcile local state discrepancy reports to drive visual particles.",
-    "What": "Drive material parameters and Niagara particles based on live `ParadoxDensity` ($\Xi$)."
+    "What": "Drive material parameters and Niagara particles based on live `ParadoxDensity` ($\\Xi$)."
   }
 ]
