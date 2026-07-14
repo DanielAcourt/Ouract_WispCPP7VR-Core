@@ -109,6 +109,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History);
 
+    /**
+     * Executes the AAS Handshake to request a temporary authority boost (+0.5 VSS).
+     * // [J] Exposing the handshake directly to Blueprints allows simulation entities to dynamically request clearance.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void ExecuteAASHandshake();
+
     /** Delegate triggered when a chat response is received from the bridge */
     UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
     FOnSovereignChatResponse OnChatResponseReceived;

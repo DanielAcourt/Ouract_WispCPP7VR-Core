@@ -27,6 +27,10 @@ To support modular, decoupled rendering of this divided data:
 - **`USovereignMasterHUD`:** Handles automated runtime discovery of registered specialized component brokers and automatically injects a pointer to the single-source-of-truth mediator (`USovereignSaveableEntityComponent`, or the **Soul Hub**) into sub-widgets.
 - **`USovereignBaseWidget`:** Automates UI element show/hide logic based on the presence of its assigned `CategoryName` (e.g. 'Bio', 'Qi') within the Soul Hub’s registered brokers. Also converts serialized category data into simple, robust C++-handled `TMap<FString, FString>` string maps (`GetCategoryDataAsMap`) for easy Blueprint binding.
 
+### C. Blueprint Handshake Support (v36.4.7-Knight-AAS)
+To resolve the stasis loops caused by single-use handshake consumption during sequential telemetry ingestion:
+- **`USovereignBridgeSubsystem::ExecuteAASHandshake`:** Added a BlueprintCallable method that executes the `/v1/aas/handshake` request from Unreal to dynamically re-arm the global authority boost. This enables entities to resolve `409 CONFLICT` gates in-simulation during gameplay or custom editor events.
+
 ---
 
 ## 🛠️ Verification of Recent Blueprint & Save Work (Commit 551ed3a)

@@ -84,6 +84,32 @@ void USovereignBridgeSubsystem::Perform07CheckIn()
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::ExecuteAASHandshake()
+{
+    // // [J] Requests a temporary +0.5 VSS authority boost from the bridge to dynamically clear 409 Conflict Gates.
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Executing AAS Handshake..."));
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            bHandshakeActive = true;
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AAS Handshake successful! Global Authority Boost Active."));
+            FlushTelemetryQueue();
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: AAS Handshake failed."));
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/aas/handshake"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+    Request->ProcessRequest();
+}
+
 void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
 {
     // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18
