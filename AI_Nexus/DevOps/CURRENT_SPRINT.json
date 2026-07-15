@@ -1,0 +1,38 @@
+[
+  {
+    "ID": "AD-003",
+    "Task": "Iron Officer: Session & Local Memory",
+    "Complexity": "8",
+    "Status": "In Progress",
+    "Node": "Admin/Research",
+    "Why": "Enable the local AI to ingest the AI_Nexus research directly.",
+    "What": "Local RAG or context window management for 12 years of project data."
+  },
+  {
+    "ID": "E-001",
+    "Task": "Epic: Sovereign Soul – The Reality-Truth Engine",
+    "Complexity": "34",
+    "Status": "In Progress",
+    "Node": "Research/DevOps",
+    "Why": "Evolve the Soul into a high-performance Orchestrator separating \"Truth\" from \"Magic\".",
+    "What": "ISovereignBroker system implemented with Mediator pattern in USovereignSaveableEntityComponent."
+  },
+  {
+    "ID": "B-016",
+    "Task": "Soul: Diagnostic Broker (Truth)",
+    "Complexity": "5",
+    "Status": "In Progress",
+    "Node": "DevOps",
+    "Why": "Implement the raw scientific/historical data layer for Lidar/Museum ingestion.",
+    "What": "UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry."
+  },
+  {
+    "ID": "B-017",
+    "Task": "Soul: Cultivation Broker (Magic)",
+    "Complexity": "5",
+    "Status": "In Progress",
+    "Node": "DevOps",
+    "Why": "Implement the gamified progression layer (Qi/Maturity) as a decoupled module.",
+    "What": "UCultivationBroker managing optional simulation logic without breaking SSoT."
+  }
+]

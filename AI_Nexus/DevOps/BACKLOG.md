@@ -1,9 +1,9 @@
 // Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
-# Sovereign Framework: BACKLOG
+# Sovereign Framework: PRODUCT BACKLOG
 
-This backlog uses Fibonacci scoring to estimate task complexity. It is designed to be "KISS" compliant and easily exportable to CSV/JSON for Lead tracking.
+This backlog tracks long-term product tasks using Fibonacci scoring. To optimize context loading during active cycles, all currently active/prioritized tickets have been moved to `CURRENT_SPRINT.md`.
 
-## 🎯 Active Phase: Infrastructure & Stabilization
+## 🎯 Defined Backlog Tickets (Todo Archive)
 
 | ID | Task | Complexity | Status | Node | Why (Context) | What (Completion Outcome) |
 |:---|:---|:---:|:---:|:---|:---|:---|
@@ -28,11 +28,7 @@ This backlog uses Fibonacci scoring to estimate task complexity. It is designed 
 | R-007 | PSTA Math: Common-Mode Failure Signatures | 8 | Todo | Research | Identify when multiple sensors fail for the same underlying reason. | Pattern recognition logic for detecting correlated cluster failures. |
 | R-008 | PSTA Math: Kernel-Level Severance Params | 5 | Todo | Research | Determine the physical bounds for autonomous AI severance. | Calculated thresholds for the Symmetrical Guard based on hardware limits. |
 | L-001 | Legal: Deterministic Safety & Heritage Compliance | 13 | Todo | Admin | Ensure the framework meets international safety and heritage standards. | Whitepaper/Audit document proving the Sovereign Framework's compliance. |
-| AD-003 | Iron Officer: Session & Local Memory | 8 | In Progress | Admin/Research | Enable the local AI to ingest the AI_Nexus research directly. | Local RAG or context window management for 12 years of project data. |
 | AD-005 | Iron Officer: Spatial Reflection (UE) | 13 | Todo | Admin/DevOps | Mirror the Iron Officer persona inside the Unreal simulation. | High-fidelity 3D agent manifestation responding to live PSTA telemetry. |
-| E-001 | Epic: Sovereign Soul – The Reality-Truth Engine | 34 | In Progress | Research/DevOps | Evolve the Soul into a high-performance Orchestrator separating "Truth" from "Magic". | ISovereignBroker system implemented with Mediator pattern in USovereignSaveableEntityComponent. |
-| B-016 | Soul: Diagnostic Broker (Truth) | 5 | In Progress | DevOps | Implement the raw scientific/historical data layer for Lidar/Museum ingestion. | UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry. |
-| B-017 | Soul: Cultivation Broker (Magic) | 5 | In Progress | DevOps | Implement the gamified progression layer (Qi/Maturity) as a decoupled module. | UCultivationBroker managing optional simulation logic without breaking SSoT. |
 | B-018 | Lidar: .DLB Ingestion Pipeline | 13 | Todo | Research | Stream Lidar data from Museum APIs into the Diagnostic Broker. | Automated manifest ingestion mapping "Unknown" tags to high-fidelity mesh assets. |
 | B-021 | Tool: `scope_validation` | 8 | Todo | DevOps | Enable agents to verify external path availability without risking operational stalls. | Proactive path testing tool with Temporal Dependency Mapping (TDM) and TOS reporting. |
 | B-022 | Tool: `introspection_schema` | 5 | Todo | DevOps | Provide agents with verifiable structural blueprints of system subsystems. | Schema retrieval tool with Degradation Forecasting and Failure Mode Simulation (DFS). |
