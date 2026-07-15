@@ -390,7 +390,7 @@ void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* In
     // 1. Safety Check: Stop the crash if data is missing
     if (!InData)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] InitializeFromSovereignData: No Data Asset provided."), *GetName());
+        UE_LOG(LogTemp, Warning, TEXT("[%s] [%s] InitializeFromSovereignData: No Data Asset provided."), *GetName(), *GetSovereignID().ToString());
         return;
     }
 
@@ -402,7 +402,7 @@ void ASovereignBaseEntity::InitializeFromSovereignData(USovereignSpeciesData* In
     RefreshVisuals();
 
     // 4. Log Success (Simplified)
-    UE_LOG(LogTemp, Log, TEXT("[%s] Sovereign Entity Initialized successfully."), *GetName());
+    UE_LOG(LogTemp, Log, TEXT("[%s] [%s] Sovereign Entity Initialized successfully."), *GetName(), *GetSovereignID().ToString());
 }
 
 void ASovereignBaseEntity::RefreshVisuals()
@@ -413,7 +413,7 @@ void ASovereignBaseEntity::RefreshVisuals()
     // 2. Index Validation
     if (!SpeciesData->GrowthStages.IsValidIndex(CurrentGrowthStage))
     {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] Invalid Growth Stage: %d"), *GetName(), CurrentGrowthStage);
+        UE_LOG(LogTemp, Warning, TEXT("[%s] [%s] Invalid Growth Stage: %d"), *GetName(), *GetSovereignID().ToString(), CurrentGrowthStage);
         return;
     }
 
@@ -451,7 +451,7 @@ void ASovereignBaseEntity::OnMeshLoaded(TSoftObjectPtr<UStaticMesh> LoadedMeshPt
         float StageScale = SpeciesData->GrowthStages[CurrentGrowthStage].VisualScale;
         EntityMesh->SetRelativeScale3D(FVector(StageScale));
 
-        UE_LOG(LogTemp, Log, TEXT("[%s] Visuals synced to Stage %d"), *GetName(), CurrentGrowthStage);
+        UE_LOG(LogTemp, Log, TEXT("[%s] [%s] Visuals synced to Stage %d"), *GetName(), *GetSovereignID().ToString(), CurrentGrowthStage);
     }
 }
 

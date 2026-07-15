@@ -252,6 +252,15 @@
     "What": "Unreal component that reconciles incompatible data streams into emergent VFX/Physics."
   },
   {
+    "ID": "B-026",
+    "Task": "Identity: Persistent GUID Serialization Hardening",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Prevent 'ApplyStateFromJsonObject' from overwriting unique top-level EntityIDs with stale/duplicate nested JSON GUIDs during world state reconstitution.",
+    "What": "Deserialization prioritizes the top-level registry-assigned FGuid and protects it from colliding or stale nested GUID properties."
+  },
+  {
     "ID": "AD-005a",
     "Task": "Spatial Sense: Save State Ingestion",
     "Complexity": "5",

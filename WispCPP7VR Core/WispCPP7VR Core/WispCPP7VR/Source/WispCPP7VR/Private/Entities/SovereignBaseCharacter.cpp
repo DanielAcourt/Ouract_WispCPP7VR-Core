@@ -222,8 +222,22 @@ void ASovereignBaseCharacter::Interact(const FInputActionValue& Value)
 	AActor* Target = GetSensedActor();
 	if (Target)
 	{
+		FString VesselGuidStr = SaveDataComponent ? SaveDataComponent->EntityID.ToString() : TEXT("N/A");
+		FString TargetGuidStr = TEXT("N/A");
+		if (auto* TargetSoul = Target->FindComponentByClass<USovereignSaveableEntityComponent>())
+		{
+			TargetGuidStr = TargetSoul->EntityID.ToString();
+		}
+		else if (Target->Implements<UInteractionInterface>())
+		{
+			if (USovereignSaveableEntityComponent* TargetSoul = IInteractionInterface::Execute_GetSovereignSoul(Target))
+			{
+				TargetGuidStr = TargetSoul->EntityID.ToString();
+			}
+		}
+
 		// Log for Debugging
-		UE_LOG(LogTemp, Log, TEXT("Sovereign: Vessel %s sensed target %s"), *GetName(), *Target->GetName());
+		UE_LOG(LogTemp, Log, TEXT("Sovereign: Vessel %s [%s] sensed target %s [%s]"), *GetName(), *VesselGuidStr, *Target->GetName(), *TargetGuidStr);
 
 		// Broadcast to Blueprints (for UI/Highlighters)
 		OnActorSensed.Broadcast(Target);
