@@ -222,8 +222,6 @@ class SovereignRAG:
 
         # Calculate Query Magnitude for Cosine Similarity
         query_mag = math.sqrt(sum(val ** 2 for val in query_tfidf.values()))
-        if query_mag == 0:
-            return []
 
         # Determine level boosting targets based on query tokens
         boosted_levels = self.detect_intent_levels(query_tokens)
@@ -232,26 +230,58 @@ class SovereignRAG:
 
         for chunk in self.chunks:
             # Compute cosine similarity
-            dot_product = 0.0
-            chunk_mag_sq = 0.0
+            similarity = 0.0
+            if query_mag > 0:
+                dot_product = 0.0
+                chunk_mag_sq = 0.0
 
-            # Calculate TF-IDF representation for chunk active tokens
-            chunk_tfidf: Dict[str, float] = {}
-            for token, tf in chunk["tf"].items():
-                if token in self.df:
-                    idf = math.log(1.0 + (self.num_chunks / (self.df[token])))
-                    chunk_tfidf[token] = tf * idf
-                    chunk_mag_sq += chunk_tfidf[token] ** 2
+                # Calculate TF-IDF representation for chunk active tokens
+                chunk_tfidf: Dict[str, float] = {}
+                for token, tf in chunk["tf"].items():
+                    if token in self.df:
+                        idf = math.log(1.0 + (self.num_chunks / (self.df[token])))
+                        chunk_tfidf[token] = tf * idf
+                        chunk_mag_sq += chunk_tfidf[token] ** 2
 
-            for token, q_val in query_tfidf.items():
-                if token in chunk_tfidf:
-                    dot_product += q_val * chunk_tfidf[token]
+                for token, q_val in query_tfidf.items():
+                    if token in chunk_tfidf:
+                        dot_product += q_val * chunk_tfidf[token]
 
-            chunk_mag = math.sqrt(chunk_mag_sq)
-            if chunk_mag == 0:
-                similarity = 0.0
-            else:
-                similarity = dot_product / (query_mag * chunk_mag)
+                chunk_mag = math.sqrt(chunk_mag_sq)
+                if chunk_mag > 0:
+                    similarity = dot_product / (query_mag * chunk_mag)
+
+            # [AD-003 Hardening] Fallback substring and fused-term matching (e.g. 'ainexus' -> 'ai_nexus', 'SaveEnitity' -> 'SaveEntity')
+            if similarity == 0.0:
+                raw_text_lower = chunk["text"].lower()
+                raw_path_lower = chunk["path"].lower()
+                raw_header_lower = chunk["header"].lower()
+
+                # Expand camelCase into separate terms (e.g., 'SaveEnitityComponent' -> 'Save Enitity Component')
+                expanded_query = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', query)
+                query_words = [w.strip().lower() for w in re.split(r'[^a-zA-Z0-9]', expanded_query) if len(w.strip()) > 2]
+
+                if query_words:
+                    match_count = 0
+                    for qw in query_words:
+                        # Direct or substring check on text, path, or headers
+                        if qw in raw_text_lower or qw in raw_path_lower or qw in raw_header_lower:
+                            match_count += 1
+                        # Substring match on stripped/fused terms (e.g., 'ainexus' matches 'ai_nexus')
+                        elif qw.replace("_", "").replace("-", "") in raw_text_lower.replace("_", "").replace("-", "") or \
+                             qw.replace("_", "").replace("-", "") in raw_path_lower.replace("_", "").replace("-", ""):
+                            match_count += 1
+                        # Fuzzy matching for minor suffix/prefix typo variations (e.g., matching 75% of string)
+                        else:
+                            qw_len = len(qw)
+                            if qw_len > 4:
+                                prefix = qw[:int(qw_len * 0.75)]
+                                if prefix in raw_text_lower or prefix in raw_path_lower:
+                                    match_count += 1
+
+                    if match_count > 0:
+                        # Normalize similarity based on matched terms ratio
+                        similarity = 0.15 * (match_count / len(query_words))
 
             # Apply Level-Based Boosting
             if similarity > 0 and chunk["level"] in boosted_levels:
