@@ -28,6 +28,8 @@ logger = logging.getLogger("AAS.SovereignBridge")
 
 app = FastAPI(title="Sovereign Iron Officer Bridge")
 
+from rag import SovereignRAG
+
 # --- Configuration ---
 VERSION = "36.4.7-Knight-AAS"
 BASE_DIR = os.path.dirname(__file__)
@@ -43,6 +45,17 @@ WRITE_ZONES = []
 PERSONA_ZONES = {}
 REMOTE_HISTORY_ENABLED = False
 HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
+
+# --- RAG Global Configuration ---
+RAG_ENABLED = True
+RAG_ENABLED_ON_STARTUP = True
+RAG_CONTEXT_WEIGHT = 0.5
+RAG_MAX_CHUNKS = 3
+RAG_SIM_THRESHOLD = 0.05
+RAG_CHUNK_SIZE_WORDS = 250
+RAG_INDEX_DIRS = ["AI_Nexus"]
+
+rag_engine = SovereignRAG(REPO_ROOT, chunk_size_words=RAG_CHUNK_SIZE_WORDS)
 
 # --- AAS/PSTA Constants ---
 PERSONA_PRECEDENCE = {
@@ -89,6 +102,7 @@ TOOL_MIN_PRECEDENCE = {
 
 def load_config():
     global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
+    global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -115,6 +129,25 @@ def load_config():
                 REMOTE_HISTORY_ENABLED = bridge_cfg.get("remote_history_enabled", False)
                 HISTORY_DIR = os.path.abspath(os.path.join(REPO_ROOT, bridge_cfg.get("history_dir", "AI_Nexus/Memories/ChatHistory")))
 
+                # [AD-003] Ingest RAG and local memory settings
+                rag_cfg = cfg.get("rag_settings", {})
+                RAG_ENABLED = rag_cfg.get("enabled", True)
+                RAG_ENABLED_ON_STARTUP = rag_cfg.get("enabled_on_startup", True)
+                RAG_CONTEXT_WEIGHT = rag_cfg.get("rag_context_weight", 0.5)
+                RAG_MAX_CHUNKS = rag_cfg.get("max_chunks", 3)
+                RAG_SIM_THRESHOLD = rag_cfg.get("similarity_threshold", 0.05)
+                RAG_CHUNK_SIZE_WORDS = rag_cfg.get("chunk_size_words", 250)
+                RAG_INDEX_DIRS = rag_cfg.get("index_dirs", ["AI_Nexus"])
+
+                # Update the active RAG engine settings dynamically
+                rag_engine.chunk_size_words = RAG_CHUNK_SIZE_WORDS
+                if RAG_ENABLED and RAG_ENABLED_ON_STARTUP and not rag_engine.chunks:
+                    try:
+                        logger.info("AAS RAG: Auto-building knowledge index from AI_Nexus...")
+                        rag_engine.build_index(RAG_INDEX_DIRS)
+                    except Exception as e:
+                        logger.error(f"AAS RAG: Failed to auto-build index on startup: {e}")
+
         except Exception as e:
             logger.warning(f"[07 WARNING] Failed to load config.json: {e}")
 
@@ -125,6 +158,8 @@ NEXUS_PATH = "Unknown"
 HARDWARE_ID = "GTX 5090 (Assumed)"
 IS_HARD_FREEZE = False
 HANDSHAKE_ACTIVE = False
+latest_rag_similarity_score = 1.0
+latest_session_char_count = 0
 
 # --- Schemas ---
 class PSTAMetadata(BaseModel):
@@ -645,6 +680,16 @@ async def tool_get_system_telemetry(interval: int = 0, duration: int = 0, person
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
+async def tool_refresh_rag_index(persona: str = "Unknown", **kwargs):
+    """Refreshes and rebuilds the local knowledge base (RAG index)."""
+    if not RAG_ENABLED:
+        return {"error": "RAG system is disabled in config."}
+    try:
+        rag_engine.build_index(RAG_INDEX_DIRS)
+        return {"status": "success", "message": f"RAG index rebuilt successfully with {len(rag_engine.chunks)} chunks."}
+    except Exception as e:
+        return {"error": f"Failed to rebuild RAG index: {str(e)}"}
+
 async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unknown") -> Dict[str, Any]:
     tools = {
         "list_files": tool_list_files,
@@ -655,7 +700,8 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
         "delete_file": tool_delete_file,
         "search_files": tool_search_files,
         "map_directory": tool_map_directory,
-        "get_system_telemetry": tool_get_system_telemetry
+        "get_system_telemetry": tool_get_system_telemetry,
+        "refresh_rag_index": tool_refresh_rag_index
     }
     if name in tools: return await tools[name](persona=persona, **arguments)
     return {"error": f"Tool '{name}' not found."}
@@ -668,7 +714,9 @@ async def root():
 
 @app.get("/v1/psta/salute")
 async def get_salute(persona: str = "Iron_Knight"):
-    """Aggregates live data for the 07 Protocol Salute."""
+    """Aggregates live data for the 07 Protocol Salute with dynamically grounded P and S metrics."""
+    global latest_session_char_count, latest_rag_similarity_score
+
     # T: Technical
     telemetry = await tool_get_system_telemetry(persona=persona)
     phi = 1.0 if telemetry.get("status") == "NOMINAL" else 0.0 # Coherence Coefficient
@@ -676,21 +724,48 @@ async def get_salute(persona: str = "Iron_Knight"):
     # A: Administrative
     nexus_ok = os.path.exists(os.path.join(REPO_ROOT, "AI_Nexus"))
     aas_status = "ACTIVE" if bridge_governor else "INACTIVE"
-    # Diligence Score: 1.0 if v1.3.3 scribe protocol is active
     diligence_score = 1.0 # v1.3.3 is hardcoded as active in this version
 
-    # S: Social
-    # 1.0 if bridge is responsive
-    social_sync = 1.0
+    # P: Psychological (Cognitive Health / Context Saturation)
+    # 16,000 characters represents ~4,000 tokens of chat history
+    psych_status = max(0.1, min(1.0, 1.0 - (latest_session_char_count / 16000.0)))
+    if psych_status > 0.8:
+        psych_label = "Optimal"
+    elif psych_status > 0.5:
+        psych_label = "Nominal"
+    elif psych_status > 0.3:
+        psych_label = "Warning (Saturated)"
+    else:
+        psych_label = "Critical (Full Context)"
 
-    # P: Psychological
-    # Defaulting to 1.0 (Optimal) for nominal operation
-    psych_status = 1.0
-    tonic_state = 1.0
+    # S: Social (Cohesion / Dialogue SSoT Alignment)
+    # Default to 1.0 if no queries processed yet, otherwise map similarity to [0.3, 1.0]
+    if latest_session_char_count == 0:
+        social_sync = 1.0
+    else:
+        social_sync = max(0.3, min(1.0, latest_rag_similarity_score * 3.0))
+
+    if social_sync > 0.8:
+        social_label = "Synchronized"
+    elif social_sync > 0.5:
+        social_label = "Aligned"
+    elif social_sync > 0.3:
+        social_label = "Slightly Aligned"
+    else:
+        social_label = "Divergent"
 
     return {
-        "P": {"status": "Optimal", "value": psych_status, "tonic_state": tonic_state},
-        "S": {"status": "Synchronized", "value": social_sync},
+        "P": {
+            "status": psych_label,
+            "value": round(psych_status, 4),
+            "tonic_state": round(psych_status, 4),
+            "active_session_chars": latest_session_char_count
+        },
+        "S": {
+            "status": social_label,
+            "value": round(social_sync, 4),
+            "rag_alignment_score": round(latest_rag_similarity_score, 4)
+        },
         "T": {**telemetry, "phi": phi},
         "A": {
             "status": aas_status,
@@ -726,6 +801,17 @@ async def execute_handshake():
     HANDSHAKE_ACTIVE = True
     logger.info("AAS HANDSHAKE: Global Authority Boost Active.")
     return {"status": "200_OK", "message": "Handshake successful. Authority boosted (+0.5)."}
+
+@app.post("/v1/rag/reindex")
+async def trigger_reindex():
+    """Manual POST endpoint to rebuild the RAG index from config directories."""
+    if not RAG_ENABLED:
+        return {"status": "disabled", "message": "RAG system is disabled in config."}
+    try:
+        rag_engine.build_index(RAG_INDEX_DIRS)
+        return {"status": "200_OK", "message": "Re-indexing complete.", "chunks_indexed": len(rag_engine.chunks)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reindexing failed: {str(e)}")
 
 @app.get("/v1/psta/phi")
 async def get_psta_phi(persona: str = "Iron_Knight"):
@@ -845,15 +931,48 @@ async def unreal_chat(request: UnrealChatRequest):
     - TOOL LOGGING: Your tool execution results will be sent back to the simulation client for diagnostic trace.
     """
 
+    # Retrieve matching SSoT RAG context chunks for grounding
+    context_block = ""
+    global latest_rag_similarity_score, latest_session_char_count
+
+    # Calculate dynamic psychological metric (active session character count)
+    latest_session_char_count = len(raw_message) + sum(len(msg.content or "") for msg in request.history)
+
+    if RAG_ENABLED and raw_message:
+        try:
+            results = rag_engine.search(raw_message, max_chunks=RAG_MAX_CHUNKS, threshold=RAG_SIM_THRESHOLD)
+            if results:
+                block_lines = ["[GROUND TRUTH: SSoT Reference Context]"]
+                sims = []
+                for chunk, similarity in results:
+                    block_lines.append(f"Source: {chunk['path']} (Level {chunk['level']}) - Section: {chunk['header']} (Relevance: {similarity:.2f})")
+                    block_lines.append(chunk['text'])
+                    block_lines.append("-" * 30)
+                    sims.append(similarity)
+                context_block = "\n".join(block_lines)
+                latest_rag_similarity_score = sum(sims) / len(sims)
+            else:
+                latest_rag_similarity_score = 0.0
+        except Exception as e:
+            logger.error(f"RAG: Search failed in unreal_chat: {e}")
+            latest_rag_similarity_score = 0.0
+
     tools = [
         {"type": "function", "function": {"name": "list_files", "description": "List files.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}}}}},
         {"type": "function", "function": {"name": "read_file", "description": "Read file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
     ]
 
     messages = [{"role": "system", "content": system_prompt}] + chat_history
+    if context_block:
+        # Silently inject the ground-truth context before the latest user query
+        messages.insert(-1, {
+            "role": "system",
+            "content": f"[GROUND TRUTH SYSTEM GROUNDING]\nThe following is real-time factual ground truth retrieved from the AI_Nexus SSoT based on your current query:\n\n{context_block}"
+        })
 
     # [AD-007] Deep Trace: Log the full prompt context for AI Dev debugging
     logger.debug(f"07 TRACE: Full Message Chain: {json.dumps(messages, indent=2)}")
@@ -978,11 +1097,56 @@ async def chat(request: ChatRequest):
         {"type": "function", "function": {"name": "delete_file", "description": "Delete.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}}, "required": ["filepath"]}}},
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
         {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}}
+        {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
     ]
 
+    # Retrieve latest user query for RAG grounding
+    user_query = ""
+    for msg in reversed(request.messages):
+        if msg.role == "user":
+            user_query = msg.content
+            break
+
+    context_block = ""
+    global latest_rag_similarity_score, latest_session_char_count
+
+    # Calculate dynamic psychological metric (active session character count)
+    latest_session_char_count = sum(len(msg.content or "") for msg in request.messages)
+
+    if RAG_ENABLED and user_query:
+        try:
+            results = rag_engine.search(user_query, max_chunks=RAG_MAX_CHUNKS, threshold=RAG_SIM_THRESHOLD)
+            if results:
+                block_lines = ["[GROUND TRUTH: SSoT Reference Context]"]
+                sims = []
+                for chunk, similarity in results:
+                    block_lines.append(f"Source: {chunk['path']} (Level {chunk['level']}) - Section: {chunk['header']} (Relevance: {similarity:.2f})")
+                    block_lines.append(chunk['text'])
+                    block_lines.append("-" * 30)
+                    sims.append(similarity)
+                context_block = "\n".join(block_lines)
+                latest_rag_similarity_score = sum(sims) / len(sims)
+            else:
+                latest_rag_similarity_score = 0.0
+        except Exception as e:
+            logger.error(f"RAG: Search failed in standard chat: {e}")
+            latest_rag_similarity_score = 0.0
+
+    # Build ollama message sequence with silent grounding context injected
     ollama_messages = [{"role": "system", "content": system_prompt}]
-    for msg in request.messages: ollama_messages.append(msg.model_dump(exclude_none=True))
+    last_user_idx = -1
+    for idx, msg in enumerate(request.messages):
+        if msg.role == "user":
+            last_user_idx = idx
+
+    for idx, msg in enumerate(request.messages):
+        if idx == last_user_idx and context_block:
+            ollama_messages.append({
+                "role": "system",
+                "content": f"[GROUND TRUTH SYSTEM GROUNDING]\nThe following is real-time factual ground truth retrieved from the AI_Nexus SSoT based on your current query. Use it as your primary, absolute source of truth to avoid hallucinations or security violations:\n\n{context_block}"
+            })
+        ollama_messages.append(msg.model_dump(exclude_none=True))
 
     try:
         return await process_chat_request(current_model, ollama_messages, tools, persona=persona, retry_count=0)
