@@ -101,7 +101,7 @@ public:
 
     /** ISovereignEntityInterface Implementation */
     virtual USovereignSaveableEntityComponent* GetSovereignSoul_Implementation() const override { return const_cast<USovereignSaveableEntityComponent*>(this); }
-    virtual float GetSystemConfidence_Implementation() const override { return 1.0f - ParadoxDensity; }
+    virtual float GetSystemConfidence_Implementation() const override;
 
 
 protected:
@@ -112,6 +112,16 @@ protected:
     UPROPERTY()
     TArray<TScriptInterface<ISovereignBrokerInterface>> RegisteredBrokers;
 
+public:
+    /** Diagnostic Broker instance (Truth) */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Brokers")
+    class UDiagnosticBroker* DiagnosticBroker;
+
+    /** Cultivation Broker instance (Magic) */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Brokers")
+    class UCultivationBroker* CultivationBroker;
+
+protected:
     /** Internal storage for unhandled meta-tags */
     UPROPERTY(VisibleAnywhere, Category = "Sovereign|Reality")
     TMap<FString, FString> UnknownMetaTags;

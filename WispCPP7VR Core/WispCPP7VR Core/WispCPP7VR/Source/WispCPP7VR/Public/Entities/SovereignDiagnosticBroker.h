@@ -22,10 +22,16 @@ public:
 	virtual void OnProcessData(const TMap<FString, FString>& Data) override;
 
 	/** Raw Lidar / Museum Metadata storage */
-	UPROPERTY(VisibleAnywhere, Category = "Sovereign|Truth")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Truth")
 	TMap<FString, FString> TruthMetadata;
 
 	/** Vetted Curator Sign-off */
-	UPROPERTY(VisibleAnywhere, Category = "Sovereign|Truth")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Truth")
 	FString VettedBy;
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Truth")
+	FString GetTruthValue(const FString& Key) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Truth")
+	void SetTruthValue(const FString& Key, const FString& Value);
 };

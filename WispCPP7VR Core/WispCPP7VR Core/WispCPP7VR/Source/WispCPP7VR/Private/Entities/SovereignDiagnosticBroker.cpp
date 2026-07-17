@@ -47,3 +47,17 @@ void UDiagnosticBroker::OnProcessData(const TMap<FString, FString>& Data)
         TruthMetadata.Add(Elem.Key, Elem.Value);
     }
 }
+
+FString UDiagnosticBroker::GetTruthValue(const FString& Key) const
+{
+    if (TruthMetadata.Contains(Key))
+    {
+        return TruthMetadata[Key];
+    }
+    return TEXT("");
+}
+
+void UDiagnosticBroker::SetTruthValue(const FString& Key, const FString& Value)
+{
+    TruthMetadata.Add(Key, Value);
+}

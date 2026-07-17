@@ -26,4 +26,22 @@ void UCultivationBroker::OnLoad(const TSharedPtr<FJsonObject>& InJson)
 void UCultivationBroker::OnProcessData(const TMap<FString, FString>& Data)
 {
     // Gamified progression logic could react to data here
+    if (Data.Contains(TEXT("QiBalance")))
+    {
+        QiBalance = FCString::Atof(*Data[TEXT("QiBalance")]);
+    }
+    if (Data.Contains(TEXT("CultivationTier")))
+    {
+        CultivationTier = FCString::Atoi(*Data[TEXT("CultivationTier")]);
+    }
+}
+
+void UCultivationBroker::AddQi(float Amount)
+{
+    QiBalance += Amount;
+}
+
+void UCultivationBroker::IncrementTier()
+{
+    CultivationTier++;
 }

@@ -28,4 +28,10 @@ public:
 	/** Cultivation Tier */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Magic")
 	int32 CultivationTier = 1;
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Magic")
+	void AddQi(float Amount);
+
+	UFUNCTION(BlueprintCallable, Category = "Sovereign|Magic")
+	void IncrementTier();
 };

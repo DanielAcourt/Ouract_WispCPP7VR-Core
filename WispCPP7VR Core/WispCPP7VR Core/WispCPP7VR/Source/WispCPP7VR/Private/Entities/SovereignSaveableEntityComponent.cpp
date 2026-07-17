@@ -2,6 +2,8 @@
 
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBrokerInterface.h"
+#include "Entities/SovereignDiagnosticBroker.h"
+#include "Entities/SovereignCultivationBroker.h"
 #include "Subsystems/SovereignBridgeSubsystem.h"
 #include "SaveSystem/SovereignActorRegistry.h"
 #include "JsonObjectConverter.h"
@@ -16,6 +18,18 @@ USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
 void USovereignSaveableEntityComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Instantiate the brokers dynamically at runtime and register them to our RegisteredBrokers list
+	if (!DiagnosticBroker)
+	{
+		DiagnosticBroker = NewObject<UDiagnosticBroker>(this);
+		RegisterBroker(DiagnosticBroker);
+	}
+	if (!CultivationBroker)
+	{
+		CultivationBroker = NewObject<UCultivationBroker>(this);
+		RegisterBroker(CultivationBroker);
+	}
 
 	if (!EntityID.IsValid())
 	{
@@ -260,6 +274,20 @@ FString USovereignSaveableEntityComponent::SerializeJsonToString(TSharedPtr<FJso
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
 	FJsonSerializer::Serialize(JsonObj.ToSharedRef(), Writer);
 	return JsonString;
+}
+
+float USovereignSaveableEntityComponent::GetSystemConfidence_Implementation() const
+{
+	float BaseConfidence = 1.0f - ParadoxDensity;
+
+	// Coupling with the Diagnostic Broker's curation status (VettedBy indicator)
+	if (DiagnosticBroker && !DiagnosticBroker->VettedBy.IsEmpty())
+	{
+		// Curator validation mitigates 80% of current paradox/uncertainty density, boosting the system confidence.
+		BaseConfidence = 1.0f - (ParadoxDensity * 0.2f);
+	}
+
+	return FMath::Clamp(BaseConfidence, 0.0f, 1.0f);
 }
 
 #if WITH_EDITOR
