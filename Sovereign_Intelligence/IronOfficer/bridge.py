@@ -97,7 +97,8 @@ TOOL_MIN_PRECEDENCE = {
     "get_system_telemetry": 5,
     "map_directory": 3,
     "search_files": 5,
-    "push_telemetry": 5
+    "push_telemetry": 5,
+    "possess_entity": 5
 }
 
 def load_config():
