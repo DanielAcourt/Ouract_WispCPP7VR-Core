@@ -70,6 +70,17 @@ void USovereignBlackBoxComponent::RecordTruthSnapshot()
         }
     }
 
+    // C. Actor Tags Fallback: Also gather from Owner->Tags if formatted as "Key:Value"
+    for (const FName& Tag : Owner->Tags)
+    {
+        FString TagStr = Tag.ToString();
+        FString Key, Value;
+        if (TagStr.Split(TEXT(":"), &Key, &Value))
+        {
+            RawData.Add(Key, Value);
+        }
+    }
+
     // 2. DELTA & PSTA PROCESSING: Evaluate the data for changes and mission health impacts.
     bool bHasChanges = false;
 
@@ -200,6 +211,26 @@ void USovereignBlackBoxComponent::IngestBlackBoxEntry(const FBlackBoxEntry& Entr
             TMap<FString, FString> Data;
             Data.Add(Entry.Key, FString::SanitizeFloat(Entry.Value));
             SaveInterface->RestoreSaveData(Data);
+        }
+        else
+        {
+            // Fallback for actors with tags (such as test actors)
+            FString Prefix = Entry.Key + TEXT(":");
+            bool bFound = false;
+            for (int32 i = 0; i < Owner->Tags.Num(); ++i)
+            {
+                FString TagStr = Owner->Tags[i].ToString();
+                if (TagStr.StartsWith(Prefix))
+                {
+                    Owner->Tags[i] = FName(*(Prefix + FString::SanitizeFloat(Entry.Value)));
+                    bFound = true;
+                    break;
+                }
+            }
+            if (!bFound)
+            {
+                Owner->Tags.Add(FName(*(Prefix + FString::SanitizeFloat(Entry.Value))));
+            }
         }
     }
 
