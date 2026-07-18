@@ -6,6 +6,7 @@
 #include "Entities/SovereignCultivationBroker.h"
 #include "Subsystems/SovereignBridgeSubsystem.h"
 #include "SaveSystem/SovereignActorRegistry.h"
+#include "Interaction/SovereignSaveInterface.h"
 #include "JsonObjectConverter.h"
 #include "Serialization/JsonSerializer.h"
 #include "Engine/World.h"
@@ -169,6 +170,19 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 		}
 	}
 
+	// 4. OWNER FLAT SAVE DATA (ISovereignSaveInterface)
+	if (AActor* Owner = GetOwner())
+	{
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
+		{
+			TMap<FString, FString> SaveData = SaveInterface->GetSaveData();
+			for (const auto& Elem : SaveData)
+			{
+				RootObj->SetStringField(Elem.Key, Elem.Value);
+			}
+		}
+	}
+
 	return RootObj;
 }
 
@@ -209,6 +223,33 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 		if (Broker.GetInterface())
 		{
 			Broker->OnLoad(JsonData);
+		}
+	}
+
+	// 4. RESTORE OWNER FLAT SAVE DATA (ISovereignSaveInterface)
+	if (AActor* Owner = GetOwner())
+	{
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
+		{
+			TMap<FString, FString> FlatData;
+			for (const auto& Elem : JsonData->Values)
+			{
+				if (Elem.Value.IsValid())
+				{
+					if (Elem.Value->Type == EJson::String)
+					{
+						FlatData.Add(Elem.Key, Elem.Value->AsString());
+					}
+					else if (Elem.Value->Type == EJson::Number)
+					{
+						FlatData.Add(Elem.Key, FString::SanitizeFloat(Elem.Value->AsNumber()));
+					}
+				}
+			}
+			if (FlatData.Num() > 0)
+			{
+				SaveInterface->RestoreSaveData(FlatData);
+			}
 		}
 	}
 
