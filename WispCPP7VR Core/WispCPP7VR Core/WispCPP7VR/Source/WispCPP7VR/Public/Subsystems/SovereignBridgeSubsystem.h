@@ -71,6 +71,9 @@ struct FSovereignChatMessage
 /** Delegate broadcasted when the bridge responds to a chat request */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSovereignChatResponse&, Response);
 
+/** Delegate triggered when an entity's AI possession state changes */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSovereignAIPossessionStateChanged, const FGuid&, EntityID, bool, bIsPossessed);
+
 /**
  * USovereignBridgeSubsystem: Manages communication between Unreal and the Iron Officer Bridge.
  * Implements the 07 Protocol, Telemetry pipelines, and Simulation Chat.
@@ -120,6 +123,10 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
     FOnSovereignChatResponse OnChatResponseReceived;
 
+    /** Delegate triggered when an entity's AI possession state changes */
+    UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
+    FOnSovereignAIPossessionStateChanged OnAIPossessionStateChanged;
+
     /** If true, the bridge will store a permanent copy of the chat in AI_Nexus/Memories/ */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
     bool bEnableRemoteHistory = false;
@@ -133,6 +140,21 @@ public:
     /** Debugging: Returns the number of registered Sovereign Entities */
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Debug")
     int32 GetRegisteredEntityCount() const;
+
+    /**
+     * Requests AI possession of a registered entity.
+     * @param EntityID  The FGuid of the entity to possess.
+     * @param bPossess  Whether to possess or unpossess.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void RequestAIPossession(const FGuid& EntityID, bool bPossess);
+
+    /**
+     * Helper to locally update AI possession state.
+     * Updates component properties, broadcasts delegate, and logs status.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void UpdateAIPossessionState(const FGuid& EntityID, bool bPossess);
 
 private:
     /** Internal struct to buffer telemetry while handshake is pending */

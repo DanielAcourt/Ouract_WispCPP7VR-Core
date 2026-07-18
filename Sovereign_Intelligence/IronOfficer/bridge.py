@@ -221,6 +221,10 @@ class UnrealChatRequest(BaseModel):
     history: List[ChatMessage] = Field(default_factory=list)
     enable_remote_history: bool = False
 
+class UnrealPossessRequest(BaseModel):
+    entity_id: str
+    possess: bool = True
+
 # --- AAS Bridge Logic ---
 
 class SovereignBridge:
@@ -690,6 +694,29 @@ async def tool_refresh_rag_index(persona: str = "Unknown", **kwargs):
     except Exception as e:
         return {"error": f"Failed to rebuild RAG index: {str(e)}"}
 
+async def tool_possess_entity(entity_id: str, possess: bool = True, persona: str = "Unknown"):
+    """Trigger AI possession of a registered simulation entity in Unreal."""
+    payload = AgentCommandPayload(
+        persona=persona,
+        command="possess_entity",
+        target_node=f"UNREAL/{entity_id}"
+    )
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if possess:
+        logger.info(f"i now control id {entity_id}")
+    else:
+        logger.info(f"Released control of id {entity_id}")
+
+    return {
+        "status": "200_OK",
+        "entity_id": entity_id,
+        "possess": possess,
+        "message": f"AI possession state {'activated' if possess else 'deactivated'}."
+    }
+
 async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unknown") -> Dict[str, Any]:
     tools = {
         "list_files": tool_list_files,
@@ -701,7 +728,8 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
         "search_files": tool_search_files,
         "map_directory": tool_map_directory,
         "get_system_telemetry": tool_get_system_telemetry,
-        "refresh_rag_index": tool_refresh_rag_index
+        "refresh_rag_index": tool_refresh_rag_index,
+        "possess_entity": tool_possess_entity
     }
     if name in tools: return await tools[name](persona=persona, **arguments)
     return {"error": f"Tool '{name}' not found."}
@@ -861,6 +889,33 @@ async def unreal_checkin(request: UnrealCheckInRequest):
         "bridge_version": VERSION
     }
 
+@app.post("/v1/unreal/possess")
+async def unreal_possess(request: UnrealPossessRequest):
+    """
+    [07] Protocol: Receive a possession state update request.
+    Arbitrates the request and triggers log messages.
+    """
+    payload = AgentCommandPayload(
+        persona="Unreal_Simulation",
+        command="possess_entity",
+        target_node=f"UNREAL/{request.entity_id}"
+    )
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if request.possess:
+        logger.info(f"i now control id {request.entity_id}")
+    else:
+        logger.info(f"Released control of id {request.entity_id}")
+
+    return {
+        "status": "200_OK",
+        "entity_id": request.entity_id,
+        "possess": request.possess,
+        "message": "Possession state updated successfully."
+    }
+
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
     """
@@ -963,7 +1018,8 @@ async def unreal_chat(request: UnrealChatRequest):
         {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
         {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}},
+        {"type": "function", "function": {"name": "possess_entity", "description": "Trigger AI possession of a registered simulation entity in Unreal.", "parameters": {"type": "object", "properties": {"entity_id": {"type": "string", "description": "The UUID of the registered Sovereign entity"}, "possess": {"type": "boolean", "description": "True to possess, False to release."}}, "required": ["entity_id"]}}}
     ]
 
     messages = [{"role": "system", "content": system_prompt}] + chat_history
@@ -1098,7 +1154,8 @@ async def chat(request: ChatRequest):
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
         {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
         {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}},
+        {"type": "function", "function": {"name": "possess_entity", "description": "Trigger AI possession of a registered simulation entity in Unreal.", "parameters": {"type": "object", "properties": {"entity_id": {"type": "string", "description": "The UUID of the registered Sovereign entity"}, "possess": {"type": "boolean", "description": "True to possess, False to release."}}, "required": ["entity_id"]}}}
     ]
 
     # Retrieve latest user query for RAG grounding

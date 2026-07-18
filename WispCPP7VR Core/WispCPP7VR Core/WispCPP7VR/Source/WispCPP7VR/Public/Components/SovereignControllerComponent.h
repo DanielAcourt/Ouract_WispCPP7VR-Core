@@ -22,6 +22,10 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Possession")
     bool bIsPlayerPossessed;
 
+    /** Track if the AI is currently possessing this vessel */
+    UPROPERTY(BlueprintReadOnly, Category = "Sovereign|Possession")
+    bool bIsAIPossessed;
+
     /** Called when the parent Pawn is possessed by ANY controller */
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Possession")
     void OnPossessed(AController* NewController);

@@ -4,6 +4,7 @@
 
 #include "Subsystems/SovereignBridgeSubsystem.h"
 #include "Entities/SovereignSaveableEntityComponent.h"
+#include "Components/SovereignControllerComponent.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -331,8 +332,29 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
                         TSharedPtr<FJsonObject> FuncObj = ToolObj->GetObjectField(TEXT("function"));
                         if (FuncObj.IsValid())
                         {
-                            ChatResponse.ToolLogs[i].ToolName = FuncObj->GetStringField(TEXT("name"));
-                            UE_LOG(LogTemp, Log, TEXT("SovereignBridge: AI Executed Tool: %s"), *ChatResponse.ToolLogs[i].ToolName);
+                            FString ToolName = FuncObj->GetStringField(TEXT("name"));
+                            ChatResponse.ToolLogs[i].ToolName = ToolName;
+                            UE_LOG(LogTemp, Log, TEXT("SovereignBridge: AI Executed Tool: %s"), *ToolName);
+
+                            if (ToolName == TEXT("possess_entity"))
+                            {
+                                TSharedPtr<FJsonObject> ArgsObj = FuncObj->GetObjectField(TEXT("arguments"));
+                                if (ArgsObj.IsValid())
+                                {
+                                    FString EntityIdStr;
+                                    if (ArgsObj->TryGetStringField(TEXT("entity_id"), EntityIdStr))
+                                    {
+                                        bool bPossess = true;
+                                        ArgsObj->TryGetBoolField(TEXT("possess"), bPossess);
+
+                                        FGuid TargetGuid;
+                                        if (FGuid::Parse(EntityIdStr, TargetGuid))
+                                        {
+                                            UpdateAIPossessionState(TargetGuid, bPossess);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -347,4 +369,70 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
         FString ErrorDetail = Response.IsValid() ? FString::Printf(TEXT("Code: %d"), Response->GetResponseCode()) : TEXT("Network Error");
         UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Simulation Chat FAILED. %s"), *ErrorDetail);
     }
+}
+
+void USovereignBridgeSubsystem::UpdateAIPossessionState(const FGuid& EntityID, bool bPossess)
+{
+    for (const TWeakObjectPtr<USovereignSaveableEntityComponent>& WeakSoul : RegisteredSovereignEntities)
+    {
+        if (USovereignSaveableEntityComponent* Soul = WeakSoul.Get())
+        {
+            if (Soul->EntityID == EntityID)
+            {
+                Soul->bIsBeingPossessed = bPossess;
+
+                if (AActor* Owner = Soul->GetOwner())
+                {
+                    if (USovereignControllerComponent* ControlComp = Owner->FindComponentByClass<USovereignControllerComponent>())
+                    {
+                        ControlComp->bIsAIPossessed = bPossess;
+                    }
+                }
+
+                OnAIPossessionStateChanged.Broadcast(EntityID, bPossess);
+
+                if (bPossess)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("i now control id %s"), *EntityID.ToString());
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Released control of id %s"), *EntityID.ToString());
+                }
+                break;
+            }
+        }
+    }
+}
+
+void USovereignBridgeSubsystem::RequestAIPossession(const FGuid& EntityID, bool bPossess)
+{
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+
+    Request->OnProcessRequestComplete().BindLambda([this, EntityID, bPossess](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            UpdateAIPossessionState(EntityID, bPossess);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: RequestAIPossession failed on the bridge."));
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/possess"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("entity_id"), EntityID.ToString());
+    JsonPayload->SetBoolField(TEXT("possess"), bPossess);
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
 }

@@ -8,6 +8,7 @@ USovereignControllerComponent::USovereignControllerComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
     bIsPlayerPossessed = false; // This will now work because it's in the .h
+    bIsAIPossessed = false;
 }
 
 void USovereignControllerComponent::BeginPlay()
@@ -25,6 +26,7 @@ void USovereignControllerComponent::OnPossessed(AController* NewController)
 
     // Check if the pilot is a human (PlayerController) or code (AIController)
     bIsPlayerPossessed = NewController->IsPlayerController();
+    bIsAIPossessed = !bIsPlayerPossessed;
 
     if (bIsPlayerPossessed)
     {
@@ -42,6 +44,7 @@ void USovereignControllerComponent::OnUnpossessed()
 
     CurrentController = nullptr;
     bIsPlayerPossessed = false;
+    bIsAIPossessed = false;
 }
 
 
