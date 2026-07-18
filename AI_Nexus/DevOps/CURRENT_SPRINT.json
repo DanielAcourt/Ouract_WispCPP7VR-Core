@@ -12,7 +12,7 @@
     "ID": "B-016",
     "Task": "Soul: Diagnostic Broker (Truth)",
     "Complexity": "5",
-    "Status": "In Progress",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Implement the raw scientific/historical data layer for Lidar/Museum ingestion.",
     "What": "UDiagnosticBroker capturing and restoring vetted metadata and raw telemetry."
@@ -21,7 +21,7 @@
     "ID": "B-017",
     "Task": "Soul: Cultivation Broker (Magic)",
     "Complexity": "5",
-    "Status": "In Progress",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Implement the gamified progression layer (Qi/Maturity) as a decoupled module.",
     "What": "UCultivationBroker managing optional simulation logic without breaking SSoT."
@@ -30,7 +30,7 @@
     "ID": "E-001a",
     "Task": "Epic: Soul – Dynamic Broker Instantiation",
     "Complexity": "8",
-    "Status": "In Progress",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Automatically instantiate and register UDiagnosticBroker and UCultivationBroker on BeginPlay.",
     "What": "Dynamic lifecycle complete with safe NewObject creation."
@@ -39,7 +39,7 @@
     "ID": "E-001b",
     "Task": "Epic: Soul – Domain Namespace Isolation",
     "Complexity": "5",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Ensure strict separation of \"Sovereign.Truth\" and \"Sovereign.Magic\" save keys.",
     "What": "Decoupled namespace serialization verified under distinct JSON category keys."
@@ -48,7 +48,7 @@
     "ID": "E-001c",
     "Task": "Epic: Soul – VSS & Paradox Coupling",
     "Complexity": "8",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "Research/DevOps",
     "Why": "Bind Paradox Density and System Confidence to Diagnostic Broker vetting indicators.",
     "What": "Paradox scaling mapped to truth validation and unvetted telemetry."
