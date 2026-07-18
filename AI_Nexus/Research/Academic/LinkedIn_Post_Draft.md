@@ -45,3 +45,5 @@ Stop building shallow wrappers. It's time to build architecture that lasts.
 I’m looking to connect with researchers, founders, and engineers who are tired of superficial chatbots and want to talk real, deterministic architecture.
 
 **Drop a comment or DM me directly—let’s swap notes.**
+
+#SystemsEngineering #Robotics #CyberPhysicalSystems #LocalAI #UnrealEngine #EdgeAI #EmbeddedSystems #ArtificialIntelligence #SoftwareArchitecture #ByzantineFaultTolerance #PSTA
