@@ -15,21 +15,27 @@ USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void USovereignSaveableEntityComponent::BeginPlay()
+void USovereignSaveableEntityComponent::OnRegister()
 {
-	Super::BeginPlay();
+	Super::OnRegister();
 
 	// Instantiate the brokers dynamically at runtime and register them to our RegisteredBrokers list
 	if (!DiagnosticBroker)
 	{
 		DiagnosticBroker = NewObject<UDiagnosticBroker>(this);
-		RegisterBroker(DiagnosticBroker);
 	}
+	RegisterBroker(DiagnosticBroker);
+
 	if (!CultivationBroker)
 	{
 		CultivationBroker = NewObject<UCultivationBroker>(this);
-		RegisterBroker(CultivationBroker);
 	}
+	RegisterBroker(CultivationBroker);
+}
+
+void USovereignSaveableEntityComponent::BeginPlay()
+{
+	Super::BeginPlay();
 
 	if (!EntityID.IsValid())
 	{
