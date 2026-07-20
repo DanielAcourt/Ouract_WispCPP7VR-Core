@@ -24,7 +24,7 @@ Most safety models average scores, letting a polite chatbot hide a hardware fail
 To end hallucination, my local AI and cloud-based training levels are prohibited from asserting technical/environmental status without executing a physical tool (like `nvidia-smi` or `list_files`) in the active session log. If it tries to lie, our bridge triggers a security violation and forces a retry with grounded data.
 
 ### 5. Local Sovereignty
-No data is streamed to the cloud. The entire system runs locally (GTX 5090), backed by a custom, zero-VRAM, CPU-resident RAG engine that indexes our Single Source of Truth (`AI_Nexus`).
+No operational telemetry is streamed to the cloud. The active system runs locally on the edge (GTX 5090), backed by a custom, zero-VRAM, CPU-resident RAG engine that indexes our Single Source of Truth (`AI_Nexus`).
 
 ### 6. The Byzantine Dilemma: Solving a 60-Year-Old Problem for the Modern Day
 My next horizon is tackling the classic Byzantine Generals problem in a cyber-physical environment. When you have multiple AI agents and physical sensors conflicting, how do you achieve consensus without heavy, slow block-chains?
