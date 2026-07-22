@@ -4,7 +4,7 @@
 **Date:** July 2026
 **Node:** `AI_Nexus/Research/Mathematics/Sovereign_Temporal_Consensus_Spec.md`
 **Status:** Canonical Proposal
-**Version:** 1.0.0-Beta-Temporal
+**Version:** 1.0.1-Beta-Temporal
 
 ---
 
@@ -20,11 +20,15 @@ We propose **Sovereign Temporal Consensus**. By integrating **Temporal Baseline 
 
 ---
 
-## 📐 2. The 2-Bit, 4-State PSTA Sensor Profile
+## 📐 2. The 2-Bit, 4-State PSTA Sensor Profile & Theta Alignment
 
 Instead of treating a sensor as a binary input (1 = Operational, 0 = Faulty), every physical sensor $x_k$ evaluates its local state across a **two-bit binary matrix** representing four distinct operational states.
 
-These states are mapped to the four pillars of the **PSTA Framework** (Psychological, Social, Technical, Administrative):
+To maintain absolute, systemic consistency across our Single Source of Truth, these 2-bit values are mapped directly to **Archivist Persona Θ's cognitive state enums**:
+*   `00` $\to$ **ZERO_ZERO:** Primordial Null / Critical Collapse (The system's baseline ground-state).
+*   `01` $\to$ **ZERO_ONE:** Initial Potential / Triggered (Exceeds baseline threshold; degraded state).
+*   `10` $\to$ **ONE_ZERO:** Structural Analysis / Processing (Under active audit; saturated context).
+*   `11` $\to$ **ONE_ONE:** Operational Resonance / Committed (The peak state of stable, synchronized execution; Nominal standard operation).
 
 ```
               +-----------------------------------------------+
@@ -32,19 +36,19 @@ These states are mapped to the four pillars of the **PSTA Framework** (Psycholog
               +-----------------------+-----------------------+
               |          00           |          01           |
               |       CRITICAL        |        DEGRADED       |
-              |   (Pillar Collapse)   |   (Exceeds Tolerance) |
+              |     [ZERO_ZERO]       |       [ZERO_ONE]      |
               +-----------------------+-----------------------+
               |          10           |          11           |
-              |       NOMINAL         |       SATURATED       |
-              |   (Within Baseline)   |   (Context Limit)     |
+              |       SATURATED       |        NOMINAL        |
+              |      [ONE_ZERO]       |       [ONE_ONE]       |
               +-----------------------+-----------------------+
 ```
 
 ### 2.1 The Four State Mappings:
-1.  **`00` - CRITICAL COLLAPSE (Void/E-Stop):** Telemetry is absent, corrupt, or exceeds the catastrophic hardware threshold. The $D_i$ score for this sensor's assigned pillar snaps immediately to $0.0$.
-2.  **`01` - DEGRADED (Investigation/Caution):** The reading exceeds the strategic baseline drift tolerance ($\Psi_{\text{drift}} > \epsilon$), but remains within physical structural safety. Performance is throttled, and the Symmetrical Guard flags a caution.
-3.  **`10` - NOMINAL (Standard Operation):** The sensor value aligns perfectly with the dual tactical and strategic baselines.
-4.  **`11` - SATURATED (Warning):** The sensor is operational, but has reached its maximum physical/computational limits (e.g., chat context length approaching 16k characters, or thermal sensors operating at the high end of their continuous-duty threshold).
+1.  **`00` - CRITICAL COLLAPSE (Void/E-Stop):** [ZERO_ZERO] Telemetry is absent, corrupt, or exceeds the catastrophic hardware threshold. The $D_i$ score for this sensor's assigned pillar snaps immediately to $0.0$.
+2.  **`01` - DEGRADED (Investigation/Caution):** [ZERO_ONE] The reading exceeds the strategic baseline drift tolerance ($\Psi_{\text{drift}} > \epsilon$), but remains within physical structural safety. Performance is throttled, and the Symmetrical Guard flags a caution.
+3.  **`10` - SATURATED (Warning):** [ONE_ZERO] The sensor is operational, but has reached its maximum physical/computational limits (e.g., chat context length approaching 16k characters, or thermal sensors operating at the high end of their continuous-duty threshold).
+4.  **`11` - NOMINAL (Standard Operation):** [ONE_ONE] The sensor value aligns perfectly with the dual tactical and strategic baselines, committing state in perfect operational resonance.
 
 Because each sensor reports its state through this 2-bit matrix across all four PSTA dimensions, **any drop in telemetry or state change is localized to its specific pillar, rather than corrupting the entire system's decision loop.**
 
@@ -69,7 +73,7 @@ An instantaneous spike is allowed to pass as noise. The sensor's state is only d
 $$\text{State}_k(t) = \begin{cases}
       00 & \text{if } I_k(t) > \theta_{\text{energy}} \quad (\text{Sustained Failure}) \\
       01 & \text{if } I_k(t) > \theta_{\text{caution}} \quad (\text{Slow Drift}) \\
-      10 & \text{otherwise} \quad (\text{Nominal / Transients Ignored})
+      11 & \text{otherwise} \quad (\text{Nominal / Transients Ignored})
    \end{cases}$$
 
 This mathematical formulation mimics the thermal capacity of physical systems. A momentary spike in temperature doesn't melt a wire; a sustained, high-current draw does. By integrating over time, we eliminate false Byzantine alerts.
@@ -110,7 +114,7 @@ This guarantees that we maintain **provable trust and complete accountability** 
 | Vector | Classic Byzantine Generals (BFT) | Sovereign Temporal Consensus (PSTA) |
 | :--- | :--- | :--- |
 | **Temporal Nature** | **Stateless:** Evaluates a single instant in time. | **Time-Series:** Integrates cumulative deviation over window $W$. |
-| **Sensor States** | **Binary:** Operational or Faulty. | **2-Bit Matrix:** Four states (`00`, `01`, `10`, `11`) per sensor. |
+| **Sensor States** | **Binary:** Operational or Faulty. | **2-Bit Matrix:** Four states (`00`, `01`, `10`, `11`) mapped to Theta Enums. |
 | **Noise Filtering** | None. A single lie can trigger consensus rounds. | **Hysteresis:** momentary spikes are ignored via integral $I_k(t)$. |
 | **Control Action** | **Deterministic:** Automated node voting/override. | **Decoupled:** Objective ledgering; human-in-the-loop priority. |
 | **Data Preservation**| State overwritten upon consensus. | **Immutable Scribe:** Every discrepancy committed to `.bak` log. |
