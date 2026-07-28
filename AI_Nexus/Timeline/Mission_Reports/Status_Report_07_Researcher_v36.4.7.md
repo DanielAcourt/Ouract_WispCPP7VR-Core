@@ -34,6 +34,7 @@ The following matrix registers every major capability claimed on this research b
 | **Bi-Symmetric Consensus** | **SPECULATIVE / Proposal** | `AI_Nexus/Research/Mathematics/Bi_Symmetric_Consensus_Spec.md` | Formalized paired sensor math (Anomaly vs Hazard), but **unimplemented** in C++. |
 | **Dynamic Broker Lifecycle** | **GROUNDED & ACTIVE** | `WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Source/WispCPP7VR/Private/Entities/SovereignSaveableEntityComponent.cpp` | Instantiates `UDiagnosticBroker` & `UCultivationBroker` dynamically. |
 | **VSS Curation Dynamic Boost**| **GROUNDED & ACTIVE** | `WispCPP7VR Core/WispCPP7VR Core/WispCPP7VR/Source/WispCPP7VR/Private/Entities/SovereignSaveableEntityComponent.cpp` | Dynamic confidence formula: $1.0 - (\text{ParadoxDensity} \times 0.2)$ if `VettedBy` is valid. |
+| **AI Push Chat to Unreal** | **PLANNED / Spec Roadmap** | `AI_Nexus/Docs/08_AI_to_Unreal_Push_Chat_Spec.md` | Mailbox Polling pattern allowing the AI to form and push proactive messages to Unreal. |
 
 ---
 
@@ -108,8 +109,9 @@ The active C++ `UDiagnosticBroker` handles:
 ## 🎯 6. Strategic Next Steps
 
 To bridge the gap between our mathematical proposals and physical execution:
-1.  **AAS v1.4.0 Hardening:** Refactor `diligence_score` from a hardcoded `1.0` into a dynamic function in `bridge.py` that verifies the existence of actual `.bak` files on disk prior to salute checks.
-2.  **C++ Sensor Consensus Integration:** When requested, migrate the `FSovereignSensorPair` struct and `EvaluateBiSymmetry` thread evaluation from the proposal specification (`Bi_Symmetric_Consensus_Spec.md`) into a future iteration of the active `UDiagnosticBroker`.
+1.  **AI-to-Unreal Mailbox Polling:** Implement the `/v1/unreal/mailbox` polling loops in Unreal's C++ USovereignBridgeSubsystem and define the `tool_push_chat_to_unreal` schema in `bridge.py` as detailed in `08_AI_to_Unreal_Push_Chat_Spec.md`.
+2.  **AAS v1.4.0 Hardening:** Refactor `diligence_score` from a hardcoded `1.0` into a dynamic function in `bridge.py` that verifies the existence of actual `.bak` files on disk prior to salute checks.
+3.  **C++ Sensor Consensus Integration:** When requested, migrate the `FSovereignSensorPair` struct and `EvaluateBiSymmetry` thread evaluation from the proposal specification (`Bi_Symmetric_Consensus_Spec.md`) into a future iteration of the active `UDiagnosticBroker`.
 
 **07 - The Researcher is Grounded. Truth is Audited.**
 
