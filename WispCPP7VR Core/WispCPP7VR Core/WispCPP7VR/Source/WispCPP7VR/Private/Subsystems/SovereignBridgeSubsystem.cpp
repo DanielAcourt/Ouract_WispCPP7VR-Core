@@ -26,6 +26,7 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void USovereignBridgeSubsystem::Deinitialize()
 {
     UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Deinitializing. Clearing %d registered entities."), RegisteredSovereignEntities.Num());
+    StopMailboxPolling();
     RegisteredSovereignEntities.Empty();
 
     Super::Deinitialize();
@@ -346,5 +347,92 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
     {
         FString ErrorDetail = Response.IsValid() ? FString::Printf(TEXT("Code: %d"), Response->GetResponseCode()) : TEXT("Network Error");
         UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Simulation Chat FAILED. %s"), *ErrorDetail);
+    }
+}
+
+void USovereignBridgeSubsystem::StartMailboxPolling(const FString& ActorName)
+{
+    if (ActorName.StartsWith(TEXT("SIM_")))
+    {
+        PollingActorName = ActorName;
+    }
+    else
+    {
+        PollingActorName = FString::Printf(TEXT("SIM_%s"), *ActorName);
+    }
+
+    // Stop any active polling first to avoid redundant timer accumulation
+    StopMailboxPolling();
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        World->GetTimerManager().SetTimer(
+            MailboxTimerHandle,
+            this,
+            &USovereignBridgeSubsystem::QueryMailbox,
+            MailboxPollInterval,
+            true
+        );
+        UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Started Mailbox Polling loop for [%s] every %f seconds."), *PollingActorName, MailboxPollInterval);
+    }
+}
+
+void USovereignBridgeSubsystem::StopMailboxPolling()
+{
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        World->GetTimerManager().ClearTimer(MailboxTimerHandle);
+    }
+
+    TSharedPtr<IHttpRequest, ESPMode::ThreadSafe> RequestPtr = ActiveMailboxRequest.Pin();
+    if (RequestPtr.IsValid())
+    {
+        RequestPtr->CancelRequest();
+        UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Canceled active in-flight mailbox request."));
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Stopped Mailbox Polling."));
+}
+
+void USovereignBridgeSubsystem::QueryMailbox()
+{
+    if (PollingActorName.IsEmpty()) return;
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindUObject(this, &USovereignBridgeSubsystem::OnMailboxResponse);
+
+    ActiveMailboxRequest = Request;
+
+    // Use string concatenation (+) to avoid path separator operator compilation ambiguity
+    FString TargetURL = BridgeBaseUrl + TEXT("/v1/unreal/mailbox?actor_name=") + PollingActorName;
+    Request->SetURL(TargetURL);
+    Request->SetVerb(TEXT("GET"));
+    Request->ProcessRequest();
+}
+
+void USovereignBridgeSubsystem::OnMailboxResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (bWasSuccessful && Response.IsValid() && EHttpResponseCodes::IsOk(Response->GetResponseCode()))
+    {
+        TSharedPtr<FJsonObject> JsonObject;
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+        if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* MessagesArray;
+            if (JsonObject->TryGetArrayField(TEXT("messages"), MessagesArray))
+            {
+                for (const TSharedPtr<FJsonValue>& MsgVal : *MessagesArray)
+                {
+                    FString PushedMessage = MsgVal->AsString();
+                    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AI Pushed Proactive Chat: %s"), *PushedMessage);
+
+                    // Broadcast to UI Widgets, subtitles, or character dialogue systems
+                    OnAIChatPushed.Broadcast(PushedMessage);
+                }
+            }
+        }
     }
 }

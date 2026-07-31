@@ -97,7 +97,8 @@ TOOL_MIN_PRECEDENCE = {
     "get_system_telemetry": 5,
     "map_directory": 3,
     "search_files": 5,
-    "push_telemetry": 5
+    "push_telemetry": 5,
+    "push_chat_to_unreal": 5
 }
 
 def load_config():
@@ -161,6 +162,9 @@ HANDSHAKE_ACTIVE = False
 latest_rag_similarity_score = 1.0
 latest_session_char_count = 0
 
+# Map actor_name to list of pending messages queued by the AI
+unreal_mailbox: Dict[str, List[str]] = {}
+
 # --- Schemas ---
 class PSTAMetadata(BaseModel):
     """Machine-readable PSTA metadata embedded in payloads."""
@@ -220,6 +224,10 @@ class UnrealChatRequest(BaseModel):
     message: str
     history: List[ChatMessage] = Field(default_factory=list)
     enable_remote_history: bool = False
+
+class PushChatPayload(BaseModel):
+    actor_name: str
+    message: str
 
 # --- AAS Bridge Logic ---
 
@@ -347,9 +355,9 @@ class SovereignBridge:
         payload.persona = original_persona
 
         # [B-026] Dual-Threshold System (0.4 for Read-Only, 0.7 for Mutation)
-        # // [J] Adding 'push_telemetry' to non-destructive tools lowers its threshold to 0.4 and prevents it from consuming the active handshake token.
+        # // [J] Adding 'push_telemetry' and 'push_chat_to_unreal' to non-destructive tools lowers their threshold to 0.4 and prevents them from consuming the active handshake token.
         threshold = 0.7
-        non_destructive_tools = ["list_files", "read_file", "map_directory", "get_system_telemetry", "search_files", "push_telemetry"]
+        non_destructive_tools = ["list_files", "read_file", "map_directory", "get_system_telemetry", "search_files", "push_telemetry", "push_chat_to_unreal"]
         if payload.command in non_destructive_tools:
             threshold = 0.4
 
@@ -680,6 +688,32 @@ async def tool_get_system_telemetry(interval: int = 0, duration: int = 0, person
     except Exception as e:
         return {"error": f"Engineer diagnostic failed: {str(e)}"}
 
+async def tool_push_chat_to_unreal(actor_name: str, message: str, persona: str = "Unknown"):
+    """
+    Pushes an AI-formed chat string directly into the mailbox queue of a specific Unreal actor.
+    """
+    if not actor_name or not message:
+        return {"error": "Invalid arguments."}
+
+    clean_actor = actor_name.replace("SIM_", "") # Support both standard and prefixed formats
+    payload = AgentCommandPayload(persona=persona, command="push_chat_to_unreal", target_node=f"UNREAL/{clean_actor}")
+    arbitration = await bridge_governor.arbitrate(payload)
+    if arbitration["status"] != "200_OK":
+        return arbitration
+
+    if clean_actor not in unreal_mailbox:
+        unreal_mailbox[clean_actor] = []
+
+    unreal_mailbox[clean_actor].append(message)
+    logger.info(f"07 MAILBOX: Queued push chat for SIM_{clean_actor}: '{message[:40]}...'")
+
+    return {
+        "status": "success",
+        "queued": True,
+        "actor_name": f"SIM_{clean_actor}",
+        "pending_count": len(unreal_mailbox[clean_actor])
+    }
+
 async def tool_refresh_rag_index(persona: str = "Unknown", **kwargs):
     """Refreshes and rebuilds the local knowledge base (RAG index)."""
     if not RAG_ENABLED:
@@ -701,7 +735,8 @@ async def execute_tool(name: str, arguments: Dict[str, Any], persona: str = "Unk
         "search_files": tool_search_files,
         "map_directory": tool_map_directory,
         "get_system_telemetry": tool_get_system_telemetry,
-        "refresh_rag_index": tool_refresh_rag_index
+        "refresh_rag_index": tool_refresh_rag_index,
+        "push_chat_to_unreal": tool_push_chat_to_unreal
     }
     if name in tools: return await tools[name](persona=persona, **arguments)
     return {"error": f"Tool '{name}' not found."}
@@ -861,6 +896,20 @@ async def unreal_checkin(request: UnrealCheckInRequest):
         "bridge_version": VERSION
     }
 
+@app.get("/v1/unreal/mailbox")
+async def get_unreal_mailbox(actor_name: str):
+    clean_actor = actor_name.replace("SIM_", "")
+    messages = unreal_mailbox.pop(clean_actor, [])
+    return {
+        "actor_name": f"SIM_{clean_actor}",
+        "messages": messages,
+        "count": len(messages)
+    }
+
+@app.post("/v1/unreal/push_chat")
+async def push_chat_manually(payload: PushChatPayload):
+    return await tool_push_chat_to_unreal(payload.actor_name, payload.message, persona="Lead")
+
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
     """
@@ -963,7 +1012,8 @@ async def unreal_chat(request: UnrealChatRequest):
         {"type": "function", "function": {"name": "write_file", "description": "Write file.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "content": {"type": "string"}}, "required": ["filepath", "content"]}}},
         {"type": "function", "function": {"name": "patch_file", "description": "Surgical edit.", "parameters": {"type": "object", "properties": {"filepath": {"type": "string"}, "search": {"type": "string"}, "replace": {"type": "string"}}, "required": ["filepath", "search", "replace"]}}},
         {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}},
+        {"type": "function", "function": {"name": "push_chat_to_unreal", "description": "Pushes an AI-formed chat string directly into the mailbox queue of a specific Unreal actor.", "parameters": {"type": "object", "properties": {"actor_name": {"type": "string", "description": "The target Unreal actor name (e.g., SIM_PlayerWisp or PlayerWisp)"}, "message": {"type": "string", "description": "The message content to push"}}, "required": ["actor_name", "message"]}}}
     ]
 
     messages = [{"role": "system", "content": system_prompt}] + chat_history
@@ -1098,7 +1148,8 @@ async def chat(request: ChatRequest):
         {"type": "function", "function": {"name": "search_files", "description": "Search.", "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}, "directory": {"type": "string"}, "extension": {"type": "string"}}, "required": ["pattern"]}}},
         {"type": "function", "function": {"name": "map_directory", "description": "Map.", "parameters": {"type": "object", "properties": {"directory": {"type": "string"}, "depth": {"type": "integer"}}}}},
         {"type": "function", "function": {"name": "get_system_telemetry", "description": "GPU status.", "parameters": {"type": "object", "properties": {"interval": {"type": "integer"}, "duration": {"type": "integer"}}}}},
-        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}}
+        {"type": "function", "function": {"name": "refresh_rag_index", "description": "Trigger a complete rebuild and refresh of the RAG search index from the AI_Nexus folder.", "parameters": {"type": "object", "properties": {}}}},
+        {"type": "function", "function": {"name": "push_chat_to_unreal", "description": "Pushes an AI-formed chat string directly into the mailbox queue of a specific Unreal actor.", "parameters": {"type": "object", "properties": {"actor_name": {"type": "string", "description": "The target Unreal actor name (e.g., SIM_PlayerWisp or PlayerWisp)"}, "message": {"type": "string", "description": "The message content to push"}}, "required": ["actor_name", "message"]}}}
     ]
 
     # Retrieve latest user query for RAG grounding

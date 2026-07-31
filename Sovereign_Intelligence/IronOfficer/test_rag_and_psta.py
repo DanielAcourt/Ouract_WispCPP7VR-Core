@@ -107,5 +107,48 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         self.assertGreater(salute2["P"]["active_session_chars"], 0, "Active session chars should be updated after chat query.")
         self.assertLess(salute2["P"]["value"], 1.0, "Psychological health value should drop representing cognitive load.")
 
+    def test_mailbox_polling_endpoints(self):
+        """Verifies the mailbox API endpoints and the push_chat_to_unreal tool logic."""
+        if not HAS_TESTCLIENT:
+            self.skipTest("FastAPI TestClient unavailable. Mailbox test skipped.")
+            return
+
+        client = TestClient(app)
+
+        # 1. Initially check the mailbox for SIM_PlayerWisp is empty
+        response = client.get("/v1/unreal/mailbox?actor_name=SIM_PlayerWisp")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["actor_name"], "SIM_PlayerWisp")
+        self.assertEqual(data["messages"], [])
+        self.assertEqual(data["count"], 0)
+
+        # 2. Push a message manually via POST
+        payload = {
+            "actor_name": "SIM_PlayerWisp",
+            "message": "Hello from the AI Bridge!"
+        }
+        response = client.post("/v1/unreal/push_chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        pushed_data = response.json()
+        self.assertEqual(pushed_data["status"], "success")
+        self.assertTrue(pushed_data["queued"])
+        self.assertEqual(pushed_data["actor_name"], "SIM_PlayerWisp")
+
+        # 3. Check the mailbox again to see if the message was queued, and that retrieve-and-clear (pop) works
+        response = client.get("/v1/unreal/mailbox?actor_name=SIM_PlayerWisp")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["actor_name"], "SIM_PlayerWisp")
+        self.assertEqual(data["messages"], ["Hello from the AI Bridge!"])
+        self.assertEqual(data["count"], 1)
+
+        # 4. Check mailbox once more, it should be empty now
+        response = client.get("/v1/unreal/mailbox?actor_name=SIM_PlayerWisp")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["messages"], [])
+        self.assertEqual(data["count"], 0)
+
 if __name__ == "__main__":
     unittest.main()
