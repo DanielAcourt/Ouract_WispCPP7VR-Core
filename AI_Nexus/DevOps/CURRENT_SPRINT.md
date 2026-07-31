@@ -20,6 +20,17 @@ This file tracks active tickets prioritized for the current iteration. Isolating
 
 ---
 
+## 📋 Upcoming Prioritized Sprint Tickets (Next Phase)
+
+The following tickets have been prioritized and added to the active backlog queue for the next development iteration:
+
+| ID | Task | Complexity | Status | Node | Why (Context) | What (Completion Outcome) |
+|:---|:---|:---:|:---:|:---|:---|:---|
+| AD-005a | Spatial Sense: Save State Ingestion | 5 | Todo | Research/DevOps | Map serialized JSON save payloads to the LLM's system context prompt framing. | Serialized component save packet (Identity, Bio, Qi, etc.) is injected during `/v1/unreal/chat` calls. |
+| B-027 | AAS v1.4.0 Hardening | 3 | Todo | DevOps | Refactor the hardcoded diligence score to dynamically verify backup files on disk. | Diligence score is calculated dynamically based on actual .bak coverage ratios on disk. |
+
+---
+
 ## 🏛️ Strategic Alignment
 - **Combined Sprint Backlog Load:** **47 Points** (All Completed)
 - **Sprint Goal:** Stabilize the decoupled Sovereign Soul Broker interface, establish dynamic broker instantiation, and enforce strict Truth/Magic domain separation. (100% Achieved)
