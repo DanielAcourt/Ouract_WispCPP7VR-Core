@@ -372,6 +372,7 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
             }
 
             UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Chat Response Received (%d tools executed)"), ChatResponse.ToolLogs.Num());
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AI Response: %s"), *ChatResponse.Content);
             OnChatResponseReceived.Broadcast(ChatResponse);
         }
     }

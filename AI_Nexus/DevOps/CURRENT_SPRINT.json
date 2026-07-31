@@ -72,6 +72,15 @@
     "What": "Serialized component save packet (Identity, Bio, Qi, etc.) is injected during /v1/unreal/chat calls."
   },
   {
+    "ID": "AD-005d",
+    "Task": "E2E Dialogue Console Logging",
+    "Complexity": "2",
+    "Status": "Done",
+    "Node": "DevOps",
+    "Why": "Enable immediate trace logging of the AI's response content in the bridge and client subsystem.",
+    "What": "AI response is logged with prefix trace on both Python and C++ consoles."
+  },
+  {
     "ID": "B-027",
     "Task": "AAS v1.4.0 Hardening",
     "Complexity": "3",
