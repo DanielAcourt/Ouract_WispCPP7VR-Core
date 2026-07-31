@@ -8,6 +8,7 @@ import sys
 import os
 import unittest
 import json
+import unittest.mock
 
 # Ensure local directories are in the import path
 BASE_DIR = os.path.dirname(__file__)
@@ -149,6 +150,84 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["messages"], [])
         self.assertEqual(data["count"], 0)
+
+    @unittest.mock.patch("bridge.process_chat_request")
+    def test_unreal_chat_save_state_ingestion(self, mock_process):
+        """Verifies that the /v1/unreal/chat endpoint correctly ingests, caches, and formats save_state context."""
+        if not HAS_TESTCLIENT:
+            self.skipTest("FastAPI TestClient unavailable. Save state ingestion test skipped.")
+            return
+
+        from unittest.mock import AsyncMock
+
+        # Setup AsyncMock for process_chat_request
+        mock_process.return_value = {
+            "result": {
+                "message": {
+                    "role": "assistant",
+                    "content": "I sense a magnificent antelope grazing nearby. A worthy creature for our journey!"
+                }
+            },
+            "tool_chain": [],
+            "tool_outputs": []
+        }
+
+        client = TestClient(app)
+
+        # Construct chat payload with save state
+        payload = {
+            "actor_name": "PlayerWisp",
+            "message": "Let us talk about what is around us.",
+            "history": [],
+            "save_state": {
+                "Identity": {
+                    "GUID": "3E4B-88F1-4A5D-B912-9F0A3C9E2D11",
+                    "BirthTimestamp": "2026-06-28T12:00:00",
+                    "bIsBeingPossessed": True,
+                    "ParadoxDensity": 0.1
+                },
+                "Bio": {
+                    "Maturity": "Adult",
+                    "Lineage": "Wisp"
+                },
+                "Qi": {
+                    "QiPool": 450,
+                    "Alignment": "Balanced"
+                },
+                "Nearby_Entity": "Antelope",
+                "Environment_Region": "Whispering Plains"
+            }
+        }
+
+        response = client.post("/v1/unreal/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Verify response matches our mocked output
+        self.assertEqual(data["status"], "200_OK")
+        self.assertIn("antelope", data["response"])
+
+        # Verify that the active save state was cached in-memory
+        from bridge import active_simulation_states
+        self.assertIn("PlayerWisp", active_simulation_states)
+        self.assertEqual(active_simulation_states["PlayerWisp"]["Nearby_Entity"], "Antelope")
+
+        # Verify prompt construction contains formatted state
+        self.assertTrue(mock_process.called)
+        called_args = mock_process.call_args[0]
+        messages = called_args[1]
+        system_prompt = messages[0]["content"]
+
+        # Assertions to ensure save state fields exist in the generated system prompt
+        self.assertIn("[ACTIVE SIMULATION WORLD STATE / PLAYSPACE LORE]", system_prompt)
+        self.assertIn("Entity Identity:", system_prompt)
+        self.assertIn("3E4B-88F1-4A5D-B912-9F0A3C9E2D11", system_prompt)
+        self.assertIn("Bio Component State:", system_prompt)
+        self.assertIn("Maturity: Adult", system_prompt)
+        self.assertIn("Qi Component State:", system_prompt)
+        self.assertIn("QiPool: 450", system_prompt)
+        self.assertIn("Simulation Environment & Surroundings:", system_prompt)
+        self.assertIn("Nearby_Entity: Antelope", system_prompt)
 
 if __name__ == "__main__":
     unittest.main()

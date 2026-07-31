@@ -127,6 +127,38 @@ void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, con
     JsonPayload->SetStringField(TEXT("message"), Message);
     JsonPayload->SetBoolField(TEXT("enable_remote_history"), bEnableRemoteHistory);
 
+    // Look up the active registered saveable entity component associated with this Actor
+    TSharedPtr<FJsonObject> SaveStateObj;
+    for (const TWeakObjectPtr<USovereignSaveableEntityComponent>& EntityPtr : RegisteredSovereignEntities)
+    {
+        if (EntityPtr.IsValid())
+        {
+            AActor* Owner = EntityPtr->GetOwner();
+            if (Owner)
+            {
+                FString OwnerName = Owner->GetName();
+                FString CleanActorName = ActorName.Replace(TEXT("SIM_"), TEXT(""));
+                FString CleanOwnerName = OwnerName.Replace(TEXT("SIM_"), TEXT(""));
+
+                // Suffix-agnostic matching for Unreal transient spawn names (e.g., BP_PlayerWisp_C_0 matching BP_PlayerWisp)
+                if (OwnerName == ActorName ||
+                    CleanOwnerName == CleanActorName ||
+                    CleanOwnerName.StartsWith(CleanActorName) ||
+                    CleanActorName.StartsWith(CleanOwnerName))
+                {
+                    SaveStateObj = EntityPtr->CaptureFullEntityState();
+                    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Found Registered Entity [%s] for Actor [%s]. Ingesting save state."), *OwnerName, *ActorName);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (SaveStateObj.IsValid())
+    {
+        JsonPayload->SetObjectField(TEXT("save_state"), SaveStateObj);
+    }
+
     // Serialize History
     TArray<TSharedPtr<FJsonValue>> HistoryArray;
     for (const FSovereignChatMessage& Msg : History)

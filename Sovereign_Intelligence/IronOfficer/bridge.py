@@ -165,6 +165,47 @@ latest_session_char_count = 0
 # Map actor_name to list of pending messages queued by the AI
 unreal_mailbox: Dict[str, List[str]] = {}
 
+# Cached active simulation states keyed by normalized actor name
+active_simulation_states: Dict[str, Dict[str, Any]] = {}
+
+def format_save_state(state: Dict[str, Any]) -> str:
+    """Formats raw JSON save state into a clean, hierarchical YAML-like structure."""
+    if not state:
+        return "No active simulation state registered."
+    lines = []
+
+    # 1. Identity
+    identity = state.get("Identity", {})
+    if identity:
+        lines.append("Entity Identity:")
+        for k, v in identity.items():
+            lines.append(f"  - {k}: {v}")
+
+    # 2. Modular components
+    for cat in ["Bio", "Qi", "Elements", "Attributes", "Sovereign.Truth", "Sovereign.Magic"]:
+        cat_data = state.get(cat, {})
+        if cat_data:
+            lines.append(f"{cat} Component State:")
+            for k, v in cat_data.items():
+                lines.append(f"  - {k}: {v}")
+
+    # 3. Flat owner keys (any key not in registered namespaces/categories)
+    known_categories = {"Identity", "UnknownTags", "Bio", "Qi", "Elements", "Attributes", "Sovereign.Truth", "Sovereign.Magic"}
+    owner_keys = [k for k in state if k not in known_categories]
+    if owner_keys:
+        lines.append("Simulation Environment & Surroundings:")
+        for k in owner_keys:
+            lines.append(f"  - {k}: {state[k]}")
+
+    # 4. UnknownTags / Paradox
+    unknown = state.get("UnknownTags", {})
+    if unknown:
+        lines.append("Simulation Paradox & Meta-Tags:")
+        for k, v in unknown.items():
+            lines.append(f"  - {k}: {v}")
+
+    return "\n".join(lines)
+
 # --- Schemas ---
 class PSTAMetadata(BaseModel):
     """Machine-readable PSTA metadata embedded in payloads."""
@@ -224,6 +265,7 @@ class UnrealChatRequest(BaseModel):
     message: str
     history: List[ChatMessage] = Field(default_factory=list)
     enable_remote_history: bool = False
+    save_state: Optional[Dict[str, Any]] = None
 
 class PushChatPayload(BaseModel):
     actor_name: str
@@ -949,12 +991,21 @@ async def unreal_chat(request: UnrealChatRequest):
     // [J] This endpoint provides a dedicated channel for simulation-born entities to interact with the architectural knight.
     """
     sim_persona = f"SIM_{request.actor_name}"
+    clean_actor_name = request.actor_name.replace("SIM_", "")
 
     # [AD-007] Simulation-specific trace logging
     logger.info(f"07 SIM CHAT: {sim_persona} initiated dialogue.")
     raw_message = request.message
 
     logger.info(f"07 SIM CHAT: {sim_persona} -> {raw_message}")
+
+    # Ingest and cache the active save state if provided
+    if request.save_state:
+        active_simulation_states[clean_actor_name] = request.save_state
+        logger.info(f"07 SIM CHAT: Ingested and cached active save state for {clean_actor_name}")
+
+    # Resolve active simulation state from request or in-memory cache
+    state_data = request.save_state or active_simulation_states.get(clean_actor_name)
 
     # Map to Iron Knight's chat logic
     current_model = get_best_available_model()
@@ -979,6 +1030,10 @@ async def unreal_chat(request: UnrealChatRequest):
     - SCRIBE PROTOCOL: Use tools to verify and modify the environment as requested by the Lead or the Simulation.
     - TOOL LOGGING: Your tool execution results will be sent back to the simulation client for diagnostic trace.
     """
+
+    if state_data:
+        formatted_state = format_save_state(state_data)
+        system_prompt += f"\n\n    [ACTIVE SIMULATION WORLD STATE / PLAYSPACE LORE]\n    The following is the active, serialized simulation state for the calling entity ({sim_persona}). You are encouraged to weave these world details and surroundings into your dialogue creatively:\n\n{formatted_state}"
 
     # Retrieve matching SSoT RAG context chunks for grounding
     context_block = ""

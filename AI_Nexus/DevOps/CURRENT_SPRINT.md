@@ -17,6 +17,7 @@ This file tracks active tickets prioritized for the current iteration. Isolating
 | E-001b | Epic: Soul – Domain Namespace Isolation | 5 | Done | DevOps | Ensure strict separation of "Sovereign.Truth" and "Sovereign.Magic" save keys. | Decoupled namespace serialization verified under distinct JSON category keys. |
 | E-001c | Epic: Soul – VSS & Paradox Coupling | 8 | Done | Research/DevOps | Bind Paradox Density and System Confidence to Diagnostic Broker vetting indicators. | Paradox scaling mapped to truth validation and unvetted telemetry. |
 | B-026 | AI-to-Unreal Mailbox Polling | 8 | Done | DevOps | Implement proactive AI chat capabilities using the Mailbox Polling pattern. | Integration of /v1/unreal/mailbox HTTP loop in USovereignBridgeSubsystem and push_chat tool. |
+| AD-005a | Spatial Sense: Save State Ingestion | 5 | Done | Research/DevOps | Map serialized JSON save payloads to the LLM's system context prompt framing. | Serialized component save packet (Identity, Bio, Qi, etc.) is injected during `/v1/unreal/chat` calls. |
 
 ---
 
@@ -26,7 +27,6 @@ The following tickets have been prioritized and added to the active backlog queu
 
 | ID | Task | Complexity | Status | Node | Why (Context) | What (Completion Outcome) |
 |:---|:---|:---:|:---:|:---|:---|:---|
-| AD-005a | Spatial Sense: Save State Ingestion | 5 | Todo | Research/DevOps | Map serialized JSON save payloads to the LLM's system context prompt framing. | Serialized component save packet (Identity, Bio, Qi, etc.) is injected during `/v1/unreal/chat` calls. |
 | B-027 | AAS v1.4.0 Hardening | 3 | Todo | DevOps | Refactor the hardcoded diligence score to dynamically verify backup files on disk. | Diligence score is calculated dynamically based on actual .bak coverage ratios on disk. |
 
 ---

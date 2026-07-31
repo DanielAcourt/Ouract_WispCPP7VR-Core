@@ -66,7 +66,7 @@
     "ID": "AD-005a",
     "Task": "Spatial Sense: Save State Ingestion",
     "Complexity": "5",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "Research/DevOps",
     "Why": "Map serialized JSON save payloads to the LLM's system context prompt framing.",
     "What": "Serialized component save packet (Identity, Bio, Qi, etc.) is injected during /v1/unreal/chat calls."
