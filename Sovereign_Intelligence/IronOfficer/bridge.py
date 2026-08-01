@@ -1093,6 +1093,8 @@ async def unreal_chat(request: UnrealChatRequest):
         # [AD-007] Trace Log: Summary of interaction
         logger.info(f"07 SIM RESPONSE: {sim_persona} received AI response. Tools triggered: {len(response_data['tool_chain'])}")
 
+        logger.info(f"07 SIM RESPONSE CONTENT: {response_data['result']['message']['content']}")
+
         return {
             "status": "200_OK",
             "response": response_data["result"]["message"]["content"],
