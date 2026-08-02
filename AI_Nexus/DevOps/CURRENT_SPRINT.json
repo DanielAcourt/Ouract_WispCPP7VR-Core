@@ -88,5 +88,14 @@
     "Node": "DevOps",
     "Why": "Refactor the hardcoded diligence score to dynamically verify backup files on disk.",
     "What": "Diligence score is calculated dynamically based on actual .bak coverage ratios on disk."
+  },
+  {
+    "ID": "B-031",
+    "Task": "Hardware-Agnostic Telemetry Fallback",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "Research/DevOps",
+    "Why": "Decouple the T-pillar from static nvidia-smi calls to support standard development setups.",
+    "What": "Implement the Strategy Pattern to dynamically find and fallback to AMD, Intel, and CPU/RAM psutil sensors."
   }
 ]

@@ -255,7 +255,7 @@
     "ID": "B-026",
     "Task": "AI-to-Unreal Mailbox Polling",
     "Complexity": "8",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Implement proactive AI chat capabilities using the Mailbox Polling pattern.",
     "What": "Integration of /v1/unreal/mailbox HTTP loop in USovereignBridgeSubsystem and push_chat tool."
@@ -264,7 +264,7 @@
     "ID": "B-027",
     "Task": "AAS v1.4.0 Hardening",
     "Complexity": "3",
-    "Status": "Todo",
+    "Status": "Active Sprint",
     "Node": "Research",
     "Why": "Refactor the hardcoded diligence score to dynamically verify backup files on disk.",
     "What": "Diligence score calculates actual .bak coverage ratios dynamically."
@@ -282,10 +282,19 @@
     "ID": "AD-005a",
     "Task": "Spatial Sense: Save State Ingestion",
     "Complexity": "5",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "Research/DevOps",
     "Why": "Ingest the serialized component save packet during `/v1/unreal/chat` calls.",
     "What": "Map serialized JSON save payloads to the LLM's system context prompt framing."
+  },
+  {
+    "ID": "B-031",
+    "Task": "Hardware-Agnostic Telemetry Fallback",
+    "Complexity": "5",
+    "Status": "Active Sprint",
+    "Node": "Research/DevOps",
+    "Why": "Decouple the T-pillar from static nvidia-smi calls to support standard development setups.",
+    "What": "Implement the Strategy Pattern to dynamically find and fallback to AMD, Intel, and CPU/RAM psutil sensors."
   },
   {
     "ID": "AD-005b",
