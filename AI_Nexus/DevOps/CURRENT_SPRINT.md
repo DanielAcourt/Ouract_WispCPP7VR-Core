@@ -29,6 +29,7 @@ The following tickets have been prioritized and added to the active backlog queu
 | ID | Task | Complexity | Status | Node | Why (Context) | What (Completion Outcome) |
 |:---|:---|:---:|:---:|:---|:---|:---|
 | B-027 | AAS v1.4.0 Hardening | 3 | Todo | DevOps | Refactor the hardcoded diligence score to dynamically verify backup files on disk. | Diligence score is calculated dynamically based on actual .bak coverage ratios on disk. |
+| B-031 | Hardware-Agnostic Telemetry Fallback | 5 | Todo | Research/DevOps | Decouple the T-pillar from static nvidia-smi calls to support standard development setups. | Implement the Strategy Pattern to dynamically find and fallback to AMD, Intel, and CPU/RAM psutil sensors. |
 
 ---
 
