@@ -88,5 +88,32 @@
     "Node": "DevOps",
     "Why": "Refactor the hardcoded diligence score to dynamically verify backup files on disk.",
     "What": "Diligence score is calculated dynamically based on actual .bak coverage ratios on disk."
+  },
+  {
+    "ID": "AD-008",
+    "Task": "Adaptive System Prompt Modulation",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Prevent the LLM from snapping back to rigid Knight behavior during roleplay.",
+    "What": "System prompt dynamically softens tone and instructs model to write to active paths immediately."
+  },
+  {
+    "ID": "AD-009",
+    "Task": "Smart RAG Query Filtering",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Prevent irrelevant administrative documents from polluting the creative context.",
+    "What": "RAG search is bypassed or restricted if the prompt is purely roleplay/conversational."
+  },
+  {
+    "ID": "AD-010",
+    "Task": "Transient Path Memory Anchor",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Keep the active file path anchored in the system context to stop repetitive parameter loops.",
+    "What": "A last_active_file variable is dynamically tracked and injected into the system prompt."
   }
 ]
