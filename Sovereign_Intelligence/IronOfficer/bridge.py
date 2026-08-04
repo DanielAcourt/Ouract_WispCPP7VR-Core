@@ -1125,11 +1125,16 @@ async def unreal_generate_persona(request: GeneratePersonaRequest):
     global last_active_file
     last_active_file = profile_path
 
+    try:
+        rel_profile_path = os.path.relpath(profile_path, REPO_ROOT)
+    except ValueError:
+        rel_profile_path = profile_path
+
     return {
         "status": "success",
         "character_name": request.character_name,
         "profile_file": profile_filename,
-        "profile_path": to_forward_slash(os.path.relpath(profile_path, REPO_ROOT)),
+        "profile_path": to_forward_slash(rel_profile_path),
         "random_generate": request.random_generate,
         "indexed": True
     }

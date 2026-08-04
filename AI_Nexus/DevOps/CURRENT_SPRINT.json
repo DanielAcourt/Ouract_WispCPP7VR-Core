@@ -115,5 +115,14 @@
     "Node": "DevOps",
     "Why": "Keep the active file path anchored in the system context to stop repetitive parameter loops.",
     "What": "A last_active_file variable is dynamically tracked and injected into the system prompt."
+  },
+  {
+    "ID": "AD-011",
+    "Task": "Windows Cross-Drive Endpoint Hardening",
+    "Complexity": "2",
+    "Status": "Done",
+    "Node": "DevOps",
+    "Why": "Resolve Windows ValueError crash when calculating relative paths in generate_persona across multiple drive mounts.",
+    "What": "try-except fallback implemented to return absolute path on cross-drive relative failure."
   }
 ]
