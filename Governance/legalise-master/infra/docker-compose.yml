@@ -1,0 +1,167 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: legalise
+      POSTGRES_PASSWORD: legalise
+      POSTGRES_DB: legalise
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legalise"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: legalise
+      MINIO_ROOT_PASSWORD: legalisesecret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      - "3001:3000"
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles: ["local-models"]
+
+  backend:
+    # backend/Dockerfile installs the optional `anonymisation` extra
+    # (Presidio + spaCy + model) — the dev/demo image is batteries-included.
+    build: ../backend
+    # Read repo-root .env so values a forker sets in their copy of
+    # .env.example actually reach the container. Without this, the
+    # backend bind-mount at /app shadows the repo root and
+    # Settings(env_file=".env") can't find it. env_file is lower
+    # priority than the explicit `environment:` block, so the known
+    # compose interpolations below still win — env_file is the
+    # catch-all for vars compose doesn't name explicitly
+    # (S3_ACCESS_KEY, SESSION_SECRET, LEGALISE_KEY_ENCRYPTION_SECRET,
+    # etc.).
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      ENVIRONMENT: development
+      # Phase 16 B: only CI-load-bearing interpolations live here.
+      # Hard-coded literals previously in this block (REDIS_URL,
+      # S3_ENDPOINT, OLLAMA_URL, etc.) were silently shadowing any
+      # forker-set values from `.env` via env_file above. They're now
+      # dropped — `backend/app/core/config.py` defaults already match
+      # the compose service hostnames, and `.env` overrides flow
+      # through env_file when the forker sets them.
+      #
+      # POSTGRES_DSN + CORS_ORIGINS stay as `${VAR:-default}`
+      # interpolations because Phase 15 CI exports them via host env
+      # before `compose up` and the workflow's verify steps depend on
+      # this exact mechanism. Always one driver per workflow.
+      POSTGRES_DSN: ${POSTGRES_DSN:-postgresql+psycopg://legalise:legalise@db:5432/legalise}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","https://legalise.dev"]}
+      # Phase 17.5 — firm role gates default DORMANT (false) for local
+      # dev/eval; the e2e workflow exports true so its posture suite can
+      # assert firm-mode enforcement. Same ${VAR:-default} pattern.
+      LEGALISE_FIRM_ROLE_GATES_ENABLED: ${LEGALISE_FIRM_ROLE_GATES_ENABLED:-false}
+      # Auth abuse throttle overrides. Empty default = the
+      # in-code limits; e2e exports 0 to disable for its register storm
+      # and repeated per-test sign-ins.
+      LEGALISE_RATE_LIMIT_LOGIN_PER_HOUR: ${LEGALISE_RATE_LIMIT_LOGIN_PER_HOUR:-}
+      LEGALISE_RATE_LIMIT_REGISTER_PER_HOUR: ${LEGALISE_RATE_LIMIT_REGISTER_PER_HOUR:-}
+      LEGALISE_RATE_LIMIT_REQUEST_VERIFY_TOKEN_PER_HOUR: ${LEGALISE_RATE_LIMIT_REQUEST_VERIFY_TOKEN_PER_HOUR:-}
+      LEGALISE_RATE_LIMIT_FORGOT_PASSWORD_PER_HOUR: ${LEGALISE_RATE_LIMIT_FORGOT_PASSWORD_PER_HOUR:-}
+      # Anthropic API base URL. Defaults to the real endpoint (no change to
+      # local/prod); the e2e workflow overrides it to an unreachable host so
+      # the settings-keys key probe connection-errors (transient -> persist
+      # unverified) instead of hitting a real 401 on its throwaway key.
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      # Local/eval only: first registered user becomes workspace admin
+      # automatically, removing the bootstrap_admin copy-paste from the
+      # two-minute demo path. The e2e workflow exports false so it can
+      # exercise the manual bootstrap_admin operator path. Production
+      # ignores this flag in code.
+      LEGALISE_DEV_AUTO_ADMIN_FIRST_USER: ${LEGALISE_DEV_AUTO_ADMIN_FIRST_USER:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - matters_data:/data/matters
+      # Manifest schema — read-only bind so `modules.py` validator and
+      # the capability-vocabulary parity test can both find the canonical
+      # schemas/module.json from the repo root.
+      - ../schemas:/schemas:ro
+      # Phase 6 reference modules — examples/modules/ at the repo root.
+      # The vertical-slice test reads contract_review/module.json from
+      # this path; future reference modules land alongside it.
+      - ../examples:/app/examples:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  worker:
+    build: ../backend
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      ENVIRONMENT: development
+      # See backend block above for the env-precedence rationale.
+      POSTGRES_DSN: ${POSTGRES_DSN:-postgresql+psycopg://legalise:legalise@db:5432/legalise}
+    volumes:
+      - ../backend:/app
+      - matters_data:/data/matters
+      - ../schemas:/schemas:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build: ../frontend
+    command: ["sh", "-lc", "npm install && npm run dev -- --host 0.0.0.0 --port 3000"]
+    environment:
+      # Vite dev server reads VITE_* from process.env at request time.
+      # For local forks the signup form must render, so default the
+      # access mode to "open" here. Hosted prod (Cloudflare Pages)
+      # keeps "waitlist" via its own build env; this only affects
+      # `docker compose up`. R1 fix from the Phase 16 plan — without
+      # this, fresh forks hit the waitlist page on /auth/signin and
+      # cannot register.
+      VITE_HOSTED_ACCESS_MODE: ${VITE_HOSTED_ACCESS_MODE:-open}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  minio_data:
+  ollama_data:
+  matters_data:

@@ -1,0 +1,267 @@
+"""SQLAlchemy models for Legalise.
+
+Importing this package imports every model module so `Base.metadata` is
+populated for alembic autogenerate.
+
+Schema overview:
+- User: id, email, name, role
+- OAuthAccount: id, user_id, oauth_name, account_id, account_email — one row
+    per (user, provider) social sign-in link. See ADR-012.
+- Matter: id, slug, title, matter_type, status, case_theory, pivot_fact,
+    privilege_posture, default_model_id, facts (JSONB),
+    opened_at, closed_at, retention_until, created_by_id
+- Document: id, matter_id, filename, mime_type, size_bytes, sha256,
+    storage_uri, tag, from_disclosure, disclosure_proceedings_ref,
+    uploaded_at, uploaded_by_id
+- Event: id, matter_id, event_date, description, significance,
+    source_doc_ids, priv_flag, created_at, created_by_id
+- AuditEntry: id, timestamp, actor_id, matter_id, action, resource_type,
+    resource_id, model_used, prompt_hash, response_hash, token_count,
+    latency_ms, payload (JSONB)
+- AuditChainEntry: separate append-only hash-chain link for each audit row
+
+See ARCHITECTURE.md for the full data model.
+"""
+
+from app.models.base import Base
+from app.models.user import AccessToken, OAuthAccount, User, UserApiKey
+from app.models.matter import (
+    Matter,
+    PRIVILEGE_CLEARED,
+    PRIVILEGE_MIXED,
+    PRIVILEGE_PAUSED,
+    PRIVILEGE_VALUES,
+    STATUS_OPEN,
+    STATUS_SETTLEMENT,
+    STATUS_CLOSED,
+    STATUS_ARCHIVED,
+    STATUS_VALUES,
+)
+from app.models.document import Document, TAG_VALUES
+from app.models.document_chunk import DocumentChunk, EMBEDDING_DIM
+from app.models.event import Event
+from app.models.audit import AuditEntry
+from app.models.auth_throttle import AuthThrottleEvent
+from app.models.audit_chain import (
+    AUDIT_CHAIN_SCOPE_MATTER,
+    AUDIT_CHAIN_SCOPE_SYSTEM,
+    AUDIT_CHAIN_SCOPES,
+    AUDIT_CHAIN_VERSION,
+    AuditChainEntry,
+)
+from app.models.document_body import DocumentBody, BODY_KIND_VALUES, EXTRACTION_METHOD_VALUES
+from app.models.document_version import DocumentVersion, VERSION_KIND_VALUES
+from app.models.document_edit import DocumentEdit, EDIT_STATUS_VALUES
+from app.models.document_edit_session import DocumentEditSession
+from app.models.document_working_draft import DocumentWorkingDraft
+from app.models.document_comment import (
+    COMMENT_STATUS_OPEN,
+    COMMENT_STATUS_RESOLVED,
+    COMMENT_STATUS_VALUES,
+    DocumentComment,
+)
+from app.models.workspace_skill import WorkspaceDisabledSkill
+from app.models.workspace_skill_capability_grant import (
+    SCOPE_TYPE_MATTER,
+    SCOPE_TYPE_VALUES,
+    SCOPE_TYPE_WORKSPACE,
+    WorkspaceSkillCapabilityGrant,
+)
+from app.models.matter_citation import MatterCitation
+from app.models.assistant import AssistantMessage, AssistantThread
+from app.models.job import (
+    Job,
+    JOB_STATUS_QUEUED,
+    JOB_STATUS_RUNNING,
+    JOB_STATUS_SUCCEEDED,
+    JOB_STATUS_FAILED,
+    JOB_STATUS_CANCELLED,
+    JOB_STATUS_VALUES,
+    JOB_ACTIVE_STATUSES,
+    JOB_KIND_EXPORT,
+    JOB_KIND_INDEX,
+)
+
+# Substrate primitives.
+from app.models.matter_context_schema import MatterContextSchema
+from app.models.matter_context_item import (
+    MatterContextItem,
+    SOURCE_TYPE_DOCUMENT,
+    SOURCE_TYPE_EVENT,
+    SOURCE_TYPE_AUDIT_ENTRY,
+    SOURCE_TYPE_USER_ASSERTION,
+    SOURCE_TYPE_CONNECTOR_RESULT,
+    SOURCE_TYPE_GENERATED_OUTPUT,
+    SOURCE_TYPE_VALUES,
+)
+from app.models.state_machine_definition import StateMachineDefinition
+from app.models.state_machine_instance import (
+    StateMachineInstance,
+    OWNER_SCOPE_MATTER,
+    OWNER_SCOPE_WORKSPACE,
+    OWNER_SCOPE_PROSPECT,
+)
+from app.models.state_machine_transition import (
+    StateMachineTransition,
+    TRANSITION_STATUS_COMPLETED,
+    TRANSITION_STATUS_BLOCKED,
+    TRANSITION_STATUS_FAILED,
+    TRANSITION_STATUS_VALUES,
+)
+from app.models.advice_boundary_decision import (
+    AdviceBoundaryDecision,
+    ADVICE_TIER_FACTUAL_EXTRACTION,
+    ADVICE_TIER_LEGAL_INFORMATION,
+    ADVICE_TIER_DRAFT_ADVICE,
+    ADVICE_TIER_SUPERVISED_LEGAL_ADVICE,
+    ADVICE_TIER_APPROVED_FINAL_ADVICE,
+    ADVICE_TIER_VALUES,
+    DECISION_STATUS_COMPLETED,
+    DECISION_STATUS_BLOCKED,
+    DECISION_STATUS_DENIED,
+    DECISION_STATUS_FAILED,
+    DECISION_STATUS_VALUES,
+)
+
+# Installed modules registry.
+from app.models.installed_module import InstalledModule
+from app.models.matter_artifact import MatterArtifact
+
+# Supervisor Review v1 — human review over a matter artifact.
+from app.models.matter_review import (
+    MatterReview,
+    REVIEW_PENDING,
+    REVIEW_APPROVED,
+    REVIEW_REJECTED,
+    REVIEW_CHANGES_REQUESTED,
+    REVIEW_OVERRIDDEN,
+    REVIEW_TERMINAL_STATES,
+    REVIEW_STATE_VALUES,
+    REVIEW_ELIGIBLE_KINDS,
+)
+
+# Professional Sign-Off v1 — author sign-off over a matter artifact.
+from app.models.matter_signoff import (
+    MatterSignoff,
+    SIGNOFF_SIGNED,
+    SIGNOFF_SIGNED_WITH_OBSERVATIONS,
+    SIGNOFF_REJECTED,
+    SIGNOFF_DECISIONS,
+    SIGNOFF_AFFIRMATIVE,
+    SIGNOFF_REASONING_REQUIRED,
+)
+
+__all__ = [
+    "Base",
+    "User",
+    "AccessToken",
+    "OAuthAccount",
+    "UserApiKey",
+    "Matter",
+    "Document",
+    "DocumentChunk",
+    "EMBEDDING_DIM",
+    "Event",
+    "AuditEntry",
+    "AuditChainEntry",
+    "AUDIT_CHAIN_VERSION",
+    "AUDIT_CHAIN_SCOPE_MATTER",
+    "AUDIT_CHAIN_SCOPE_SYSTEM",
+    "AUDIT_CHAIN_SCOPES",
+    "DocumentBody",
+    "DocumentVersion",
+    "DocumentEdit",
+    "DocumentEditSession",
+    "DocumentWorkingDraft",
+    "DocumentComment",
+    "WorkspaceDisabledSkill",
+    "WorkspaceSkillCapabilityGrant",
+    "SCOPE_TYPE_WORKSPACE",
+    "SCOPE_TYPE_MATTER",
+    "SCOPE_TYPE_VALUES",
+    "MatterCitation",
+    "AssistantMessage",
+    "AssistantThread",
+    "Job",
+    "JOB_STATUS_QUEUED",
+    "JOB_STATUS_RUNNING",
+    "JOB_STATUS_SUCCEEDED",
+    "JOB_STATUS_FAILED",
+    "JOB_STATUS_CANCELLED",
+    "JOB_STATUS_VALUES",
+    "JOB_ACTIVE_STATUSES",
+    "JOB_KIND_EXPORT",
+    "JOB_KIND_INDEX",
+    "PRIVILEGE_CLEARED",
+    "PRIVILEGE_MIXED",
+    "PRIVILEGE_PAUSED",
+    "PRIVILEGE_VALUES",
+    "STATUS_OPEN",
+    "STATUS_SETTLEMENT",
+    "STATUS_CLOSED",
+    "STATUS_ARCHIVED",
+    "STATUS_VALUES",
+    "TAG_VALUES",
+    "BODY_KIND_VALUES",
+    "EXTRACTION_METHOD_VALUES",
+    "VERSION_KIND_VALUES",
+    "EDIT_STATUS_VALUES",
+    "COMMENT_STATUS_OPEN",
+    "COMMENT_STATUS_RESOLVED",
+    "COMMENT_STATUS_VALUES",
+    # Matter context primitive.
+    "MatterContextSchema",
+    "MatterContextItem",
+    "SOURCE_TYPE_DOCUMENT",
+    "SOURCE_TYPE_EVENT",
+    "SOURCE_TYPE_AUDIT_ENTRY",
+    "SOURCE_TYPE_USER_ASSERTION",
+    "SOURCE_TYPE_CONNECTOR_RESULT",
+    "SOURCE_TYPE_GENERATED_OUTPUT",
+    "SOURCE_TYPE_VALUES",
+    # State machine primitive.
+    "StateMachineDefinition",
+    "StateMachineInstance",
+    "StateMachineTransition",
+    "OWNER_SCOPE_MATTER",
+    "OWNER_SCOPE_WORKSPACE",
+    "OWNER_SCOPE_PROSPECT",
+    "TRANSITION_STATUS_COMPLETED",
+    "TRANSITION_STATUS_BLOCKED",
+    "TRANSITION_STATUS_FAILED",
+    "TRANSITION_STATUS_VALUES",
+    # Advice boundary primitive.
+    "AdviceBoundaryDecision",
+    "ADVICE_TIER_FACTUAL_EXTRACTION",
+    "ADVICE_TIER_LEGAL_INFORMATION",
+    "ADVICE_TIER_DRAFT_ADVICE",
+    "ADVICE_TIER_SUPERVISED_LEGAL_ADVICE",
+    "ADVICE_TIER_APPROVED_FINAL_ADVICE",
+    "ADVICE_TIER_VALUES",
+    "DECISION_STATUS_COMPLETED",
+    "DECISION_STATUS_BLOCKED",
+    "DECISION_STATUS_DENIED",
+    "DECISION_STATUS_FAILED",
+    "DECISION_STATUS_VALUES",
+    # Installed modules.
+    "InstalledModule",
+    "MatterArtifact",
+    "MatterReview",
+    "MatterSignoff",
+    "SIGNOFF_SIGNED",
+    "SIGNOFF_SIGNED_WITH_OBSERVATIONS",
+    "SIGNOFF_REJECTED",
+    "SIGNOFF_DECISIONS",
+    "SIGNOFF_AFFIRMATIVE",
+    "SIGNOFF_REASONING_REQUIRED",
+    "REVIEW_PENDING",
+    "REVIEW_APPROVED",
+    "REVIEW_REJECTED",
+    "REVIEW_CHANGES_REQUESTED",
+    "REVIEW_OVERRIDDEN",
+    "REVIEW_TERMINAL_STATES",
+    "REVIEW_STATE_VALUES",
+    "REVIEW_ELIGIBLE_KINDS",
+    # Auth rate limiting.
+    "AuthThrottleEvent",
+]

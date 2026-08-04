@@ -1,0 +1,28 @@
+export function CprGateBanner({ count, onConfirm }: { count: number; onConfirm: () => void }) {
+  return (
+    <div className="bg-paper rounded-card border border-rule border-l-[3px] border-l-seal p-4 text-ink text-sm mb-6">
+      <div className="font-semibold mb-2">
+        <span className="text-seal mr-2" aria-hidden="true">▌</span>
+        CPR 31.22 - implied undertaking · step required
+      </div>
+      <p className="leading-relaxed mb-3">
+        {count} chronology {count === 1 ? "entry traces" : "entries trace"} to documents obtained
+        under disclosure. CPR 31.22(1) restricts use of disclosed material to the proceedings in
+        which it was disclosed. Until you acknowledge the implied undertaking, the server
+        withholds detail of {count === 1 ? "that entry - the row below shows it" : "those entries - the rows below show them"}{" "}
+        as redacted.
+      </p>
+      <p className="text-prose leading-relaxed mb-4">
+        Acknowledgement is recorded in Activity (audit action:{" "}
+        <span className="tech-token text-xs text-ink">chronology.gate.confirmed</span>) and scoped
+        to this matter and user.
+      </p>
+      <button
+        onClick={onConfirm}
+        className="bg-ink text-paper px-4 py-2 hover:bg-black transition-colors text-sm font-medium min-h-[44px]"
+      >
+        I confirm
+      </button>
+    </div>
+  );
+}

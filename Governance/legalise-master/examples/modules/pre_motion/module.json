@@ -1,0 +1,73 @@
+{
+  "capabilities": [
+    {
+      "advice_tier_max": "draft_advice",
+      "audit_events": [
+        "module.capability.invoked",
+        "model.invoked",
+        "advice_boundary.decision.completed",
+        "module.capability.completed",
+        "posture_gate.check.blocked"
+      ],
+      "data_movement": {
+        "external_destinations": [],
+        "local_only": true
+      },
+      "external_network": false,
+      "gates": [
+        "privilege_posture"
+      ],
+      "id": "draft_motion",
+      "kind": "skill",
+      "model_access": "required",
+      "reads": [
+        "matter.document.read"
+      ],
+      "scope": "matter",
+      "streaming_mode": "sync",
+      "ui": {
+        "label": "Draft pre-motion",
+        "slot": "matter.workflows"
+      },
+      "writes": [
+        "matter.artifact.write"
+      ]
+    },
+    {
+      "advice_tier_max": "factual_extraction",
+      "audit_events": [
+        "model.invoked"
+      ],
+      "data_movement": {
+        "external_destinations": [],
+        "local_only": true
+      },
+      "external_network": false,
+      "gates": [],
+      "id": "default-provider",
+      "kind": "provider",
+      "model_access": "none",
+      "reads": [],
+      "scope": "workspace",
+      "streaming_mode": "sync",
+      "ui": {
+        "label": "Provider (internal)",
+        "slot": "matter.workflows"
+      },
+      "writes": []
+    }
+  ],
+  "entrypoint": {
+    "entry": "PreMotionModule",
+    "python_module": "examples.modules.pre_motion"
+  },
+  "id": "examples.pre-motion",
+  "name": "Pre-Motion",
+  "publisher": "legalise",
+  "runtime": "native",
+  "schema_version": "2.0.0",
+  "signature": "c961747b59a610258658fafd1b8171b172f845f0b4bdb9e7537e1222cb22c58a",
+  "signed_by": "legalise",
+  "version": "1.0.0",
+  "visibility": "example"
+}

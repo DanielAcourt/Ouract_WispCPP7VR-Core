@@ -1,0 +1,140 @@
+"""User model — fastapi-users compatible.
+
+Extends the fastapi-users `SQLAlchemyBaseUserTableUUID` (id, email,
+hashed_password, is_active, is_superuser, is_verified) with project-
+specific columns: name, role, default model, default privilege posture.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, UTC
+
+from fastapi_users_db_sqlalchemy import (
+    SQLAlchemyBaseOAuthAccountTableUUID,
+    SQLAlchemyBaseUserTableUUID,
+)
+from fastapi_users_db_sqlalchemy.access_token import SQLAlchemyBaseAccessTokenTableUUID
+from sqlalchemy import DateTime, ForeignKey, LargeBinary, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
+
+from app.models.base import Base
+
+
+class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
+    """Social sign-in identity, one row per (user, provider). See
+    ADR-012. `hashed_password` on `User` stays nullable-in-practice for
+    OAuth-only accounts — fastapi-users hashes an unusable random
+    password on OAuth-created users so the column is never empty, but
+    no login-by-password path can succeed for them without first
+    setting a real password via the normal reset flow.
+    """
+
+    __tablename__ = "oauth_accounts"
+
+    @declared_attr
+    def user_id(cls) -> Mapped[uuid.UUID]:
+        return mapped_column(
+            UUID(as_uuid=True),
+            ForeignKey("users.id", ondelete="cascade"),
+            nullable=False,
+        )
+
+
+class User(SQLAlchemyBaseUserTableUUID, Base):
+    __tablename__ = "users"
+
+    # `lazy="selectin"` deliberately, not fastapi-users' docs example of
+    # `lazy="joined"` — joined-eager-load on a collection duplicates rows
+    # in any plain `session.scalars(select(User)).all()` query unless the
+    # caller adds `.unique()`, which would mean auditing every existing
+    # User list query in the app (admin_users.py's list endpoint hit this
+    # exact bug in testing). selectin is a separate batched query — no
+    # duplication, no ripple effect on code that predates OAuth.
+    oauth_accounts: Mapped[list[OAuthAccount]] = relationship(
+        "OAuthAccount", lazy="selectin"
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="solicitor")
+    # v0.1 plan field - display only. No enforcement, no billing semantics
+    # wired anywhere. Every user is `free`. Real subscription state (plan
+    # periods, Stripe references, plan-based gating) lands in v0.2 when
+    # billing wires; until then this is honest "what tier are you on"
+    # signage and nothing more.
+    plan: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="free", server_default="free"
+    )
+    default_model_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    default_privilege_posture: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, default="B_mixed"
+    )
+    # Gate 4 demand capture (see app/core/demand_capture.py). persona and
+    # signup_channel are optional self-reported signup fields; email_domain
+    # + domain_class are derived server-side from the email address at
+    # registration. All nullable — rows created before instrumentation (or
+    # via scripts/seed) simply read as "unknown" in the funnel.
+    persona: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    signup_channel: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    email_domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    domain_class: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<User {self.email} ({self.role})>"
+
+
+class AccessToken(SQLAlchemyBaseAccessTokenTableUUID, Base):
+    """fastapi-users DatabaseStrategy token table.
+
+    Cookie transport stores the token value in an httponly cookie; this
+    table is the server-side validator. Lifetime is enforced by the
+    strategy config, not a column.
+
+    The fastapi-users mixin declares `user_id` with a FK to `user.id`
+    (singular). Our user table is `users`, so we override the column
+    here. Migration 0003 already creates the FK against `users.id`;
+    this only fixes the ORM-side metadata so flush resolves correctly.
+    """
+
+    __tablename__ = "access_token"
+
+    @declared_attr
+    def user_id(cls) -> Mapped[uuid.UUID]:
+        return mapped_column(
+            UUID(as_uuid=True),
+            ForeignKey("users.id", ondelete="cascade"),
+            nullable=False,
+        )
+
+
+class UserApiKey(Base):
+    """Per-user provider API key, encrypted at rest (AES-256-GCM).
+
+    `ciphertext` and `nonce` are the encryption output of
+    `app.core.encryption`. Plaintext lives only in-memory during a
+    request — never logged, never serialised to audit payloads.
+    """
+
+    __tablename__ = "user_api_keys"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    ciphertext: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    nonce: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserApiKey user={self.user_id} provider={self.provider}>"

@@ -1,0 +1,1056 @@
+/**
+ * /architecture — technical documentation for Legalise: what each subsystem
+ * is, how it is built, and where in the repository to verify each claim.
+ * Grounded entirely in the code on master; every code claim links to the file
+ * that implements it.
+ *
+ * Diagrams are hand-drawn inline SVG, no deps: SpineDiagram (the matter
+ * spine), RequestPathDiagram (the checks at each node), GatewayDiagram (the
+ * single-egress internals).
+ */
+
+import { Footer } from "../ui/Footer";
+
+const REPO = "https://github.com/b1rdmania/legalise";
+const BLOB = `${REPO}/blob/master`;
+
+/** Deep-links to the files that implement each claim. Prose names a file,
+ * then links to the code so a reader can check the claim. */
+const SRC = {
+  gateway: `${BLOB}/backend/app/core/model_gateway.py`,
+  gatewayCall: `${BLOB}/backend/app/core/model_gateway.py#L319`,
+  gatewaySelect: `${BLOB}/backend/app/core/model_gateway.py#L281`,
+  invokeTool: `${BLOB}/backend/app/core/model_gateway.py#L179`,
+  providers: `${REPO}/tree/master/backend/app/providers`,
+  anthropic: `${BLOB}/backend/app/providers/anthropic_provider.py`,
+  ollama: `${BLOB}/backend/app/providers/ollama_provider.py`,
+  openai: `${BLOB}/backend/app/providers/openai_provider.py`,
+  postureGate: `${BLOB}/backend/app/core/posture_gate.py`,
+  userKeys: `${BLOB}/backend/app/core/user_keys.py`,
+  encryption: `${BLOB}/backend/app/core/encryption.py`,
+  signing: `${BLOB}/backend/app/core/signing.py`,
+  publishers: `${BLOB}/backend/app/core/publishers.py`,
+  githubImport: `${BLOB}/backend/app/core/github_import.py`,
+  auditChain: `${BLOB}/backend/app/core/audit_chain.py`,
+  auditChainEndpoint: `${BLOB}/backend/app/api/audit.py#L247`,
+  exportVerifier: `${BLOB}/backend/app/core/export_chain_verifier.py`,
+  exportVerifierTest: `${BLOB}/backend/tests/test_export_audit_chain.py`,
+  signoff: `${BLOB}/backend/app/core/signoff.py`,
+  config: `${BLOB}/backend/app/core/config.py`,
+  presidio: `${BLOB}/backend/app/modules/anonymisation/presidio_engine.py`,
+  presidioPipeline: `${BLOB}/backend/app/modules/anonymisation/pipeline.py`,
+  capabilities: `${BLOB}/backend/app/core/capabilities.py`,
+  trustCeremony: `${BLOB}/backend/app/core/trust_ceremony.py`,
+  matterAccess: `${BLOB}/backend/app/core/matter_access.py`,
+};
+
+/** An inline "read the code" link, monospace, set next to the claim. */
+function Src({ file, children }: { file: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={file}
+      target="_blank"
+      rel="noreferrer"
+      className="tech-token text-[11px] text-muted underline underline-offset-4 decoration-rule transition-colors hover:text-seal hover:decoration-seal"
+    >
+      {children}
+    </a>
+  );
+}
+
+/** A cluster of source links under a section. */
+function SourceRow({ items }: { items: { label: string; file: string }[] }) {
+  return (
+    <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-rule/50 pt-4">
+      <span className="tech-token text-[10px] uppercase tracking-track2 text-muted">
+        Source:
+      </span>
+      {items.map((it) => (
+        <Src key={it.label} file={it.file}>
+          {it.label}
+        </Src>
+      ))}
+    </div>
+  );
+}
+
+/** Each section of this page → its canonical doc(s) in the repository. */
+const DOC_MAP: { section: string; docs: { label: string; file: string }[] }[] = [
+  {
+    section: "Identity & access",
+    docs: [{ label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` }],
+  },
+  {
+    section: "Inference gateway / keys",
+    docs: [{ label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` }],
+  },
+  {
+    section: "Privilege gate",
+    docs: [
+      { label: "ARCHITECTURE.md", file: `${BLOB}/docs/ARCHITECTURE.md` },
+      { label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` },
+    ],
+  },
+  {
+    section: "Anonymisation",
+    docs: [{ label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` }],
+  },
+  {
+    section: "Admission / signing",
+    docs: [
+      { label: "ARCHITECTURE.md", file: `${BLOB}/docs/ARCHITECTURE.md` },
+      { label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` },
+    ],
+  },
+  {
+    section: "The record",
+    docs: [
+      { label: "ARCHITECTURE.md", file: `${BLOB}/docs/ARCHITECTURE.md` },
+      { label: "EVALUATING.md", file: `${BLOB}/docs/EVALUATING.md` },
+    ],
+  },
+  {
+    section: "Sign-off / output",
+    docs: [
+      { label: "ARCHITECTURE.md", file: `${BLOB}/docs/ARCHITECTURE.md` },
+      { label: "EVALUATING.md", file: `${BLOB}/docs/EVALUATING.md` },
+    ],
+  },
+  {
+    section: "Review and sign-off",
+    docs: [{ label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` }],
+  },
+  {
+    section: "Compliance / regulatory",
+    docs: [{ label: "REGULATORY_PLUMBING.md", file: `${BLOB}/REGULATORY_PLUMBING.md` }],
+  },
+  {
+    section: "Claim boundary",
+    docs: [{ label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` }],
+  },
+  {
+    section: "Threat model",
+    docs: [{ label: "THREAT_MODEL.md", file: `${BLOB}/docs/THREAT_MODEL.md` }],
+  },
+  {
+    section: "Top-level",
+    docs: [
+      { label: "ARCHITECTURE.md", file: `${BLOB}/docs/ARCHITECTURE.md` },
+      { label: "EVALUATING.md", file: `${BLOB}/docs/EVALUATING.md` },
+      { label: "ROADMAP.md", file: `${BLOB}/docs/ROADMAP.md` },
+    ],
+  },
+];
+
+/** Shipped-vs-deferred matrix. "shipped" = in the code on master; "deferred"
+ * = designed/staged but not built; "accepted" = a deliberate trade. */
+const STATUS_MATRIX: {
+  capability: string;
+  status: "shipped" | "deferred" | "accepted";
+  verification: string;
+}[] = [
+  { capability: "Single-egress inference gateway", status: "shipped", verification: "model_gateway.py" },
+  { capability: "Bring-your-own keys, encrypted at rest", status: "shipped", verification: "encryption.py · user_keys.py" },
+  { capability: "Privilege gate read from DB per call", status: "shipped", verification: "posture_gate.py" },
+  { capability: "Hash-chained audit, one-click verify", status: "shipped", verification: "audit_chain.py · GET /audit/verify" },
+  { capability: "Named sign-off over artifact SHA-256", status: "shipped", verification: "signoff.py" },
+  { capability: "Skill admission ceremony, two signature grades", status: "shipped", verification: "signing.py · trust_ceremony.py" },
+  { capability: "Per-user matter isolation, session revocation", status: "shipped", verification: "matter_access.py · TRUST.md" },
+  { capability: "Audit-role split asserted in CI", status: "shipped", verification: "SECURITY.md (build gate)" },
+  { capability: "Deterministic evals: grounding, refusal, chain integrity", status: "shipped", verification: "evals/agent-kit · agent_evals.py" },
+  { capability: "Retention enforcement (opt-in scheduled sweep)", status: "shipped", verification: "retention_sweep.py" },
+  { capability: "Organisation / team / SSO / MFA", status: "deferred", verification: "TRUST.md · ROADMAP.md" },
+  { capability: "Multi-tenancy (one deploy = one workspace today)", status: "deferred", verification: "ROADMAP.md" },
+  { capability: "Manifest web-of-trust / publisher registry at scale", status: "deferred", verification: "TRUST.md" },
+  { capability: "Durable job recovery, regulator reconstruction", status: "deferred", verification: "ROADMAP.md" },
+  { capability: "SBOM / SLSA / signed images / SOC 2 / ISO", status: "deferred", verification: "not present — roadmap only" },
+  { capability: "Hosted application backend", status: "deferred", verification: "legalise.dev is static; self-host for the full workspace" },
+];
+
+const CITATIONS: { label: string; href: string }[] = [
+  { label: "Trust", href: `${REPO}/blob/master/docs/TRUST.md` },
+  { label: "Security", href: `${REPO}/blob/master/SECURITY.md` },
+  { label: "Architecture", href: `${REPO}/blob/master/docs/ARCHITECTURE.md` },
+  { label: "Evaluating", href: `${REPO}/blob/master/docs/EVALUATING.md` },
+  { label: "Roadmap", href: `${REPO}/blob/master/docs/ROADMAP.md` },
+  { label: "MIT", href: `${REPO}/blob/master/LICENSE` },
+];
+
+/** The matter spine: six stations over one record rail. */
+function SpineDiagram() {
+  const stations = [
+    "DOCUMENTS",
+    "THE MATTER",
+    "THE GATE",
+    "THE MODEL",
+    "OUTPUT",
+    "SIGN-OFF",
+  ];
+  const W = 720;
+  const boxW = 96;
+  const boxH = 34;
+  const y = 28;
+  const railY = 132;
+  const gap = (W - stations.length * boxW) / (stations.length - 1);
+  return (
+    <figure className="mt-8 max-w-3xl overflow-x-auto border border-rule bg-paper p-4">
+      <svg viewBox={`0 0 ${W} 170`} role="img" aria-label="The matter spine: documents, matter, gate, model, output, and sign-off, each writing to one hash-chained record" className="block w-full min-w-[720px]">
+        {stations.map((label, i) => {
+          const x = i * (boxW + gap);
+          const cx = x + boxW / 2;
+          const isGate = label === "THE GATE";
+          return (
+            <g key={label}>
+              <rect
+                x={x + 0.5}
+                y={y + 0.5}
+                width={boxW}
+                height={boxH}
+                fill="none"
+                stroke={isGate ? "#8B0000" : "#181818"}
+                strokeWidth="1"
+              />
+              <text
+                x={cx}
+                y={y + boxH / 2 + 3}
+                textAnchor="middle"
+                fontSize="9"
+                letterSpacing="1.5"
+                fill="#181818"
+                fontFamily="ui-monospace, monospace"
+              >
+                {label}
+              </text>
+              {i < stations.length - 1 && (
+                <line
+                  x1={x + boxW}
+                  y1={y + boxH / 2}
+                  x2={x + boxW + gap}
+                  y2={y + boxH / 2}
+                  stroke="#181818"
+                  strokeWidth="1"
+                />
+              )}
+              {/* every station writes down to the record */}
+              <line
+                x1={cx}
+                y1={y + boxH}
+                x2={cx}
+                y2={railY}
+                stroke={isGate ? "#8B0000" : "#9b9b93"}
+                strokeWidth="1"
+                strokeDasharray={isGate ? undefined : "2 3"}
+              />
+            </g>
+          );
+        })}
+        <text
+          x={stations.indexOf("THE GATE") * (boxW + gap) + boxW / 2 + 6}
+          y={railY - 8}
+          fontSize="8"
+          letterSpacing="1.2"
+          fill="#8B0000"
+          fontFamily="ui-monospace, monospace"
+        >
+          REFUSALS TOO
+        </text>
+        <rect x="0" y={railY} width={W} height="20" fill="#181818" />
+        <text
+          x={W / 2}
+          y={railY + 14}
+          textAnchor="middle"
+          fontSize="9"
+          letterSpacing="2"
+          fill="#f5f3ee"
+          fontFamily="ui-monospace, monospace"
+        >
+          THE RECORD · HASH-CHAINED · EXPORTABLE
+        </text>
+      </svg>
+      <figcaption className="px-1 pt-3 pb-1 text-[11px] text-prose">
+        Every stage writes to one hash-chained record.
+      </figcaption>
+    </figure>
+  );
+}
+
+/** The request path drawn as nodes top to bottom, with the check each node
+ * runs written beside it and the refusal branch marked. */
+function RequestPathDiagram() {
+  const W = 720;
+  const boxW = 300;
+  const boxX = 60;
+  const boxH = 40;
+  const stepGap = 30;
+  const y0 = 20;
+
+  const nodes = [
+    { label: "REQUEST", check: "authenticated session · HttpOnly cookie", refuse: null },
+    { label: "MATTER", check: "owned by this user? cross-user → 404", refuse: null },
+    {
+      label: "THE GATE",
+      check: "read posture from DB row, this session",
+      refuse: "C_paused → refuse · 403 · struck audit row",
+      seal: true,
+    },
+    { label: "INFERENCE GATEWAY", check: "decrypt your key at call time · single egress", refuse: null },
+    { label: "PROVIDER", check: "Anthropic · Ollama (local) · stub", refuse: null },
+    { label: "OUTPUT (DRAFT)", check: "nothing ships unreviewed", refuse: null },
+    { label: "SIGN-OFF", check: "named human · optional four-eyes", refuse: null },
+    { label: "THE RECORD", check: "hash-chained row · model + SHA-256 only", refuse: null, rail: true },
+  ];
+
+  const rowH = boxH + stepGap;
+  const totalH = y0 + nodes.length * rowH;
+
+  return (
+    <figure className="mt-8 max-w-3xl overflow-x-auto border border-rule bg-paper p-4">
+      <svg
+        viewBox={`0 0 ${W} ${totalH}`}
+        role="img"
+        aria-label="The request path: an authenticated request runs through matter ownership, the privilege gate (which can refuse), the inference gateway, a provider, a draft, human sign-off, and finally the hash-chained record"
+        className="block w-full min-w-[720px]"
+      >
+        {nodes.map((n, i) => {
+          const y = y0 + i * rowH;
+          const cy = y + boxH / 2;
+          const isSeal = Boolean(n.seal);
+          return (
+            <g key={n.label}>
+              <rect
+                x={boxX + 0.5}
+                y={y + 0.5}
+                width={boxW}
+                height={boxH}
+                fill="none"
+                stroke={isSeal ? "#8B0000" : "#181818"}
+                strokeWidth="1"
+              />
+              <text
+                x={boxX + 14}
+                y={cy + 4}
+                fontSize="11"
+                letterSpacing="1.5"
+                fill={isSeal ? "#8B0000" : "#181818"}
+                fontFamily="ui-monospace, monospace"
+              >
+                {n.label}
+              </text>
+              <text
+                x={boxX + boxW + 16}
+                y={cy - 2}
+                fontSize="8.5"
+                fill="#524b40"
+                fontFamily="ui-monospace, monospace"
+              >
+                {n.check}
+              </text>
+              {n.refuse && (
+                <text
+                  x={boxX + boxW + 16}
+                  y={cy + 11}
+                  fontSize="8.5"
+                  fill="#8B0000"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  {n.refuse}
+                </text>
+              )}
+              {i < nodes.length - 1 && (
+                <line
+                  x1={boxX + boxW / 2}
+                  y1={y + boxH}
+                  x2={boxX + boxW / 2}
+                  y2={y + rowH}
+                  stroke={isSeal ? "#8B0000" : "#181818"}
+                  strokeWidth="1"
+                  markerEnd="url(#arrowhead)"
+                />
+              )}
+            </g>
+          );
+        })}
+        <defs>
+          <marker
+            id="arrowhead"
+            markerWidth="7"
+            markerHeight="7"
+            refX="3.5"
+            refY="3.5"
+            orient="auto"
+          >
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#181818" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption className="px-1 pt-3 pb-1 text-[11px] text-prose">
+        The request path: what runs, and what is checked, at every node.
+      </figcaption>
+    </figure>
+  );
+}
+
+/** The inference gateway drawn from the inside: many callers, one box, the
+ * key decrypted at the last moment, one wire out to a provider. */
+function GatewayDiagram() {
+  const W = 720;
+  const H = 320;
+  const gx = 250;
+  const gy = 70;
+  const gw = 220;
+  const gh = 180;
+
+  const callers = ["chat turn", "a skill", "anonymiser fallback"];
+  const providers = [
+    { name: "Anthropic", note: "your key", keyed: true },
+    { name: "Ollama (local)", note: "keyless", keyed: false },
+    { name: "stub-echo", note: "dev only", keyed: false },
+  ];
+
+  return (
+    <figure className="mt-8 max-w-3xl overflow-x-auto border border-rule bg-paper p-4">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label="The inference gateway: every caller funnels into one gateway component, which reads the privilege posture, decrypts the user's key at call time, and is the only component that talks to a model provider"
+        className="block w-full min-w-[720px]"
+      >
+        {callers.map((c, i) => {
+          const cy = 70 + i * 60;
+          return (
+            <g key={c}>
+              <rect x={20} y={cy} width={150} height={36} fill="none" stroke="#181818" strokeWidth="1" />
+              <text x={95} y={cy + 22} textAnchor="middle" fontSize="9" fill="#181818" fontFamily="ui-monospace, monospace">
+                {c}
+              </text>
+              <line x1={170} y1={cy + 18} x2={gx} y2={gy + gh / 2} stroke="#9b9b93" strokeWidth="1" markerEnd="url(#gw-arrow)" />
+            </g>
+          );
+        })}
+
+        <rect x={gx} y={gy} width={gw} height={gh} fill="none" stroke="#181818" strokeWidth="1.5" />
+        <text x={gx + gw / 2} y={gy + 24} textAnchor="middle" fontSize="11" letterSpacing="1.5" fill="#181818" fontFamily="ui-monospace, monospace">
+          THE GATEWAY
+        </text>
+        {[
+          "1 · read posture (DB)",
+          "2 · C_paused → refuse",
+          "3 · pick provider",
+          "4 · decrypt key (now)",
+          "5 · call · hash · audit",
+        ].map((step, i) => (
+          <text
+            key={step}
+            x={gx + 16}
+            y={gy + 54 + i * 24}
+            fontSize="9"
+            fill={i === 1 ? "#8B0000" : "#181818"}
+            fontFamily="ui-monospace, monospace"
+          >
+            {step}
+          </text>
+        ))}
+
+        <line x1={gx + gw} y1={gy + gh / 2} x2={560} y2={gy + gh / 2} stroke="#181818" strokeWidth="1.5" markerEnd="url(#gw-arrow)" />
+        <text x={(gx + gw + 560) / 2} y={gy + gh / 2 - 8} textAnchor="middle" fontSize="8" letterSpacing="1" fill="#8B0000" fontFamily="ui-monospace, monospace">
+          ONLY WIRE OUT
+        </text>
+
+        {providers.map((p, i) => {
+          const py = 60 + i * 64;
+          return (
+            <g key={p.name}>
+              <rect
+                x={560}
+                y={py}
+                width={140}
+                height={42}
+                fill="none"
+                stroke={p.keyed ? "#181818" : "#9b9b93"}
+                strokeWidth="1"
+              />
+              <text x={630} y={py + 18} textAnchor="middle" fontSize="9" fill="#181818" fontFamily="ui-monospace, monospace">
+                {p.name}
+              </text>
+              <text x={630} y={py + 32} textAnchor="middle" fontSize="8.5" fill="#524b40" fontFamily="ui-monospace, monospace">
+                {p.note}
+              </text>
+            </g>
+          );
+        })}
+
+        <defs>
+          <marker id="gw-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#181818" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption className="px-1 pt-3 pb-1 text-[11px] text-prose">
+        Legalise model calls leave through one gateway.
+      </figcaption>
+    </figure>
+  );
+}
+
+function AuditChainDiagram() {
+  const rows = [
+    { action: "model.call", hash: "9f2a…" },
+    { action: "output.written", hash: "c71b…" },
+    { action: "output.signed", hash: "4e08…" },
+  ];
+  const W = 720;
+  const boxW = 132;
+  const boxH = 52;
+  const gap = 66;
+  const headW = 116;
+  const y = 34;
+  const midY = y + boxH / 2;
+  const headX = rows.length * (boxW + gap);
+  return (
+    <figure className="mt-8 max-w-3xl overflow-x-auto border border-rule bg-paper p-4">
+      <svg
+        viewBox={`0 0 ${W} 150`}
+        role="img"
+        aria-label="The audit chain: each entry carries the hash of the entry before it, up to a head hash that fingerprints the whole matter"
+        className="block w-full min-w-[720px]"
+      >
+        <defs>
+          <marker id="ah-ink" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6" fill="none" stroke="#181818" strokeWidth="1" />
+          </marker>
+          <marker id="ah-seal" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6" fill="none" stroke="#8B0000" strokeWidth="1.2" />
+          </marker>
+        </defs>
+        {rows.map((r, i) => {
+          const x = i * (boxW + gap);
+          const cx = x + boxW / 2;
+          return (
+            <g key={r.action}>
+              <rect x={x + 0.5} y={y + 0.5} width={boxW} height={boxH} fill="none" stroke="#181818" strokeWidth="1" />
+              <text x={cx} y={y + 21} textAnchor="middle" fontSize="9" letterSpacing="1" fill="#181818" fontFamily="ui-monospace, monospace">{r.action}</text>
+              <text x={cx} y={y + 39} textAnchor="middle" fontSize="9" letterSpacing="1" fill="#8B0000" fontFamily="ui-monospace, monospace">hash {r.hash}</text>
+              {i < rows.length - 1 && (
+                <>
+                  <line x1={x + boxW} y1={midY} x2={x + boxW + gap - 2} y2={midY} stroke="#181818" strokeWidth="1" markerEnd="url(#ah-ink)" />
+                  <text x={x + boxW + gap / 2} y={midY - 7} textAnchor="middle" fontSize="8.5" fill="#6b6b63" fontFamily="ui-monospace, monospace">prev</text>
+                </>
+              )}
+            </g>
+          );
+        })}
+        {/* Head node — filled, the published fingerprint. */}
+        <line
+          x1={(rows.length - 1) * (boxW + gap) + boxW}
+          y1={midY}
+          x2={headX - 2}
+          y2={midY}
+          stroke="#8B0000"
+          strokeWidth="1.4"
+          markerEnd="url(#ah-seal)"
+        />
+        <rect x={headX + 0.5} y={y + 0.5} width={headW} height={boxH} fill="#8B0000" stroke="#8B0000" strokeWidth="1" />
+        <text x={headX + headW / 2} y={y + 21} textAnchor="middle" fontSize="9" letterSpacing="1.5" fill="#f5f3ee" fontFamily="ui-monospace, monospace">HEAD</text>
+        <text x={headX + headW / 2} y={y + 39} textAnchor="middle" fontSize="8.5" fill="#f5f3ee" fontFamily="ui-monospace, monospace">fingerprint</text>
+        <text x={W / 2} y={128} textAnchor="middle" fontSize="8.5" letterSpacing="1.5" fill="#181818" fontFamily="ui-monospace, monospace">
+          CHANGE ANY ROW · EVERY HASH AFTER IT BREAKS
+        </text>
+      </svg>
+      <figcaption className="px-1 pt-3 pb-1 text-[11px] text-prose">
+        Each entry carries the hash of the one before it, up to a head that
+        fingerprints the whole matter.
+      </figcaption>
+    </figure>
+  );
+}
+
+function StatusTag({ status }: { status: "shipped" | "deferred" | "accepted" }) {
+  const isShipped = status === "shipped";
+  return (
+    <span
+      className={`tech-token text-[10px] uppercase tracking-[0.18em] ${
+        isShipped ? "text-ink" : "text-seal"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+/** A plain section heading with a scroll anchor. */
+function H2({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <h2
+      id={id}
+      className="mt-16 scroll-mt-8 text-2xl md:text-[28px] font-bold tracking-tight2 text-ink"
+    >
+      {children}
+    </h2>
+  );
+}
+
+function H3({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mt-8 text-lg font-semibold tracking-tight2 text-ink">
+      {children}
+    </h3>
+  );
+}
+
+function P({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-5 max-w-3xl text-base leading-relaxed text-prose">
+      {children}
+    </p>
+  );
+}
+
+export function Architecture() {
+  return (
+    <div className="max-w-page mx-auto">
+      <div className="px-4 sm:px-6 md:px-16 lg:px-24 py-16 md:py-20">
+        <header>
+          <h1 className="font-redaction35 text-[52px] sm:text-[72px] leading-none tracking-tight2 text-ink">
+            Architecture
+          </h1>
+          <p className="mt-6 max-w-3xl text-base leading-relaxed text-prose">
+            Legalise is a self-hosted workspace and reference implementation for
+            governed legal AI. Before a model or skill runs, it checks the
+            matter&apos;s policy. AI output remains a draft until a named human
+            signs the exact file. Every action and refusal enters a
+            database-enforced hash chain and is included in an export that can
+            be verified offline.
+          </p>
+          <p className="mt-4 text-sm text-muted">
+            Evaluation release for England and Wales. External anchoring is not
+            built.
+          </p>
+          <a
+            href={REPO}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 inline-block text-sm font-medium text-ink underline decoration-rule underline-offset-4 transition-colors hover:text-seal hover:decoration-seal"
+          >
+            View source on GitHub ↗
+          </a>
+
+        </header>
+
+        <H2 id="overview">How it works</H2>
+        <P>
+          A <em>matter</em> is one legal case or file. Its documents, chat,
+          model calls, skills, outputs, review, and sign-off share one policy
+          boundary and one record.
+        </P>
+        <P>
+          React provides the workspace; FastAPI and Python run the back end;
+          Postgres enforces the audit record. The governance path is independent
+          of any one model provider.
+        </P>
+        <SpineDiagram />
+        <P>
+          A request advances only when the current check allows it. Refusals
+          enter the same record as successful actions.
+        </P>
+        <RequestPathDiagram />
+        <P>
+          Model calls use the user&apos;s own keys. Skills arrive from a public
+          GitHub repository at a fixed commit and run only after admission.
+        </P>
+        <SourceRow
+          items={[
+            { label: "model_gateway.py", file: SRC.gateway },
+            { label: "posture_gate.py", file: SRC.postureGate },
+            { label: "audit_chain.py", file: SRC.auditChain },
+            { label: "signoff.py", file: SRC.signoff },
+            { label: "github_import.py", file: SRC.githubImport },
+          ]}
+        />
+        <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
+          {CITATIONS.map((c) => (
+            <a
+              key={c.label}
+              href={c.href}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs uppercase tracking-[0.18em] text-muted underline underline-offset-4 decoration-rule transition-colors hover:text-seal hover:decoration-seal"
+            >
+              {c.label}
+            </a>
+          ))}
+        </div>
+
+        <H2 id="identity">Identity and access</H2>
+        <P>
+          Login uses fastapi-users with cookie sessions (HttpOnly, Secure,
+          SameSite=Lax) backed by a server-side{" "}
+          <code className="tech-token">access_token</code> table, so sign-out
+          revokes the session server-side. Passwords use Argon2/bcrypt; email
+          verification uses Resend; password resets use short-lived tokens.
+          Postgres-backed IP limits hold across multiple app instances, and the
+          first rejection in a window writes an{" "}
+          <code className="tech-token">auth.rate_limited</code> row.
+        </P>
+        <P>
+          Matters belong to one user. A matter's short name is unique per{" "}
+          <code className="tech-token">(slug, created_by_id)</code>, so two users
+          can each hold a matter with the same name. Reading another user's
+          matter returns 404, not 403, so user A cannot learn that user B has a
+          matter with a given name. Access decisions, changes, and model calls
+          each write their own audit row.
+        </P>
+        <SourceRow
+          items={[
+            { label: "matter_access.py", file: SRC.matterAccess },
+            { label: "config.py", file: SRC.config },
+            { label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` },
+          ]}
+        />
+
+        <H2 id="gateway">The inference gateway</H2>
+        <P>
+          Every model call passes through one interface for Anthropic, OpenAI,
+          OpenRouter, local Ollama, or the development stub. Users bring their
+          own keys, encrypted with AES-256-GCM under a deployment master key. In
+          production, an invalid master key stops startup and a missing provider
+          key stops the call with an error and audit row; there is no fallback to
+          a server-owned key.
+        </P>
+        <GatewayDiagram />
+        <P>
+          Every call reads the matter&apos;s policy from the database, refuses a
+          paused matter, selects the provider, decrypts the key just in time,
+          makes the call, then hashes the prompt and response into the audit
+          row. The plaintext key exists only for the call and never enters a log
+          or audit row.
+        </P>
+        <P>
+          The gateway resolves which provider a model name belongs to in a single
+          helper, used both by the gateway and by any check that runs before the
+          call. A check can therefore never be stricter than the call it checks;
+          if a renamed model id would change routing, both sides change at once.
+        </P>
+        <SourceRow
+          items={[
+            { label: "ModelGateway.call", file: SRC.gatewayCall },
+            { label: "_select_provider", file: SRC.gatewaySelect },
+            { label: "user_keys.py", file: SRC.userKeys },
+            { label: "encryption.py", file: SRC.encryption },
+            { label: "providers/", file: SRC.providers },
+          ]}
+        />
+
+        <H2 id="gate">The privilege gate</H2>
+        <P>
+          Every matter has one of three privilege settings.{" "}
+          <code className="tech-token">A_cleared</code> allows all providers.{" "}
+          <code className="tech-token">B_mixed</code>, the default, prefers a
+          local Ollama provider when one is configured and a frontier model was
+          asked for, and otherwise allows the frontier providers under their
+          no-training contract terms.{" "}
+          <code className="tech-token">C_paused</code> allows no model call at
+          all.
+        </P>
+        <P>
+          The gateway reads the setting from the matter row for each request,
+          never from caller-supplied state. A paused matter stops before network
+          traffic, and changing the setting is itself audited.
+        </P>
+        <P>
+          A second gate,{" "}
+          <code className="tech-token">check_posture</code>, runs before any
+          capability, including non-model actions. Missing matter context is a
+          refusal, not a bypass. Skill calls also require a{" "}
+          <code className="tech-token">model.invoke</code> grant for their{" "}
+          <code className="tech-token">(plugin, skill)</code> pair,
+          and a tool that writes a privileged resource also needs its matching
+          write permission. The policy is a reviewed table in code, not a
+          production switch.
+        </P>
+        <SourceRow
+          items={[
+            { label: "posture_gate.py", file: SRC.postureGate },
+            { label: "gateway.call (DB read)", file: SRC.gatewayCall },
+            { label: "invoke_tool", file: SRC.invokeTool },
+            { label: "capabilities.py", file: SRC.capabilities },
+          ]}
+        />
+
+        <H2 id="anon">Anonymisation</H2>
+        <P>
+          Before sending a document to a model, a solicitor can pseudonymise it:
+          replace names and other identifying details with placeholders. The
+          layer runs Microsoft Presidio with three UK-specific detectors added on
+          top of the spaCy defaults: postcodes, National Insurance numbers, and
+          GBP amounts. Detected text is replaced with stable tokens
+          (PARTY_1, ORG_1, and so on), and the mapping is stored so a re-run
+          produces the same result.
+        </P>
+        <P>
+          Two limits. First, Presidio is an optional install; the slim
+          deployment image omits it, and a real run in that state fails cleanly
+          with install guidance rather than passing text straight through.
+          Second, in <code className="tech-token">auto</code> mode, if Presidio
+          appears to catch too little on a long document, the layer can fall back
+          to a Claude pass through the same gateway. That fallback is a model
+          call, so it goes through the same privilege gate and gets the same
+          audit row. Pseudonymisation reduces what a provider sees; it is not a
+          guarantee, and the gate still decides whether the provider may be
+          called at all.
+        </P>
+        <SourceRow
+          items={[
+            { label: "presidio_engine.py", file: SRC.presidio },
+            { label: "pipeline.py", file: SRC.presidioPipeline },
+          ]}
+        />
+
+        <H2 id="admission">Skill admission</H2>
+        <P>
+          Anyone can propose a skill from a public GitHub repository that has a
+          SKILL.md file. The importer reads it at a fixed commit, checks the
+          licence, and produces a draft the system can govern. Admission scans
+          the manifest's structure, its declared permissions, and whether the
+          source matches, then stops at one human decision: approve and enable,
+          or refuse. The record keeps both outcomes the same way.
+        </P>
+        <H3>The two signature grades</H3>
+        <P>
+          <code className="tech-token">verified</code> means the manifest carries
+          an ed25519 signature that checks out cryptographically against the
+          publisher&apos;s registered public key.{" "}
+          <code className="tech-token">structure_verified</code> means shape only:
+          the signature is present and plausible and the publisher is in the
+          registry, but no cryptography ran. A publisher without a registered
+          key can never reach <code className="tech-token">verified</code>. The
+          signature covers a fixed hash of the manifest with signature fields
+          removed, pinning the signed content.
+        </P>
+        <div className="mt-8 max-w-3xl border border-rule bg-paper p-2">
+          <pre className="tech-token overflow-x-auto whitespace-pre border border-rule/60 bg-wash p-4 text-[11px] leading-5 text-prose">
+{`{
+  "id": "review",
+  "kind": "skill",
+  "scope": "matter",
+  "reads":  ["matter.document.read"],
+  "writes": ["matter.artifact.write"],
+  "gates":  ["privilege_posture"],
+  "model_access": "required",
+  "external_network": false,
+  "data_movement": { "local_only": true, "external_destinations": [] },
+  "advice_tier_max": "draft_advice"
+}`}
+          </pre>
+          <p className="px-1 pt-2 pb-1 text-[11px] text-muted">
+            A capability from the contract-review manifest: declared, checked,
+            then admitted.
+          </p>
+        </div>
+        <SourceRow
+          items={[
+            { label: "signing.py", file: SRC.signing },
+            { label: "publishers.py", file: SRC.publishers },
+            { label: "github_import.py", file: SRC.githubImport },
+            { label: "trust_ceremony.py", file: SRC.trustCeremony },
+            { label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` },
+          ]}
+        />
+
+        <H2 id="refusal">Refusals</H2>
+        <P>
+          A refusal lands in the same ledger as any successful action and
+          appears as a struck entry. It does not disappear into an application
+          log.
+        </P>
+
+        <H2 id="record">The audit record</H2>
+        <P>
+          Each model call records the model, token count, latency, and SHA-256
+          hashes of the prompt and response—not their text. Matter changes write
+          rows too. A Postgres trigger links each row to its predecessor, making
+          the head hash a fingerprint of the matter. The verify endpoint{" "}
+          <code className="tech-token">GET /api/matters/&#123;slug&#125;/audit/verify</code>{" "}
+          recomputes the chain independently in Python and reports the head and
+          any breaks. CI fails if the PL/pgSQL and Python recipes disagree.
+        </P>
+        <AuditChainDiagram />
+        <P>
+          A trigger rejects UPDATE and DELETE, while the application role lacks
+          permission to attempt either; CI checks both controls. A self-hosted
+          operator must apply the documented role split. A database superuser
+          can still disable these controls and rewrite unanchored history.
+        </P>
+        <P>
+          The exported working pack holds the outputs, the source context, the
+          signatures, the audit trail, and a standard-library verifier. A
+          recipient can check the record with Python 3 alone—without Legalise,
+          a network connection, or database access.
+        </P>
+        <div className="mt-6 max-w-3xl border border-rule/60 bg-wash p-4">
+          <p className="eyebrow-sm mb-3">Verify an exported pack</p>
+          <pre className="tech-token overflow-x-auto whitespace-pre text-[12px] leading-6 text-prose">
+{`$ unzip matter-export.zip -d matter-export
+$ cd matter-export
+$ python3 verify_chain.py
+PASS: audit chain verified — …
+unbroken from sequence 1.`}
+          </pre>
+        </div>
+        <SourceRow
+          items={[
+            { label: "audit_chain.py", file: SRC.auditChain },
+            { label: "GET /audit/verify", file: SRC.auditChainEndpoint },
+            { label: "offline verifier", file: SRC.exportVerifier },
+            { label: "export verification tests", file: SRC.exportVerifierTest },
+            { label: "SECURITY.md", file: `${BLOB}/SECURITY.md` },
+            { label: "TRUST.md", file: `${BLOB}/docs/TRUST.md` },
+          ]}
+        />
+
+        <H2 id="signoff">Sign-off</H2>
+        <P>
+          Every output is a draft until a named human reviews it, changes it
+          where needed, and signs it. Edits show up as inline tracked changes:
+          deletions struck through, insertions underlined, and each acceptance or
+          rejection gets its own audit row. A firm that wants a four-eyes rule
+          (two people, not one) can deploy with{" "}
+          <code className="tech-token">SIGNOFF_AUTHOR_MUST_DIFFER</code> set,
+          which stops an author signing their own output (rejecting it stays
+          allowed). It is off by default so a sole practitioner can sign their own
+          work.
+        </P>
+        <P>
+          Sign-off decisions accumulate per skill: signed, signed with
+          observations, or rejected. The signature pins the exact output the
+          signer saw: it is taken over a SHA-256 of the file, so a signature
+          cannot quietly come to mean a different document. The record also notes
+          when a sign-off lands faster than a rough ten-minutes-per-thousand-words
+          baseline would suggest for the length of the output. It flags this; it
+          does not block it.
+        </P>
+        <SourceRow
+          items={[
+            { label: "signoff.py", file: SRC.signoff },
+            { label: "SIGNOFF_AUTHOR_MUST_DIFFER", file: SRC.config },
+          ]}
+        />
+
+        <H2 id="deployment">Deployment and self-hosting</H2>
+        <P>
+          The gateway supports Anthropic, OpenAI, OpenRouter, and local Ollama
+          providers. Provider behavior is not identical; the reference
+          evaluation must be run against each model a deployment intends to use.
+        </P>
+        <P>
+          The project is MIT-licensed and can be self-hosted. The hosted backend is
+          currently off. A self-hosting operator chooses the infrastructure,
+          controls the data location, and owns the master encryption key. Because{" "}
+          <code className="tech-token">B_mixed</code> prefers a registered local
+          Ollama provider, a firm building on this can tune it to run entirely on
+          local models; at that point no client data needs to leave the building,
+          and a local model is not a third party for privilege.
+        </P>
+
+        <H2 id="limits">What is not solved</H2>
+        <P>
+          One deployment is one workspace. Multi-tenancy, organisation
+          accounts, SSO, MFA, a publisher web of trust, SOC 2, and ISO 27001
+          certification are not shipped. The full boundary is maintained in{" "}
+          <a
+            href={`${BLOB}/docs/LIMITATIONS.md`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink underline underline-offset-4 decoration-rule transition-colors hover:text-seal hover:decoration-seal"
+          >
+            LIMITATIONS.md
+          </a>
+          .
+        </P>
+        <P>
+          A database superuser can rewrite an unanchored audit trail. A cloud
+          provider sees prompts in cleartext unless matter policy blocks the
+          call. Models can hallucinate; citations support human review but do
+          not replace it.
+        </P>
+        <P>
+          If a claim is wrong or a control can be broken, open an issue in the{" "}
+          <a
+            href={`${REPO}/issues`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink underline underline-offset-4 decoration-rule transition-colors hover:text-seal hover:decoration-seal"
+          >
+            repository
+          </a>
+          .
+        </P>
+
+        <H2 id="status">Status</H2>
+        <P>
+          Shipped means it is in the code on master. Deferred means it is designed
+          or staged but not built. Accepted means a deliberate trade. Each row
+          points at where to check.
+        </P>
+        <div className="mt-8 max-w-3xl overflow-x-auto border border-rule bg-paper">
+          <table className="w-full border-collapse text-left text-sm text-prose">
+            <thead>
+              <tr className="border-b border-rule/60">
+                <th className="px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-muted">
+                  Capability
+                </th>
+                <th className="px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-muted">
+                  Status
+                </th>
+                <th className="px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-muted">
+                  Verification
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {STATUS_MATRIX.map((row) => (
+                <tr key={row.capability} className="border-b border-rule/40 last:border-0">
+                  <td className="px-3 py-2 align-top">{row.capability}</td>
+                  <td className="px-3 py-2 align-top">
+                    <StatusTag status={row.status} />
+                  </td>
+                  <td className="tech-token px-3 py-2 align-top text-[11px] text-muted">
+                    {row.verification}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <H2 id="docs">Reference documents</H2>
+        <P>
+          Each section above maps to one or more documents in the repository that
+          carry the full detail.
+        </P>
+        <dl className="mt-8 max-w-3xl space-y-4">
+          {DOC_MAP.map((row) => (
+            <div
+              key={row.section}
+              className="grid grid-cols-1 gap-x-6 gap-y-2 border-t border-rule/50 pt-4 sm:grid-cols-[180px_1fr]"
+            >
+              <dt className="text-[11px] uppercase tracking-[0.18em] text-muted">
+                {row.section}
+              </dt>
+              <dd className="flex flex-wrap gap-x-5 gap-y-2">
+                {row.docs.map((d) => (
+                  <Src key={d.label} file={d.file}>
+                    {d.label}
+                  </Src>
+                ))}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-16">
+          <Footer />
+        </div>
+      </div>
+    </div>
+  );
+}

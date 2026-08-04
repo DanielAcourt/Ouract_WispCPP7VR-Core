@@ -1,0 +1,207 @@
+"""Settings router — user-scoped configuration.
+
+Endpoints:
+- GET    /api/settings/keys                 list user's keys (masked)
+- POST   /api/settings/keys                 upsert a provider key
+- DELETE /api/settings/keys/{provider}      remove a provider key
+- GET    /api/settings/profile              fastapi-users' /users/me alias
+- PATCH  /api/settings/profile              fastapi-users' /users/me alias
+
+Keys are never returned in plaintext after write. The response gives a
+masked tail (last 4 chars), provider, and timestamps.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel, Field
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.auth import current_user
+from app.core.db import get_session
+from app.core.user_keys import ProviderUpstreamError, upsert_user_provider_key
+from app.models import User, UserApiKey
+
+
+router = APIRouter()
+
+
+SUPPORTED_PROVIDERS = ("anthropic", "openai", "openrouter")
+Provider = Literal["anthropic", "openai", "openrouter"]
+
+# Providers verified with a live probe at save time. Keyless providers
+# (ollama, stub-echo) never reach this router and need no verification.
+_VERIFIABLE_PROVIDERS = {"anthropic", "openai", "openrouter"}
+
+# OpenRouter exposes a dedicated key endpoint — an authenticated GET is
+# the cheapest possible validity check (no tokens spent).
+_OPENROUTER_KEY_URL = "https://openrouter.ai/api/v1/key"
+
+
+async def _verify_provider_key(provider: str, api_key: str) -> None:
+    """Probe `provider` with the candidate `api_key` before we persist it.
+
+    Sends the smallest possible call (one-token "ping") so a key that the
+    provider rejects fails here rather than silently on the user's first
+    chat turn.
+
+    Outcome contract:
+      - auth failure (upstream 401/403, `provider_invalid_key`) -> raise
+        HTTPException(400); the caller must NOT persist.
+      - transient failure (connection error, 429, 5xx, or any other
+        upstream code) -> return cleanly; the key is persisted unverified
+        rather than blocking a save because the provider is momentarily
+        unreachable.
+      - success -> return cleanly.
+    """
+    if provider == "openrouter":
+        # Cheaper than a model call: GET /key with the candidate key is
+        # OpenRouter's own auth check and spends no tokens.
+        import httpx
+
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(
+                    _OPENROUTER_KEY_URL,
+                    headers={"Authorization": f"Bearer {api_key}"},
+                )
+        except httpx.HTTPError:
+            # Transient — don't block the save because OpenRouter is
+            # momentarily unreachable.
+            return
+        if resp.status_code in (401, 403):
+            raise HTTPException(
+                400,
+                f"the key was rejected by {provider}; check it and try again",
+            )
+        return
+
+    if provider == "anthropic":
+        from app.providers.anthropic_provider import AnthropicProvider
+
+        prov = AnthropicProvider(api_key=None)
+    elif provider == "openai":
+        from app.providers.openai_provider import OpenAIProvider
+
+        prov = OpenAIProvider(api_key=None)
+    else:  # pragma: no cover - guarded by _VERIFIABLE_PROVIDERS upstream
+        return
+
+    try:
+        await prov.call("ping", api_key=api_key, max_tokens=1)
+    except ProviderUpstreamError as exc:
+        if exc.upstream_status in (401, 403):
+            raise HTTPException(
+                400,
+                f"the key was rejected by {provider}; check it and try again",
+            ) from exc
+        # Transient (connection / 429 / 5xx / unknown) — don't block the
+        # save just because the provider is momentarily unreachable.
+        return
+
+
+class UserApiKeyRead(BaseModel):
+    provider: str
+    last_used_at: datetime | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class UserApiKeyUpsert(BaseModel):
+    provider: Provider
+    api_key: str = Field(min_length=8, max_length=512)
+
+
+@router.get("/keys", response_model=list[UserApiKeyRead])
+async def list_keys(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+) -> list[UserApiKey]:
+    rows = await session.scalars(
+        select(UserApiKey)
+        .where(UserApiKey.user_id == user.id)
+        .order_by(UserApiKey.provider)
+    )
+    return list(rows.all())
+
+
+@router.post("/keys", response_model=UserApiKeyRead, status_code=status.HTTP_201_CREATED)
+async def upsert_key(
+    body: UserApiKeyUpsert,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+) -> UserApiKey:
+    if body.provider not in SUPPORTED_PROVIDERS:
+        raise HTTPException(400, f"provider must be one of {SUPPORTED_PROVIDERS}")
+    # Reject a bad key at save time. Auth failures raise HTTPException(400)
+    # here so we never persist; transient provider errors fall through and
+    # the key is saved unverified. Keyless providers are skipped.
+    if body.provider in _VERIFIABLE_PROVIDERS:
+        await _verify_provider_key(body.provider, body.api_key)
+    # Detect whether this is a fresh insert or a rotation, before the upsert
+    # collapses the row.
+    existing = await session.scalar(
+        select(UserApiKey.provider).where(
+            UserApiKey.user_id == user.id, UserApiKey.provider == body.provider
+        )
+    )
+    is_rotation = existing is not None
+    row = await upsert_user_provider_key(session, user.id, body.provider, body.api_key)
+    # Audit row.
+    from app.core.api import audit
+
+    await audit.log(
+        session,
+        "user.key.configured",
+        actor_id=user.id,
+        module="core.settings",
+        resource_type="user_api_key",
+        resource_id=str(row.id),
+        payload={
+            "provider": body.provider,
+            "action": "rotated" if is_rotation else "added",
+        },
+    )
+    await session.commit()
+    await session.refresh(row)
+    return row
+
+
+@router.delete(
+    "/keys/{provider}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
+async def delete_key(
+    provider: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+) -> Response:
+    if provider not in SUPPORTED_PROVIDERS:
+        raise HTTPException(400, f"provider must be one of {SUPPORTED_PROVIDERS}")
+    result = await session.execute(
+        delete(UserApiKey).where(
+            UserApiKey.user_id == user.id, UserApiKey.provider == provider
+        )
+    )
+    if result.rowcount == 0:
+        raise HTTPException(404, f"no key found for provider: {provider}")
+    # Audit row.
+    from app.core.api import audit
+
+    await audit.log(
+        session,
+        "user.key.revoked",
+        actor_id=user.id,
+        module="core.settings",
+        resource_type="user_api_key",
+        resource_id=None,
+        payload={"provider": provider},
+    )
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

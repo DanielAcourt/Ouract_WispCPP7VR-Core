@@ -1,0 +1,77 @@
+// Matter shell taxonomy (V1 — compressed matter rail).
+//
+// SIDEBAR_NAV is the core nav that renders in the matter rail.
+// Secondary surfaces (activity/audit, chronology, approvals) remain
+// routable for deep links but do not compete with the main chat-led
+// loop. The historical built-in skill surfaces (pre-motion, letters,
+// contract review, tabular review, case law) were removed in the
+// skills-as-plugins cut; skills now run from Chat via the generic
+// runner.
+//
+// Bare /matters/{slug} lands on Overview — opening a matter shows the
+// matter at a glance first; documents and chat are one click away.
+//
+// User-facing tab labels (Chat / Documents / Skills / Activity)
+// intentionally do not match the underlying URL keys
+// (assistant / documents / workflows / audit). The keys are kept
+// stable in this slice for route compatibility; they are rewired in
+// a later slice that restructures the matter shell.
+
+export type TabKey =
+  | "overview"
+  | "assistant"
+  | "documents"
+  | "chronology"
+  | "workflows"
+  | "audit"
+  | "approvals"
+  // Operator surface: the matter's capability grants. Reached from the
+  // matter "Manage" menu, not the primary rail — kept out of the
+  // run-skills (workflows) tab so that tab stays "run skills here".
+  | "permissions";
+
+// The matter loop, surfaced in the primary rail lane. Chat is the
+// product; files, chronology and skills are one click away. The
+// governance surfaces (Outputs / Approvals / Activity) are promoted
+// into the rail too, but as a separate "Governance" group wired in the
+// rail adapters (ui/Sidebar.tsx, ui/Drawer.tsx) because some of them
+// are full-page routes rather than in-shell tabs. URL keys stay stable
+// (assistant/documents/workflows) for route compatibility.
+export const SIDEBAR_NAV: ReadonlyArray<{ key: TabKey; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "assistant", label: "Chat" },
+  { key: "documents", label: "Documents" },
+  { key: "chronology", label: "Chronology" },
+  { key: "workflows", label: "Skills" },
+];
+
+export const MATTER_TAB_LABELS: Readonly<Record<TabKey, string>> = {
+  overview: "Overview",
+  assistant: "Chat",
+  documents: "Documents",
+  chronology: "Chronology",
+  workflows: "Skills",
+  audit: "Activity",
+  approvals: "Approvals",
+  permissions: "Permissions",
+};
+
+const VALID_KEYS: ReadonlySet<string> = new Set<TabKey>([
+  "overview",
+  "assistant",
+  "documents",
+  "chronology",
+  "workflows",
+  "audit",
+  "approvals",
+  "permissions",
+]);
+
+export function isTabKey(v: string): v is TabKey {
+  return VALID_KEYS.has(v);
+}
+
+// Which sidebar item should highlight as active given the current tab.
+export function sidebarActiveFor(tab: TabKey): TabKey {
+  return tab;
+}

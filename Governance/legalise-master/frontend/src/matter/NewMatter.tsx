@@ -1,0 +1,280 @@
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { createMatter, listModels, providerLabel, type ModelOption } from "../lib/api";
+import { useAuth } from "../auth/AuthProvider";
+import { navigate } from "../lib/route";
+import type { ReactNode } from "react";
+import { ErrorCallout, PageHeader } from "../ui/primitives";
+
+// Real UK matter types. Values are stable identifiers — other code matches
+// "employment_tribunal" and "civil" exactly, so those strings must not
+// change. Labels are what the user reads.
+const MATTER_TYPES: { value: string; label: string }[] = [
+  { value: "employment_tribunal", label: "Employment Tribunal" },
+  { value: "civil", label: "Civil Litigation" },
+  { value: "commercial_contract", label: "Commercial Contract" },
+  { value: "family", label: "Family" },
+  { value: "property", label: "Property / Conveyancing" },
+  { value: "personal_injury", label: "Personal Injury" },
+  { value: "debt_recovery", label: "Debt Recovery" },
+  { value: "other", label: "Other" },
+];
+
+// Cause pre-fill per matter type. Only Employment Tribunal has a canonical
+// one; everything else starts blank. The field re-derives when the type
+// changes (unless the user has typed their own cause).
+const CAUSE_PREFILL: Record<string, string> = {
+  employment_tribunal: "s.94 ERA 1996, unfair dismissal",
+};
+
+// Aligned with the catalog's recommended default. Only used until
+// /api/models responds (or if it never does); once the list arrives the
+// recommended/usable model wins.
+const FALLBACK_MODEL_ID = "claude-sonnet-5";
+
+// Ledger-label form field (DESIGN.md P27): labels carry the 0.18em
+// clerk's-ledger tier rather than the generic eyebrow-sm.
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+        {label}
+        {hint && (
+          <span className="ml-2 normal-case tracking-normal text-xs text-muted">
+            ({hint})
+          </span>
+        )}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+export function NewMatter() {
+  const { user } = useAuth();
+  // A matter's model is fixed at creation. Pre-fill from the account's
+  // default so the profile setting actually flows to new matters (it used
+  // to be ignored — every matter silently got the backend default), and so
+  // an evaluator can see and change which model this matter will run on.
+  const [form, setForm] = useState(() => ({
+    title: "",
+    matter_type: "employment_tribunal",
+    cause: CAUSE_PREFILL.employment_tribunal,
+    case_theory: "",
+    pivot_fact: "",
+    default_model_id: user?.default_model_id ?? FALLBACK_MODEL_ID,
+  }));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [models, setModels] = useState<ModelOption[] | null>(null);
+
+  // Load the selectable model list. Once it arrives, make sure the
+  // pre-filled selection points at a model that actually exists — if the
+  // account default isn't on the list, fall back to the first model that
+  // doesn't need a key the user lacks, else the first model.
+  useEffect(() => {
+    let live = true;
+    listModels()
+      .then((rows) => {
+        if (!live) return;
+        setModels(rows);
+        setForm((f) => {
+          const has = rows.some((m) => m.id === f.default_model_id);
+          if (has) return f;
+          // Prefer the catalog's recommended model (if the user can run
+          // it), then any usable model, then the first row.
+          const usable =
+            rows.find(
+              (m) => m.recommended && (!m.requires_key || m.key_configured),
+            ) ??
+            rows.find((m) => !m.requires_key || m.key_configured) ??
+            rows[0];
+          return usable ? { ...f, default_model_id: usable.id } : f;
+        });
+      })
+      .catch(() => {
+        // Model list unavailable — leave the field as-is; the backend
+        // still validates on create.
+        if (live) setModels([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const selectedModel = models?.find((m) => m.id === form.default_model_id) ?? null;
+  const selectedNeedsKey = !!selectedModel?.requires_key && !selectedModel.key_configured;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      // Omit a blank model so the backend applies its own default rather
+      // than receiving an empty id.
+      const matter = await createMatter({
+        ...form,
+        default_model_id: form.default_model_id.trim() || undefined,
+      });
+      navigate(`/matters/${matter.slug}`);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const inputCls =
+    "bg-paper border border-rule px-4 py-3 text-[16px] sm:text-[17px] focus:border-ink focus:outline-hidden transition-colors min-h-[44px] font-sans text-ink w-full";
+
+  return (
+    <div className="page-shell">
+      <p className="mb-6">
+        <a
+          href="/matters"
+          className="text-sm text-muted underline underline-offset-4 decoration-rule hover:decoration-seal hover:text-seal"
+        >
+          ← Matters
+        </a>
+      </p>
+      <PageHeader title="New matter." />
+
+      <form onSubmit={submit} className="space-y-6">
+        <Field label="Title" hint="becomes the slug">
+          <input
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="Khan v Acme Trading Ltd"
+            className={inputCls}
+          />
+        </Field>
+
+        <Field label="Matter type">
+          <select
+            value={form.matter_type}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              setForm((f) => {
+                // Re-derive the Cause pre-fill on type change — but never
+                // clobber a cause the user typed themselves.
+                const untouched =
+                  f.cause.trim() === "" ||
+                  f.cause === (CAUSE_PREFILL[f.matter_type] ?? "");
+                return {
+                  ...f,
+                  matter_type: nextType,
+                  cause: untouched ? CAUSE_PREFILL[nextType] ?? "" : f.cause,
+                };
+              });
+            }}
+            className={inputCls}
+          >
+            {MATTER_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Cause">
+          <input
+            value={form.cause}
+            onChange={(e) => setForm({ ...form, cause: e.target.value })}
+            className={inputCls}
+          />
+        </Field>
+
+        <Field
+          label="Default model"
+          hint="the model that runs this matter's skills; fixed at creation"
+        >
+          {models === null ? (
+            <div className={inputCls + " flex items-center text-muted"}>Loading models…</div>
+          ) : models.length === 0 ? (
+            <input
+              value={form.default_model_id}
+              onChange={(e) => setForm({ ...form, default_model_id: e.target.value })}
+              placeholder={FALLBACK_MODEL_ID}
+              className={inputCls + " tech-token"}
+            />
+          ) : (
+            <select
+              value={form.default_model_id}
+              onChange={(e) => setForm({ ...form, default_model_id: e.target.value })}
+              className={inputCls}
+            >
+              {models.map((m) => {
+                const needsKey = m.requires_key && !m.key_configured;
+                const provider = m.provider ? providerLabel(m.provider) : "";
+                return (
+                  <option key={m.id} value={m.id} disabled={needsKey}>
+                    {m.label}
+                    {needsKey ? ` (needs ${provider || "provider"} key — add in Settings)` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          )}
+          {models !== null && models.some((m) => m.provider === "openrouter") && (
+            <p className="text-xs text-muted">
+              Other models run through OpenRouter. Citation behaviour is
+              verified on the reference model only.
+            </p>
+          )}
+          {selectedNeedsKey && (
+            <p className="text-xs text-muted">
+              This model needs a provider key you haven't added.{" "}
+              <a
+                href="/settings/keys"
+                className="text-ink underline underline-offset-4 decoration-rule hover:decoration-seal hover:text-seal"
+              >
+                Add one in Settings
+              </a>
+              , or pick a keyless model.
+            </p>
+          )}
+        </Field>
+
+        <Field label="Case theory" hint="optional">
+          <textarea
+            rows={4}
+            value={form.case_theory}
+            onChange={(e) => setForm({ ...form, case_theory: e.target.value })}
+            className={inputCls + " resize-y"}
+          />
+        </Field>
+
+        <Field label="Key fact" hint="optional">
+          <input
+            value={form.pivot_fact}
+            onChange={(e) => setForm({ ...form, pivot_fact: e.target.value })}
+            placeholder="The single fact the matter turns on"
+            className={inputCls}
+          />
+        </Field>
+
+        {error && <ErrorCallout message={error} />}
+
+        <div className="flex items-center gap-4 pt-2">
+          <button
+            type="submit"
+            disabled={submitting || !form.title}
+            className="bg-ink text-paper px-4 py-2 hover:bg-seal transition-colors text-sm font-medium min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {submitting ? "Creating…" : "Create matter"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

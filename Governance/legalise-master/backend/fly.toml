@@ -1,0 +1,105 @@
+# Fly.io app config for the legalise backend.
+#
+# Default deploy: `fly deploy` from this directory after `fly launch
+# --no-deploy --copy-config` has registered the app and `fly secrets
+# set` has populated POSTGRES_DSN / SESSION_SECRET /
+# LEGALISE_KEY_ENCRYPTION_SECRET / S3 credentials. Production posture is
+# BYO user keys: do NOT set ANTHROPIC_API_KEY / OPENAI_API_KEY here.
+# See infra/deploy/cloudflare.md §[server-key posture].
+#
+# Companion: legalise-gotenberg (internal-only Gotenberg sidecar in the
+# same region — see infra/deploy/cloudflare.md §5b).
+
+app = "legalise-backend"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Backend listens on 8000 inside the machine; the public proxy
+  # terminates HTTPS on 443.
+  PORT = "8000"
+  # "demo" triggers idempotent Khan-v-Acme seeding on boot without enabling
+  # uvicorn --reload (which "development" / "dev" / "local" do). Switch to
+  # "production" if running an empty-workspace deploy.
+  ENVIRONMENT = "demo"
+  # MATTERS_ROOT is intentionally ephemeral in v0.1 — the DB is the
+  # source of truth and the filesystem-materialised matter folders are
+  # derivable. A Fly Volume would keep them across deploys; revisit if
+  # operators care about the on-disk matter/ tree surviving redeploys.
+  MATTERS_ROOT = "/data/matters"
+  # PLUGINS_ROOT is set by the Dockerfile clone — see backend/Dockerfile.
+  # PLUGINS_REPO and PLUGINS_REPO_REF are intentionally NOT set here;
+  # they live in backend/Dockerfile as ARG + ENV (single source of
+  # truth) to prevent the drift class that shipped 15 broken manifests.
+  PLUGINS_ROOT = "/plugins"
+  # Auth email links. Path-form (SPA routes are path-based; the hash
+  # form only survives a legacy rewrite shim). NOTE: a same-named Fly
+  # *secret* overrides [env]; the current hosted secret still points at
+  # the `#/auth/verify` hash form, so drop it for these to take effect:
+  #   fly secrets unset EMAIL_VERIFY_URL_BASE PASSWORD_RESET_URL_BASE
+  EMAIL_VERIFY_URL_BASE = "https://legalise.dev/auth/verify"
+  PASSWORD_RESET_URL_BASE = "https://legalise.dev/auth/reset"
+
+[deploy]
+  # Unit 3 — migration discipline. Alembic runs ONCE per deploy on a
+  # single machine before any new app instances start serving traffic.
+  # This prevents the boot-time migration race that occurs when multiple
+  # Fly machines start concurrently. The app itself does NOT run
+  # migrations at boot (see backend/entrypoint.sh and docs/ARCHITECTURE.md).
+  release_command = "alembic upgrade head"
+
+# Process groups. `app` serves HTTP. `worker` runs the arq queue that
+# dequeues background jobs (export-to-docx, PDF generation, etc.).
+# Without a worker process, those jobs sit forever in Redis. The command
+# string here is exec'd via entrypoint.sh's one-shot branch ($# > 0).
+#
+# COST NOTE: `worker` has no http_service, so auto_stop/min_machines do
+# not apply to it — a worker machine runs until something stops it, and
+# `fly deploy` recreates one whether or not the group was scaled to zero.
+# Machine counts are not expressible here; they live in `fly scale`. So
+# while this app is parked, `fly scale count app=0 worker=0` has to be
+# re-run after any deploy, or the deploy has to not happen at all.
+[processes]
+  app = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  worker = "arq app.worker.WorkerSettings"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Scale to zero when idle. No hosted deployment is served from this app
+  # today — legalise.dev is a static Cloudflare Pages site and nothing
+  # proxies to the backend — so a warm machine is pure cost. fly-proxy
+  # cold-starts one on the first request if anything ever does call it.
+  #
+  # If a hosted demo is ever run from here again, set min_machines_running
+  # back to 1 before demoing: a cold start has to boot uvicorn and run the
+  # ENVIRONMENT="demo" seed, which takes long enough that a browser fetch
+  # NetworkErrors before Fly finishes waking it. That is a demo-day
+  # decision, not a default.
+  #
+  # Governs the `app` (HTTP) process only. The `worker` has no
+  # http_service, so nothing auto-stops it — see [processes] below.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[http_service.checks]]
+  interval = "15s"
+  timeout = "2s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
+
+[[vm]]
+  processes = ["app"]
+  size = "shared-cpu-2x"
+  memory = "1gb"
+
+[[vm]]
+  processes = ["worker"]
+  size = "shared-cpu-1x"
+  memory = "1gb"

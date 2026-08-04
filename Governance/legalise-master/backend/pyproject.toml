@@ -1,0 +1,101 @@
+[project]
+name = "legalise-backend"
+version = "0.3.0"
+description = "Legalise — UK legal AI workspace backend"
+# No `readme` field: the canonical README lives at the repo root, which is
+# outside the backend Docker build context (`../backend`). Adding `readme`
+# would force a context bump or a duplicate file, and we don't publish the
+# backend to PyPI so the metadata isn't load-bearing.
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+  { name = "b1rdmania" }
+]
+dependencies = [
+  "fastapi[standard]>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "sqlalchemy>=2.0.36",
+  "alembic>=1.14.0",
+  "asyncpg>=0.30.0",
+  "psycopg[binary]>=3.2.3",
+  "pgvector>=0.3.0",
+  "pydantic>=2.10.0",
+  "pydantic-settings>=2.7.0",
+  "python-multipart>=0.0.19",
+  "anthropic>=0.40.0,<1.0.0",
+  "openai>=1.57.0,<2.0.0",
+  "httpx>=0.28.0",
+  "redis>=5.2.0",
+  "arq>=0.26.0",
+  "boto3>=1.35.0",
+  "python-docx>=1.1.2",
+  "pypdf>=5.1.0",
+  "pdfplumber>=0.11",
+  "structlog>=24.4.0",
+  "fastapi-users[sqlalchemy,oauth]>=14.0.1,<15.0.0",
+  "cryptography>=44.0.0,<49.0.0",
+  "resend>=2.5.0",
+  "pyyaml>=6.0",
+  # Pin <1.2 - 1.2 broke `frontmatter.dump(post, BytesIO)` by tightening
+  # the buffer type contract (now requires bytes-only). `submissions.py`
+  # and its tests still write str. Upgrade is a v0.2 housekeeping item.
+  "python-frontmatter>=1.1,<1.2",
+  "jsonschema>=4.21",
+  # Optional error tracking. Only initialised when SENTRY_DSN is set
+  # (see app/core/observability.py:init_error_tracking). send_default_pii
+  # is forced False — matter content / prompts / document bodies are never
+  # sent to Sentry, only exception types + stack traces + minimal metadata.
+  "sentry-sdk[fastapi]>=2.0",
+]
+
+[project.optional-dependencies]
+# Anonymisation engine (Presidio + spaCy). Heavyweight — the wheel stack
+# is ~80MB installed before the spaCy model (`en_core_web_sm`, ~12MB,
+# downloaded separately) — so it is an extra, not a base dependency. The
+# base install boots without it: the anonymisation endpoints return 503
+# with install guidance (guard in app/modules/anonymisation/
+# presidio_engine.py). The Docker image, dev compose, and CI all install
+# this extra; only a bespoke slim deploy should omit it.
+anonymisation = [
+  "presidio-analyzer>=2.2.358",
+  "presidio-anonymizer>=2.2.358",
+  "spacy>=3.7",
+]
+# Retrieval embedding backend (fastembed — BAAI/bge-small-en-v1.5, 384-dim,
+# ONNX/CPU, no torch). Kept an extra so the base install stays light; the
+# base boots without it because the hash embedding backend
+# (LEGALISE_EMBEDDING_BACKEND=hash) needs no dependencies. Install this extra
+# for the local, keyless default backend that indexes privileged content
+# in-tenant. See app/core/embeddings.py.
+retrieval = [
+  "fastembed>=0.4,<1.0",
+]
+dev = [
+  "ruff>=0.8.0",
+  "mypy>=1.13.0",
+  "pytest>=8.3.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-timeout>=2.3.1",
+  "pytest-cov>=6.0.0",
+  "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]

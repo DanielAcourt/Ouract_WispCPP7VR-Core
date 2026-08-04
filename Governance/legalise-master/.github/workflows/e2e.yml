@@ -1,0 +1,247 @@
+name: e2e
+
+on:
+  push:
+    branches: [runtime-rewrite, master]
+    # Skip the expensive Playwright run for docs-only pushes.
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [runtime-rewrite, master]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+# Playwright e2e job. Spins the existing docker-compose stack, runs
+# `npm run e2e` against the built frontend served by the e2e static
+# preview server. Trace + video artifacts uploaded on failure.
+#
+# Single job; single worker (tests share a DB).
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Job-level env so `compose up`, the alembic exec, the backend
+    # service (interpolated POSTGRES_DSN at compose-up time), and the
+    # Playwright run all see the same DSN. Without this the compose
+    # file's interpolation falls back to its default and the backend
+    # would run against `legalise` while the rest target `legalise_test`
+    # — the v2 P1 mismatch.
+    #
+    # Driver = +asyncpg to match the existing pytest pattern
+    # (backend/tests/conftest.py:47) so alembic, backend boot, and the
+    # in-process async engine all consume the same DSN shape.
+    env:
+      POSTGRES_DSN: "postgresql+asyncpg://legalise:legalise@db:5432/legalise_test"
+      # The preview server (`npm run preview`) does NOT honour
+      # vite.config.ts's proxy block — only `vite dev` does. In CI
+      # the frontend serves on :4173 but the proxy that forwards
+      # /auth + /api to backend:8000 isn't there. The browser must
+      # hit the backend directly. CORS_ORIGINS adds the preview
+      # origin so credentialed fetch + cookie write works cross-
+      # port. Compose interpolates this into the backend service
+      # env via the same ${VAR:-default} mechanism that plumbs
+      # POSTGRES_DSN.
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:4173","https://legalise.dev"]'
+      # Phase 17.5 — the e2e posture suite asserts firm-mode (enforced)
+      # behaviour: B_mixed shows the qualified-solicitor banner, etc.
+      # Production defaults this OFF (dormant); the e2e backend runs it
+      # ON so the firm-mode coverage stays green. Compose interpolates
+      # it via the same ${VAR:-default} mechanism as POSTGRES_DSN.
+      LEGALISE_FIRM_ROLE_GATES_ENABLED: "true"
+      # Local quickstart auto-promotes the first dev user so evaluators
+      # do not need the bootstrap CLI. The e2e suite deliberately
+      # exercises the documented bootstrap_admin operator path, so keep
+      # auto-admin disabled here.
+      LEGALISE_DEV_AUTO_ADMIN_FIRST_USER: "false"
+      # The e2e suite registers many users from one runner IP per hour;
+      # the auth abuse throttle (PR #219) would 429 it. 0
+      # disables per-route, exactly as production operators can.
+      LEGALISE_RATE_LIMIT_LOGIN_PER_HOUR: "0"
+      LEGALISE_RATE_LIMIT_REGISTER_PER_HOUR: "0"
+      LEGALISE_RATE_LIMIT_REQUEST_VERIFY_TOKEN_PER_HOUR: "0"
+      LEGALISE_RATE_LIMIT_FORGOT_PASSWORD_PER_HOUR: "0"
+      # POST /api/settings/keys probes the candidate key against the real
+      # provider before persisting. The e2e uses a throwaway key, so point
+      # the Anthropic SDK at an unreachable host: the probe hits a
+      # connection error (not a 401), which the endpoint treats as a
+      # transient failure and persists the key unverified -> 201, exactly
+      # what settings-keys.spec.ts exercises (add + audit row).
+      ANTHROPIC_BASE_URL: "http://127.0.0.1:1"
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Bring up db, create legalise_test, then bring up backend
+        working-directory: ${{ github.workspace }}
+        # POSTGRES_DSN is the job-level env above; docker-compose
+        # interpolates ${POSTGRES_DSN:-…} in the backend + worker
+        # service definitions, so when we `up backend` below, the
+        # backend container's POSTGRES_DSN is the CI value.
+        run: |
+          docker compose -f infra/docker-compose.yml up -d --build db
+          # Wait for postgres to accept connections.
+          for i in {1..30}; do
+            if docker compose -f infra/docker-compose.yml exec -T db pg_isready -U legalise >/dev/null 2>&1; then
+              echo "db up"
+              break
+            fi
+            sleep 2
+          done
+          # Explicitly create legalise_test (the docker-compose db
+          # service only seeds `legalise`). Idempotent.
+          docker compose -f infra/docker-compose.yml exec -T db \
+            psql -U legalise -d legalise -v ON_ERROR_STOP=1 -c \
+            "SELECT 1 FROM pg_database WHERE datname='legalise_test'" | grep -q 1 || \
+          docker compose -f infra/docker-compose.yml exec -T db \
+            psql -U legalise -d legalise -v ON_ERROR_STOP=1 -c \
+            "CREATE DATABASE legalise_test OWNER legalise"
+          # Now start backend. Compose interpolates POSTGRES_DSN from
+          # the job env, so backend's container env is the CI value.
+          docker compose -f infra/docker-compose.yml up -d --build backend
+          # Wait for backend health.
+          for i in {1..60}; do
+            if curl -sf http://localhost:8000/health >/dev/null; then
+              echo "backend up"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Verify backend CORS_ORIGINS includes the preview origin
+        working-directory: ${{ github.workspace }}
+        # Same belt-and-braces as the DSN verify. If the compose
+        # CORS_ORIGINS interpolation regresses, browser-side fetches
+        # from :4173 silently fail in CORS preflight and every
+        # signInViaUi caller times out. Cheap to assert here.
+        run: |
+          actual=$(docker compose -f infra/docker-compose.yml exec -T backend \
+            sh -c 'echo "$CORS_ORIGINS"')
+          echo "backend CORS_ORIGINS=$actual"
+          if ! echo "$actual" | grep -q "localhost:4173"; then
+            echo "::error::backend CORS_ORIGINS does not include localhost:4173"
+            exit 1
+          fi
+
+      - name: Verify backend is using the test DB
+        working-directory: ${{ github.workspace }}
+        # Sanity-check the load-bearing wire: read the backend's
+        # actual env inside the container and assert it matches the
+        # job-level POSTGRES_DSN. Without this, a future compose
+        # change that drops the ${VAR:-…} interpolation would
+        # silently regress to the v2 P1 mismatch.
+        run: |
+          actual=$(docker compose -f infra/docker-compose.yml exec -T backend \
+            sh -c 'echo "$POSTGRES_DSN"')
+          echo "backend POSTGRES_DSN=$actual"
+          if [ "$actual" != "$POSTGRES_DSN" ]; then
+            echo "::error::backend container POSTGRES_DSN ($actual) does not match job env ($POSTGRES_DSN)"
+            exit 1
+          fi
+
+      - name: Provision test DB schema (alembic — fail-fast)
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker compose -f infra/docker-compose.yml exec -T \
+            -e POSTGRES_DSN="$POSTGRES_DSN" \
+            backend python -m alembic upgrade head
+
+      - name: Start worker
+        working-directory: ${{ github.workspace }}
+        # Golden-loop export is part of the pre-evaluation contract.
+        # Export completion is worker-owned, so Playwright must run
+        # with the same durable worker process group the app uses in
+        # development/production.
+        run: docker compose -f infra/docker-compose.yml up -d --build worker
+
+      - name: Build frontend
+        # Vite env vars are baked in at build time.
+        #
+        # VITE_HOSTED_ACCESS_MODE=open — CI must render the real auth
+        # forms. lib/access.ts also gates waitlist mode to the hosted
+        # domain, but baking "open" keeps the test contract explicit.
+        #
+        # VITE_API_BASE_URL=http://localhost:8000/api — the preview
+        # server (npm run preview) does NOT honour vite.config.ts's
+        # proxy block. Without this every browser-side fetch to
+        # /auth/* or /api/* would 404 against the preview server.
+        # Setting the absolute backend URL bakes the right origin
+        # into the build; the matching CORS_ORIGINS at the job
+        # level allows credentialed requests cross-port.
+        env:
+          VITE_HOSTED_ACCESS_MODE: "open"
+          VITE_API_BASE_URL: "http://localhost:8000/api"
+        run: npm run build
+
+      - name: Start preview server
+        # Use an explicit static SPA server instead of `vite preview`.
+        # CI caught `vite preview` returning a 500 + empty HTML body for
+        # deep links such as /auth/signin, which made the sign-in form
+        # invisible before React could mount. The e2e server serves the
+        # built dist assets and falls back to index.html for every route.
+        run: nohup npm run preview:e2e -- --host 0.0.0.0 --port 4173 > preview.log 2>&1 &
+
+      - name: Wait for preview
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:4173/auth/signin >/dev/null; then
+              echo "preview up"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run Playwright
+        env:
+          CI: "true"
+          E2E_FRONTEND_URL: "http://localhost:4173"
+          E2E_BACKEND_URL: "http://localhost:8000"
+          E2E_COMPOSE_FILE: "infra/docker-compose.yml"
+          E2E_COMPOSE_CWD: "${{ github.workspace }}"
+          # E2E_DB_NAME defaults to legalise_test in db.ts; pinned
+          # here for explicitness so a future change to the default
+          # doesn't silently drift the reset target away from the
+          # backend's DB.
+          E2E_DB_NAME: "legalise_test"
+        run: npm run e2e
+
+      - name: Upload trace + video on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          retention-days: 14
+
+      - name: Tear down docker-compose
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -f infra/docker-compose.yml down -v

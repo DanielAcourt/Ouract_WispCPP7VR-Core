@@ -1,0 +1,257 @@
+# Legalise
+
+> ⚠️ **Evaluation release — a reference implementation, not production
+> software. Not for live client matters.** See
+> [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) for what is and isn't ready.
+
+Open-source governance infrastructure for AI-assisted legal work. Legalise is
+a self-hosted workspace and reference implementation: matter policy gates model
+and skill calls, AI output remains a draft until named human sign-off, and
+actions and refusals enter a database-enforced hash chain. Exports carry the
+record and an offline verifier.
+
+---
+
+## How it works
+
+The loop is **draft, cite, sign-off, audit**. AI prepares an output inside a
+matter and cites the documents used. A named person reviews it and records a
+decision. The decision pins the reviewed output by hash.
+
+```mermaid
+flowchart LR
+    A[Documents<br/>in the matter] --> B[AI drafts<br/>+ cites sources]
+    B --> C[Named person<br/>reviews]
+    C --> D[Sign-off<br/>pins output by hash]
+    A -.-> R[(Append-only<br/>hash-chained record)]
+    B -.-> R
+    C -.-> R
+    D -.-> R
+```
+
+Matter actions handled by Legalise write to an append-only, hash-chained audit
+log. The log is tamper-evident, not tamper-proof. See
+[`docs/TRUST.md`](./docs/TRUST.md) for the claim boundary and open gaps.
+
+Every exported matter pack includes `audit_chain.json` and a standalone,
+standard-library verifier. A recipient needs only Python 3—no Legalise install,
+network, or database:
+
+```bash
+unzip matter-export.zip -d matter-export
+cd matter-export
+python3 verify_chain.py
+```
+
+The verifier exits non-zero if an entry was edited, removed, or reordered. Its
+[source](./backend/app/core/export_chain_verifier.py) and
+[export round-trip tests](./backend/tests/test_export_audit_chain.py) are in the
+repository.
+
+---
+
+## What's in the repo
+
+A self-hosted workspace for exercising the governance layer end to end:
+
+- **Documents:** upload, extraction, version history, disclosure flags, and
+  owner-scoped original-file access.
+- **Chat and skills:** work against selected matter documents through a shared
+  model gateway.
+- **Review and sign-off:** record `signed`, `signed_with_observations`, or
+  `rejected`; pin the reviewed output by hash.
+- **Activity and export:** inspect the matter record and export its documents,
+  outputs, sign-offs, source anchors, and audit data.
+
+The runtime includes capability checks, matter privilege settings, an
+advice-boundary gate, and one model gateway for Anthropic, OpenAI, OpenRouter,
+and Ollama. Users bring their own model keys. Legalise does not provide model
+access.
+
+Skills arrive by import. The
+[`awesome-legal-skills`](https://github.com/lawve-ai/awesome-legal-skills)
+(Lawve) catalogue is browsable in-app, and any public GitHub repo with a
+`SKILL.md` can be dropped in by URL (e.g.
+[`pre-motion`](https://github.com/b1rdmania/pre-motion)). Each import becomes a
+draft pinned to a commit SHA. It must pass the admission flow and receive
+matter-level permissions before it can run.
+
+---
+
+## What it records
+
+- Documents and source anchors used by a Legalise workflow.
+- Model, token, latency, posture, and prompt/response hashes for gateway calls.
+- Review decisions, tracked edits, sign-offs, and refusals.
+- An append-only audit row and hash-chain entry for recorded matter actions.
+
+Each entry folds the previous entry's hash into its own, so changing one entry
+breaks the chain from that point on. That is what "tamper-evident" means here:
+not that the record can't be altered, but that alteration shows.
+
+```mermaid
+flowchart LR
+    E1["Entry 1<br/>source.attached<br/>hash: a3f2…9c"] --> E2["Entry 2<br/>model.call<br/>hash: d81e…44"]
+    E2 --> E3["Entry 3<br/>document.edited<br/>hash: 6b0a…e1"]
+    E3 --> E4["Entry 4<br/>matter.signoff<br/>hash: f97c…08"]
+    E1 -.->|prev hash| E2
+    E2 -.->|prev hash| E3
+    E3 -.->|prev hash| E4
+```
+
+A database superuser can rewrite unanchored history by disabling the controls.
+External anchoring is not built. See
+[`docs/TRUST.md`](./docs/TRUST.md#8-audit-trail).
+
+---
+
+## Run locally
+
+Stack: Postgres, MinIO, Redis, Gotenberg, FastAPI, React.
+
+### Quickstart
+
+1. **Clone.**
+
+   ```bash
+   git clone https://github.com/b1rdmania/legalise
+   cd legalise
+   ```
+
+2. **Run quickstart.** It copies `.env` if needed and starts the compose stack.
+
+   ```bash
+   ./scripts/quickstart.sh
+   ```
+
+   To skip local image builds when published images are available:
+
+   ```bash
+   LEGALISE_USE_PREBUILT_IMAGES=true ./scripts/quickstart.sh
+   ```
+
+3. **Create the first account.** Open <http://localhost:3000> and sign up. In
+   local dev the first user is verified, seeded with Khan v Acme, and promoted to
+   workspace admin automatically. No bootstrap CLI step is needed.
+
+4. **Run the loop.** The five steps the workspace exists for, in order:
+
+   1. **Create a matter** — or open the seeded Khan v Acme.
+   2. **Add documents** — drag/drop into the matter; bodies are extracted.
+   3. **Ask the assistant** — Chat over the documents you select.
+   4. **Run a skill** — **Skills → Add skill** to inspect a Lawve skill, convert
+      it to a governed draft, run the trust ceremony, enable it on the matter,
+      then run it from chat.
+   5. **Sign the output, then export the working pack** — review the output and
+      record a sign-off, then export the matter ZIP (documents, audit trail,
+      outputs, sign-off records, source anchors, integrity flag).
+
+5. **Check the stack with `legalise doctor`.** Inspection only; verifies the
+   database is reachable, migrations are current, MinIO is responding, plugins
+   are mounted, and the v2 manifests validate.
+
+   ```bash
+   docker compose -f infra/docker-compose.yml exec backend python -m app.tools.doctor
+   ```
+
+To check the fork end-to-end without driving the UI by hand, run
+`./scripts/smoke.sh`. It runs the same Playwright first-run spec as CI
+(truncates the local database; see the script's prompt).
+
+### Manual local path
+
+If you don't want quickstart to clone the skills catalogue or start compose:
+
+1. Copy env.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Bring the stack up.
+
+   ```bash
+   docker compose -f infra/docker-compose.yml up -d
+   ```
+
+3. Register the first user at <http://localhost:3000>. With
+   `LEGALISE_DEV_AUTO_ADMIN_FIRST_USER=true` (the local default), that user
+   becomes workspace admin. With the flag off, run the bootstrap CLI after signup:
+
+   ```bash
+   docker compose -f infra/docker-compose.yml exec backend \
+       python -m app.tools.bootstrap_admin --email you@example.com
+   ```
+
+### Self-hosting notes
+
+- Deploying your fork to Fly: change `app = "legalise-backend"` in
+  `backend/fly.toml` before `fly deploy`.
+- GHCR images are published by `.github/workflows/container-images.yml` as
+  multi-arch (`linux/amd64` + `linux/arm64`, incl. Apple Silicon). Local
+  quickstart builds from source by default; set
+  `LEGALISE_USE_PREBUILT_IMAGES=true` to pull the published images instead.
+- For setup problems, run `legalise doctor` and open an issue if a fresh fork
+  won't come up.
+- Backup, restore, and operations runbooks are maintained outside this public
+  repo. Open an issue if you're self-hosting and need them.
+
+## Status
+
+Evaluation release. Not for live client matters.
+
+The database-enforced audit chain, sign-off gate, export, and offline verifier
+are implemented and tested. The editor, model layer, and matter workspace
+remain evaluation quality. The hosted backend is off; self-hosting is the
+supported path.
+
+- **What works** is in the [CHANGELOG](./CHANGELOG.md), and you can run all of
+  it: the full matter loop, audited retrieval, sign-off, export, and a
+  deterministic eval harness ([agent-kit](https://github.com/b1rdmania/agent-kit))
+  that gates grounding, refusal, and audit-chain integrity in CI.
+- **What's deliberately out of scope, or not production-grade**, is in
+  [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) — gaps first.
+- **What's planned** is in [`docs/ROADMAP.md`](./docs/ROADMAP.md).
+
+## Docs
+
+Start with [`docs/`](./docs/):
+
+- [`docs/TRUST.md`](./docs/TRUST.md): privilege architecture, sub-processors, open gaps (read first)
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md): how it works today, cited to code
+- [`docs/EVALUATING.md`](./docs/EVALUATING.md): the walkthrough and the evaluation gate
+- [`docs/THREAT_MODEL.md`](./docs/THREAT_MODEL.md): adversary model and what we don't defend
+- [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md): what is not production-grade and what a fork must build (read before building on top)
+- [`docs/adr/`](./docs/adr/): architecture decision records — why the system is shaped this way and what not to refactor
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md): shipped, deferred, parked
+- [`docs/ATTRIBUTIONS.md`](./docs/ATTRIBUTIONS.md): credits and licence notes
+
+Operator material is maintained outside this public repo. Open an issue if
+you're self-hosting and need something that isn't here.
+
+## Contributing
+
+You don't need to touch the core. The easiest ways in: practitioner feedback
+(no code, corrections with authority attached), a one-row eval case, or a
+governed legal skill built in your own repo and listed in the
+[community catalogue](./docs/CATALOGUE.md) with a one-row PR. The ladder, the
+ground rules, and the dev setup are in [CONTRIBUTING.md](./CONTRIBUTING.md);
+skill authoring is in [`docs/BUILDING_SKILLS.md`](./docs/BUILDING_SKILLS.md).
+
+## Caveat
+
+Not legal advice, not a law firm, not for live client matters. Real regulated
+use needs the firm's own supervision, policies, model-key posture, and
+professional controls.
+
+## Licence
+
+MIT. See [LICENSE](./LICENSE).
+
+## Maintainer
+
+[@b1rdmania](https://github.com/b1rdmania). Open an issue for questions,
+failures, or challenges to the stated security boundary.
+
+Forks are independent deployments, not operated, reviewed, or endorsed by the
+maintainer unless stated.

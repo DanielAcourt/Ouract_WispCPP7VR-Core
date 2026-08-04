@@ -1,0 +1,460 @@
+"""Modules API — catalogue (v2) and installed-modules listing.
+
+Merged from test_phase2_api.py + test_phase14_5_b_installed_modules.py.
+
+Covers:
+- GET /api/modules/v2 — list discovered modules
+- GET /api/modules/v2/capabilities — flat capability catalogue
+- GET /api/modules/v2/{module_id} — single module detail
+- GET /api/modules/installed — one row per module_id (most recent by
+  installed_at), closed DTO surface, no audit emission on reads.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, UTC
+
+import pytest
+from sqlalchemy import select
+
+from app.models import InstalledModule
+
+
+async def _register_and_login(client) -> str:
+    email = f"modapi-{uuid.uuid4().hex[:8]}@example.com"
+    password = "modules-api-test-2026"
+    reg = await client.post(
+        "/auth/register",
+        json={"email": email, "password": password},
+    )
+    assert reg.status_code == 201, reg.text
+    login = await client.post(
+        "/auth/login",
+        data={"username": email, "password": password},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert login.status_code == 204
+    return email
+
+
+# ---------------------------------------------------------------------------
+# v2 manifest endpoints
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_list_v2_modules_endpoint(client) -> None:
+    await _register_and_login(client)
+    resp = await client.get("/api/modules/v2")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert "modules" in body
+    assert "ui_slots" in body
+    assert isinstance(body["modules"], list)
+    assert isinstance(body["ui_slots"], list)
+    # Every entry has the expected shape.
+    for entry in body["modules"]:
+        assert "module_id" in entry
+        assert "source_kind" in entry
+        assert entry["source_kind"] in (
+            "v2",
+            "v1_module_json",
+            "v1_skill",
+        )
+        assert "manifest" in entry
+        assert "is_valid" in entry
+        assert "validation_errors" in entry
+
+
+@pytest.mark.asyncio
+async def test_list_v2_capabilities_endpoint(client) -> None:
+    await _register_and_login(client)
+    resp = await client.get("/api/modules/v2/capabilities")
+    assert resp.status_code == 200, resp.text
+    caps = resp.json()
+    assert isinstance(caps, list)
+    for cap in caps:
+        assert "module_id" in cap
+        assert "capability_id" in cap
+        assert "kind" in cap
+        assert "scope" in cap
+        assert "reads" in cap
+        assert "writes" in cap
+
+
+@pytest.mark.asyncio
+async def test_get_v2_module_not_found(client) -> None:
+    await _register_and_login(client)
+    resp = await client.get("/api/modules/v2/nonexistent-module-id-12345")
+    assert resp.status_code == 404, resp.text
+    body = resp.json()
+    assert body["detail"]["error"] == "module_not_found"
+
+
+@pytest.mark.asyncio
+async def test_v2_endpoints_require_auth(client) -> None:
+    """All three v2 endpoints must require an authenticated user."""
+    for path in (
+        "/api/modules/v2",
+        "/api/modules/v2/capabilities",
+        "/api/modules/v2/some-module",
+    ):
+        resp = await client.get(path)
+        # fastapi-users returns 401 for unauthenticated requests when
+        # the dependency chain hits current_user.
+        assert resp.status_code in (401, 403), f"{path} did not require auth: {resp.status_code}"
+
+
+# ---------------------------------------------------------------------------
+# Installed-modules listing
+# ---------------------------------------------------------------------------
+
+
+def _make_installed_row(
+    *,
+    module_id: str,
+    version: str,
+    installed_at: datetime,
+    enabled: bool = True,
+    publisher: str = "legalise",
+    visibility: str = "first_party",
+    signature_status: str = "structure_verified",
+    installed_by_user_id: uuid.UUID | None = None,
+    capabilities: list[dict] | None = None,
+) -> InstalledModule:
+    return InstalledModule(
+        id=uuid.uuid4(),
+        module_id=module_id,
+        version=version,
+        publisher=publisher,
+        visibility=visibility,
+        signature_status=signature_status,
+        signed_by=None,
+        verified_at=installed_at,
+        install_path="<inline>",
+        manifest_snapshot={"id": module_id, "version": version},
+        permissions_snapshot={"capabilities": capabilities or []},
+        installed_at=installed_at,
+        installed_by_user_id=installed_by_user_id,
+        enabled=enabled,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Endpoint shape + auth
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_anon_caller_gets_401(client):
+    """Mirrors GET /api/modules/v2's auth posture — read-only but
+    auth-gated. An anonymous request returns 401, not 200 with an
+    empty list."""
+    # Make sure no session cookie is in flight.
+    client.cookies.clear()
+    resp = await client.get("/api/modules/installed")
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_authenticated_caller_returns_empty_when_no_installs(
+    client, db_session
+):
+    await _register_and_login(client)
+    # Ensure no InstalledModule rows exist for this matter scope.
+    # (The seed-Khan-on-register flow creates Matter rows but not
+    # InstalledModule rows — those need a real trust ceremony.)
+    resp = await client.get("/api/modules/installed")
+    assert resp.status_code == 200
+    # Tests share a DB; previously-installed modules from other
+    # tests may persist. Sanity check: it's a list, just possibly
+    # not empty. Assert shape, not absolute emptiness.
+    assert isinstance(resp.json(), list)
+
+
+# ---------------------------------------------------------------------------
+# Dedup: one row per module_id, most recent installed_at wins
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_dedupes_by_module_id_returning_most_recent(client, db_session):
+    """Substrate allows multiple InstalledModule rows per module_id
+    (successive installs without explicit delete of the prior row).
+    The listing endpoint must return ONE row per module_id, the
+    most recent by installed_at — mirroring revoke_module_endpoint's
+    "most recent installed version" lookup.
+    """
+    await _register_and_login(client)
+    module_id = f"phase145b-dedupe-{uuid.uuid4().hex[:6]}"
+    base = datetime(2026, 1, 1, tzinfo=UTC)
+
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.1.0",
+        installed_at=base,
+    ))
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.2.0",
+        installed_at=base + timedelta(days=1),
+    ))
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.3.0-rc",
+        installed_at=base + timedelta(days=2),
+    ))
+    await db_session.flush()
+
+    resp = await client.get("/api/modules/installed")
+    assert resp.status_code == 200
+    rows = resp.json()
+    matching = [r for r in rows if r["module_id"] == module_id]
+    assert len(matching) == 1, (
+        f"expected exactly one row for module_id={module_id}; got "
+        f"{len(matching)}"
+    )
+    assert matching[0]["version"] == "0.3.0-rc"
+
+
+@pytest.mark.asyncio
+async def test_disabled_row_surfaces_with_enabled_false(client, db_session):
+    """A revoked module's row has enabled=False; the listing must
+    surface that so the catalog can render a muted
+    'Installed (disabled)' badge."""
+    await _register_and_login(client)
+    module_id = f"phase145b-disabled-{uuid.uuid4().hex[:6]}"
+
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="1.0.0",
+        installed_at=datetime(2026, 1, 1, tzinfo=UTC),
+        enabled=False,
+    ))
+    await db_session.flush()
+
+    resp = await client.get("/api/modules/installed")
+    rows = resp.json()
+    matching = next((r for r in rows if r["module_id"] == module_id), None)
+    assert matching is not None
+    assert matching["enabled"] is False
+    assert matching["version"] == "1.0.0"
+
+
+@pytest.mark.asyncio
+async def test_disabled_dedup_respects_installed_at(client, db_session):
+    """Pin the dedup semantic: most-recent wins, even if the
+    most-recent is a disabled row. The catalog needs to render the
+    current state, not the most-recent enabled state."""
+    await _register_and_login(client)
+    module_id = f"phase145b-disabled-recent-{uuid.uuid4().hex[:6]}"
+
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.1.0",
+        installed_at=datetime(2026, 1, 1, tzinfo=UTC),
+        enabled=True,
+    ))
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.2.0",
+        installed_at=datetime(2026, 2, 1, tzinfo=UTC),
+        enabled=False,
+    ))
+    await db_session.flush()
+
+    resp = await client.get("/api/modules/installed")
+    rows = resp.json()
+    matching = next((r for r in rows if r["module_id"] == module_id), None)
+    assert matching is not None
+    assert matching["enabled"] is False
+    assert matching["version"] == "0.2.0"
+
+
+# ---------------------------------------------------------------------------
+# Response shape — no secrets leaked
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_response_shape_excludes_secrets_and_internals(client, db_session):
+    """Substrate-side InstalledModule carries manifest_snapshot +
+    permissions_snapshot + install_path — none of those belong in
+    the listing endpoint. The DTO surface is closed."""
+    await _register_and_login(client)
+    module_id = f"phase145b-shape-{uuid.uuid4().hex[:6]}"
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.1.0",
+        installed_at=datetime(2026, 3, 1, tzinfo=UTC),
+    ))
+    await db_session.flush()
+
+    resp = await client.get("/api/modules/installed")
+    rows = resp.json()
+    matching = next((r for r in rows if r["module_id"] == module_id), None)
+    assert matching is not None
+    # Documented fields present. `name` (manifest display name) and
+    # `install_path` (the manifest's public source_url, pinned-SHA
+    # provenance for the register) were added for the Counsel Register —
+    # both come from the manifest the user already reviewed, not secrets.
+    expected_keys = {
+        "module_id",
+        "name",
+        "version",
+        "publisher",
+        "visibility",
+        "signature_status",
+        "capabilities",
+        "enabled",
+        "installed_at",
+        "installed_by_user_id",
+        "install_path",
+        "track_record",
+        # M13 supervision legibility: median review latency + its n,
+        # both derived from audit rows at read time - not secrets.
+        "track_median_review_seconds",
+        "track_review_latency_n",
+    }
+    assert set(matching.keys()) == expected_keys
+    # Never leaks the raw snapshots or signer internals.
+    assert "manifest_snapshot" not in matching
+    assert "permissions_snapshot" not in matching
+    assert "signed_by" not in matching
+
+
+@pytest.mark.asyncio
+async def test_capability_summaries_surface_without_full_manifest(
+    client, db_session
+):
+    """Imported inline modules are not in the registry catalogue, so
+    the grants UI needs capability summaries from the installed row.
+    Surface just that grantable shape, not the full manifest snapshot."""
+    await _register_and_login(client)
+    module_id = f"phase145b-caps-{uuid.uuid4().hex[:6]}"
+    db_session.add(_make_installed_row(
+        module_id=module_id,
+        version="0.1.0",
+        installed_at=datetime(2026, 3, 2, tzinfo=UTC),
+        capabilities=[
+            {
+                "id": "default",
+                "kind": "skill",
+                "scope": "matter",
+                "reads": ["matter.document.read"],
+                "writes": ["matter.artifact.write"],
+            }
+        ],
+    ))
+    await db_session.flush()
+
+    resp = await client.get("/api/modules/installed")
+    rows = resp.json()
+    matching = next((r for r in rows if r["module_id"] == module_id), None)
+    assert matching is not None
+    assert matching["capabilities"] == [
+        {
+            "id": "default",
+            "kind": "skill",
+            "scope": "matter",
+            "reads": ["matter.document.read"],
+            "writes": ["matter.artifact.write"],
+        }
+    ]
+    assert "manifest_snapshot" not in matching
+    assert "permissions_snapshot" not in matching
+
+
+# ---------------------------------------------------------------------------
+# No audit emission (Phase 13b Decision #1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_endpoint_emits_no_audit_row(client, db_session):
+    """Reads MUST NOT emit audit rows. Pin this contract so a future
+    refactor adding telemetry doesn't quietly start auditing."""
+    from app.models import AuditEntry
+
+    await _register_and_login(client)
+
+    # Count audit rows referencing /api/modules/installed BEFORE.
+    pre = await db_session.scalar(
+        select(__import__("sqlalchemy").func.count())
+        .select_from(AuditEntry)
+        .where(AuditEntry.payload["path"].astext == "/api/modules/installed")
+    )
+
+    resp = await client.get("/api/modules/installed")
+    assert resp.status_code == 200
+
+    post = await db_session.scalar(
+        select(__import__("sqlalchemy").func.count())
+        .select_from(AuditEntry)
+        .where(AuditEntry.payload["path"].astext == "/api/modules/installed")
+    )
+    # The matters audit middleware audits /api/matters/* paths only;
+    # /api/modules/installed is outside that scope, so no row should
+    # land. Belt-and-braces: assert no semantic audit row either
+    # (no "module.installed.viewed" or similar).
+    assert post == pre, (
+        "GET /api/modules/installed emitted an audit row; reads must "
+        "not audit per Phase 13b Decision #1"
+    )
+
+    # Also verify no semantic audit action was minted for this read.
+    leaked = await db_session.scalar(
+        select(AuditEntry).where(
+            AuditEntry.action.like("module.installed.%")
+        )
+    )
+    assert leaked is None
+
+
+@pytest.mark.asyncio
+async def test_readmission_same_version_refreshes_row(client, db_session):
+    """Re-admitting the same (module_id, version) must refresh the existing
+    row (enabled=True, snapshots updated) — not 500 on the unique
+    constraint. The re-grant ceremony is already on the audit chain."""
+    from app.api.module_routes.common import _persist_install
+    from app.core.trust_ceremony import build_permission_card, Ceremony, CeremonyState
+    import uuid as _u
+
+    manifest = {
+        "id": "readmit.test-skill",
+        "version": "1.0.0",
+        "publisher": "tester",
+        "visibility": "community",
+        "capabilities": [],
+    }
+    from app.models import User
+
+    user = User(
+        id=_u.uuid4(),
+        email=f"readmit-{_u.uuid4().hex[:8]}@example.com",
+        hashed_password="x",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    def ceremony():
+        return Ceremony(
+            id=_u.uuid4(),
+            module_id=manifest["id"],
+            manifest=manifest,
+            state=CeremonyState.ENABLED,
+            fast_path=False,
+            permission_card=build_permission_card(manifest),
+            actor_user_id=user.id,
+        )
+
+    first = await _persist_install(db_session, ceremony=ceremony(), user=user)
+    first.enabled = False
+    await db_session.flush()
+
+    second = await _persist_install(db_session, ceremony=ceremony(), user=user)
+    assert second.id == first.id  # refreshed, not duplicated
+    assert second.enabled is True

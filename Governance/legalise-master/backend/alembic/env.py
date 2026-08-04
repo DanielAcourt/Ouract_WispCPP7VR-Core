@@ -1,0 +1,70 @@
+"""Alembic environment.
+
+Wires the application's SQLAlchemy metadata so autogeneration sees model
+changes from Week 1 Day 2 onward.
+"""
+
+import asyncio
+from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
+from app.core.config import settings
+from app.models import Base  # noqa: F401  — imports all models so Base.metadata is populated
+
+config = context.config
+# Migrations need DDL. When the app runs under a reduced-privilege role
+# (e.g. the WORM role split, where the app role lacks UPDATE/DELETE on
+# audit_entries and has no schema authority), point alembic at a privileged
+# MIGRATION_DSN instead. Falls back to POSTGRES_DSN when unset, so single-role
+# deployments are unchanged.
+config.set_main_option(
+    "sqlalchemy.url", settings.migration_dsn or settings.postgres_dsn
+)
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = Base.metadata
+
+
+def run_migrations_offline() -> None:
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
+
+
+def run_migrations_online() -> None:
+    asyncio.run(run_async_migrations())
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

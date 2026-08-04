@@ -1,0 +1,60 @@
+# Python — venv / build artefacts.
+# DO NOT add a bare `lib/` here. That pattern matches every `lib` folder
+# in the tree, including frontend/src/lib/, and silently drops real source.
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+venv/lib/
+venv/lib64/
+env/
+
+# Node
+node_modules/
+dist/
+.vite/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Data
+backend/data/
+data/
+matters/
+
+# Internal build-agent handovers — work orders for the next build agent,
+# not evaluator-facing docs. Kept locally, not in the public repo.
+docs/handovers/
+
+# Build artefacts
+*.log
+coverage/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.claude/worktrees/

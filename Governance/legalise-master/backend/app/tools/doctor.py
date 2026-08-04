@@ -1,0 +1,726 @@
+"""`legalise doctor`.
+
+Inspection-only check command for a local fork. Runs a fixed list of
+checks against the running stack and prints one line per check.
+
+Usage::
+
+    docker compose exec backend python -m app.tools.doctor
+    docker compose exec backend python -m app.tools.doctor --create-bucket
+
+Exit codes:
+    0  every check ok or note
+    1  one or more checks failed (`fail` rows)
+
+Doctrine:
+    - No-flag invocation only reads. Never writes, migrates, or seeds.
+    - `--create-bucket` is the one explicit mutation allowed; it
+      provisions the configured S3 bucket if missing.
+    - The Khan demo check is STATEFUL: pre-signup it soft-notes; once
+      a user exists it hard-fails if the seed didn't land.
+    - Manifest validation goes through the existing v2 registry +
+      validator path. No hand-rolled JSON-schema work here.
+    - The provider check is diagnostic only — a fork with zero
+      provider keys is a fully valid state because the stub-echo
+      keyless model handles the Khan demo.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Awaitable, Callable
+
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.core.config import settings
+
+
+EXIT_OK = 0
+EXIT_FAIL = 1
+
+
+# ---------------------------------------------------------------------------
+# Check result + reporter
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CheckResult:
+    name: str
+    status: str  # "ok" | "fail" | "note"
+    detail: str
+    remediation: str | None = None
+
+
+def _print(result: CheckResult) -> None:
+    symbol = {"ok": "ok  ", "note": "note", "fail": "fail"}[result.status]
+    line = f"[{symbol}] {result.name}: {result.detail}"
+    print(line)
+    if result.status == "fail" and result.remediation:
+        print(f"        → {result.remediation}")
+
+
+# ---------------------------------------------------------------------------
+# Individual checks. Each returns a CheckResult; raises only on
+# programmer error. Connectivity failures surface as `fail` rows
+# with remediation text.
+# ---------------------------------------------------------------------------
+
+
+def _mask_dsn(dsn: str) -> str:
+    """Hide the password in a connection string before printing.
+
+    doctor output is read over `fly ssh`, copied into chats, etc., so the
+    raw DSN (with the DB/Redis password) must never be echoed. Replaces the
+    `:password@` userinfo segment with `:***@`, leaving host/db visible.
+    """
+    return re.sub(r"(://[^:/@]+:)[^@]*(@)", r"\1***\2", dsn)
+
+
+async def check_db_reachable(session: AsyncSession) -> CheckResult:
+    try:
+        await session.execute(text("SELECT 1"))
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "db.reachable",
+            "fail",
+            f"cannot reach Postgres at {_mask_dsn(settings.postgres_dsn)}: {exc.__class__.__name__}",
+            "is the `db` service up? `docker compose ps db` and check healthcheck",
+        )
+    return CheckResult("db.reachable", "ok", _mask_dsn(settings.postgres_dsn))
+
+
+async def check_db_migrations_current(session: AsyncSession) -> CheckResult:
+    """Compare DB's alembic_version against the latest script on disk."""
+    # Heads on disk: scan alembic/versions/ for the file whose
+    # `revision` line has no descendant. Simpler approximation:
+    # take the lexically-greatest revision string from filenames
+    # `NNNN_*.py`. This is reliable because the project numbers
+    # migrations sequentially from 0001 upward (see alembic/versions/).
+    versions_dir = Path(__file__).resolve().parents[2] / "alembic" / "versions"
+    if not versions_dir.exists():
+        return CheckResult(
+            "db.migrations_current",
+            "fail",
+            f"alembic versions dir missing at {versions_dir}",
+            "rebuild backend image — alembic/ not packaged",
+        )
+    revs_on_disk = sorted(
+        p.name.split("_", 1)[0]
+        for p in versions_dir.glob("[0-9]*.py")
+    )
+    if not revs_on_disk:
+        return CheckResult(
+            "db.migrations_current",
+            "fail",
+            "no migrations found on disk",
+            "rebuild backend image",
+        )
+    head_on_disk = revs_on_disk[-1]
+
+    try:
+        row = await session.execute(text("SELECT version_num FROM alembic_version"))
+        current = row.scalar()
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "db.migrations_current",
+            "fail",
+            f"alembic_version table not readable: {exc.__class__.__name__}",
+            "run `docker compose exec backend alembic upgrade head`",
+        )
+
+    if current == head_on_disk:
+        return CheckResult(
+            "db.migrations_current", "ok", f"head={head_on_disk}"
+        )
+    return CheckResult(
+        "db.migrations_current",
+        "fail",
+        f"DB at {current!r}, disk head at {head_on_disk!r}",
+        "run `docker compose exec backend alembic upgrade head`",
+    )
+
+
+async def check_db_audit_worm(session: AsyncSession) -> CheckResult:
+    """`audit_entries` exists + WORM trigger present."""
+    table_q = await session.execute(
+        text(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = current_schema() AND table_name = 'audit_entries'"
+        )
+    )
+    if table_q.first() is None:
+        return CheckResult(
+            "db.audit_table_present",
+            "fail",
+            "audit_entries table missing",
+            "alembic head should create it; run `alembic upgrade head`",
+        )
+    trig_q = await session.execute(
+        text(
+            "SELECT 1 FROM pg_trigger WHERE tgname = 'enforce_audit_worm' "
+            "AND NOT tgisinternal"
+        )
+    )
+    if trig_q.first() is None:
+        return CheckResult(
+            "db.audit_table_present",
+            "note",
+            "audit_entries present but WORM trigger missing (live-matter gate)",
+        )
+    return CheckResult(
+        "db.audit_table_present", "ok", "audit_entries + WORM trigger present"
+    )
+
+
+async def check_audit_chain_verifies(session: AsyncSession) -> CheckResult:
+    """Recompute the audit hash chain on a bounded sample.
+
+    Bounded: verifies the scope of the most recent matter-scoped chain
+    link (one matter's chain). If no matter-scoped links exist yet, runs
+    the full verifier — at that point the only rows are the system
+    scope, which is what's left to check. No chain rows at all is a
+    soft note (fresh fork, nothing audited yet).
+    """
+    from app.core.audit_chain import verify_audit_chain
+    from app.models.audit_chain import AuditChainEntry
+
+    try:
+        latest_matter_scoped = await session.scalar(
+            select(AuditChainEntry)
+            .where(AuditChainEntry.matter_id.is_not(None))
+            .order_by(AuditChainEntry.id.desc())
+            .limit(1)
+        )
+        any_row = latest_matter_scoped or await session.scalar(
+            select(AuditChainEntry).limit(1)
+        )
+        if any_row is None:
+            return CheckResult(
+                "audit.chain_verifies",
+                "note",
+                "no audit_chain rows yet — nothing to verify",
+            )
+        if latest_matter_scoped is not None:
+            verification = await verify_audit_chain(
+                session, matter_id=latest_matter_scoped.matter_id
+            )
+            sample = f"matter scope {latest_matter_scoped.matter_id}"
+        else:
+            verification = await verify_audit_chain(session)
+            sample = "all scopes (system only)"
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "audit.chain_verifies",
+            "fail",
+            f"verifier raised: {exc.__class__.__name__}: {exc}",
+            "is migration 0030 applied? run `alembic upgrade head`",
+        )
+
+    if verification.ok:
+        return CheckResult(
+            "audit.chain_verifies",
+            "ok",
+            f"{sample}: {verification.chain_entry_count} link(s) verified",
+        )
+    first = verification.issues[0]
+    more = (
+        f" (+{len(verification.issues) - 1} more)"
+        if len(verification.issues) > 1
+        else ""
+    )
+    return CheckResult(
+        "audit.chain_verifies",
+        "fail",
+        f"{sample}: {first.code}: {first.message}{more}",
+        "the audit chain does not recompute — treat the trail as suspect "
+        "and investigate audit_chain rows for this scope",
+    )
+
+
+async def check_redis_reachable() -> CheckResult:
+    try:
+        import redis.asyncio as redis_asyncio
+    except ImportError:
+        return CheckResult(
+            "redis.reachable",
+            "fail",
+            "redis package not importable",
+            "rebuild backend image",
+        )
+    client = redis_asyncio.from_url(settings.redis_url)
+    try:
+        pong = await client.ping()
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "redis.reachable",
+            "fail",
+            f"PING failed at {_mask_dsn(settings.redis_url)}: {exc.__class__.__name__}",
+            "is the `redis` service up? `docker compose ps redis`",
+        )
+    finally:
+        try:
+            await client.aclose()
+        except Exception:  # noqa: BLE001
+            pass
+    if pong is True or pong == b"PONG" or pong == "PONG":
+        return CheckResult("redis.reachable", "ok", _mask_dsn(settings.redis_url))
+    return CheckResult(
+        "redis.reachable",
+        "fail",
+        f"unexpected PING response: {pong!r}",
+        "investigate redis health",
+    )
+
+
+async def check_worker_heartbeat() -> CheckResult:
+    """Read the arq worker's health key from Redis.
+
+    The worker writes the key every ``health_check_interval`` seconds
+    (see app.worker.WorkerSettings) and Redis expires it one second
+    after the next write is due, so presence == a live worker and
+    absence == no worker has run recently. The value is arq's own
+    counters line (jobs complete/failed/ongoing, queue depth) — job
+    ids and counts only, never matter content.
+    """
+    try:
+        import redis.asyncio as redis_asyncio
+        from arq.constants import default_queue_name, health_check_key_suffix
+    except ImportError:
+        return CheckResult(
+            "worker.heartbeat",
+            "fail",
+            "redis/arq packages not importable",
+            "rebuild backend image",
+        )
+    key = default_queue_name + health_check_key_suffix
+    client = redis_asyncio.from_url(settings.redis_url)  # type: ignore[no-untyped-call]
+    try:
+        raw = await client.get(key)
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "worker.heartbeat",
+            "fail",
+            f"cannot read {key} at {_mask_dsn(settings.redis_url)}: {exc.__class__.__name__}",
+            "is the `redis` service up? `docker compose ps redis`",
+        )
+    finally:
+        try:
+            await client.aclose()
+        except Exception:  # noqa: BLE001
+            pass
+    if raw is None:
+        return CheckResult(
+            "worker.heartbeat",
+            "fail",
+            f"no worker health key at {key} — the arq worker is not running, "
+            "so document indexing and exports will sit queued forever",
+            "start the worker: `docker compose ps worker` locally, or "
+            "`fly scale count worker=1 -a legalise-backend` on Fly",
+        )
+    detail = raw.decode("utf-8", errors="replace") if isinstance(raw, bytes) else str(raw)
+    return CheckResult("worker.heartbeat", "ok", detail)
+
+
+def _build_s3_client():
+    import boto3
+    from botocore.config import Config
+
+    return boto3.client(
+        "s3",
+        endpoint_url=settings.s3_endpoint,
+        aws_access_key_id=settings.s3_access_key,
+        aws_secret_access_key=settings.s3_secret_key,
+        region_name=settings.s3_region,
+        config=Config(signature_version="s3v4"),
+    )
+
+
+def check_s3_endpoint_reachable() -> CheckResult:
+    # Round-trip a tiny object on the CONFIGURED bucket — exactly what the app
+    # does on upload. Do NOT use list_buckets(): a correctly bucket-scoped
+    # Cloudflare R2 token (least privilege) denies that account-level call with
+    # AccessDenied even though object put/get/delete work fine, producing a
+    # false "storage is down" alarm.
+    key = "_doctor/healthcheck"
+    try:
+        client = _build_s3_client()
+        client.put_object(Bucket=settings.s3_bucket, Key=key, Body=b"ok")
+        client.get_object(Bucket=settings.s3_bucket, Key=key)["Body"].read()
+        client.delete_object(Bucket=settings.s3_bucket, Key=key)
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "s3.endpoint_reachable",
+            "fail",
+            f"cannot round-trip an object on {settings.s3_bucket} at "
+            f"{settings.s3_endpoint}: {exc.__class__.__name__}",
+            "check S3_ACCESS_KEY/S3_SECRET_KEY and the bucket grant; "
+            "locally, is `minio` up? `docker compose ps minio`",
+        )
+    return CheckResult("s3.endpoint_reachable", "ok", settings.s3_endpoint)
+
+
+def check_s3_bucket_present(*, create_bucket: bool) -> CheckResult:
+    """Soft-note on miss by default. With --create-bucket, provision it."""
+    from botocore.exceptions import ClientError
+
+    try:
+        client = _build_s3_client()
+        client.head_bucket(Bucket=settings.s3_bucket)
+        return CheckResult(
+            "s3.bucket_present", "ok", f"bucket={settings.s3_bucket}"
+        )
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code", "")
+        if code not in {"404", "NoSuchBucket"}:
+            return CheckResult(
+                "s3.bucket_present",
+                "fail",
+                f"head_bucket {settings.s3_bucket} returned {code}",
+                "check S3 credentials and bucket permissions",
+            )
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "s3.bucket_present",
+            "fail",
+            f"head_bucket failed: {exc.__class__.__name__}",
+            "check S3 endpoint + credentials",
+        )
+
+    # Bucket missing.
+    if not create_bucket:
+        return CheckResult(
+            "s3.bucket_present",
+            "note",
+            f"bucket {settings.s3_bucket!r} not created yet (storage layer "
+            f"creates it lazily on first use); rerun with --create-bucket "
+            f"to provision it now",
+        )
+    try:
+        client = _build_s3_client()
+        client.create_bucket(Bucket=settings.s3_bucket)
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "s3.bucket_present",
+            "fail",
+            f"create_bucket {settings.s3_bucket} failed: {exc.__class__.__name__}",
+            "check S3 credentials have create-bucket permission",
+        )
+    return CheckResult(
+        "s3.bucket_present", "ok", f"bucket created: {settings.s3_bucket}"
+    )
+
+
+def check_registry_discovery() -> CheckResult:
+    from app.core.registry import discover_modules
+
+    try:
+        discovered = discover_modules()
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "registry.discovery",
+            "fail",
+            f"registry discovery failed: {exc.__class__.__name__}: {exc}",
+            "check backend/app/modules and examples/modules manifests",
+        )
+    return CheckResult(
+        "registry.discovery",
+        "ok",
+        f"{len(discovered)} module(s) discovered",
+    )
+
+
+async def check_installed_entrypoints_resolvable(
+    session: AsyncSession,
+) -> CheckResult:
+    """Every ENABLED installed module must be dispatchable on this image.
+
+    Catches the stale-manifest class: a native install whose
+    ``entrypoint.python_module`` was refactored away (or isn't shipped
+    in this image) passes schema validation but fails every dispatch.
+    """
+    from app.core.runtime import native_entrypoint_error
+    from app.models import InstalledModule
+
+    rows = (
+        await session.scalars(
+            select(InstalledModule).where(InstalledModule.enabled.is_(True))
+        )
+    ).all()
+    broken = [
+        f"{row.module_id} v{row.version} ({problem})"
+        for row in rows
+        if (problem := native_entrypoint_error(row.manifest_snapshot))
+        is not None
+    ]
+    if broken:
+        return CheckResult(
+            "modules.entrypoints_resolvable",
+            "fail",
+            f"{len(broken)} enabled install(s) cannot dispatch: "
+            + "; ".join(broken),
+            "disable the row(s) or re-import the skill from its current "
+            "source — see installed_modules.manifest_snapshot.entrypoint",
+        )
+    return CheckResult(
+        "modules.entrypoints_resolvable",
+        "ok",
+        f"{len(rows)} enabled install(s), all dispatchable",
+    )
+
+
+def check_manifests_valid() -> CheckResult:
+    """Run the v2 validator against every discovered module."""
+    from app.core.registry import (
+        InvalidManifestError,
+        discover_modules,
+    )
+    from app.core.registry.shim import auto_derive_v2_from_v1
+    from app.core.registry.validator import assert_manifest_v2
+
+    try:
+        discovered = discover_modules()
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult(
+            "manifests.valid",
+            "fail",
+            f"discovery raised before validation: {exc.__class__.__name__}",
+            "see plugins.root_mounted",
+        )
+    if not discovered:
+        return CheckResult(
+            "manifests.valid", "note", "no modules to validate"
+        )
+
+    failures: list[str] = []
+    for entry in discovered:
+        try:
+            if entry.source_kind == "v2":
+                manifest = entry.payload
+            elif entry.source_kind == "v1_module_json":
+                manifest = auto_derive_v2_from_v1(
+                    source_kind="v1_module_json", payload=entry.payload
+                )
+            elif entry.source_kind == "v1_skill":
+                manifest = auto_derive_v2_from_v1(
+                    source_kind="v1_skill",
+                    skill_md=entry.payload,
+                    plugin_id=entry.extra.get("plugin_id"),
+                    skill_id=entry.extra.get("skill_id"),
+                )
+            else:
+                failures.append(
+                    f"{entry.module_id}: unknown source_kind {entry.source_kind!r}"
+                )
+                continue
+            # assert_manifest_v2 raises InvalidManifestError on miss;
+            # validate_manifest_v2 returns (ok, errors) and is the
+            # wrong API for doctor — quietly returning is silently
+            # green. Use the raising form so the except branch fires.
+            assert_manifest_v2(manifest)
+        except InvalidManifestError as exc:
+            failures.append(f"{entry.module_id}: {exc}")
+        except Exception as exc:  # noqa: BLE001
+            failures.append(f"{entry.module_id}: {exc.__class__.__name__}: {exc}")
+
+    if failures:
+        head = failures[0]
+        more = f" (+{len(failures) - 1} more)" if len(failures) > 1 else ""
+        return CheckResult(
+            "manifests.valid",
+            "fail",
+            f"{head}{more}",
+            "fix the manifest or pin a known-good PLUGINS_REPO_REF",
+        )
+    return CheckResult(
+        "manifests.valid",
+        "ok",
+        f"{len(discovered)} manifest(s) validate against schemas/module.v2.json",
+    )
+
+
+async def check_khan_demo_present(session: AsyncSession) -> CheckResult:
+    """Stateful: pre-signup → note; post-signup → demand the seed."""
+    from app.models import Matter, User
+    from app.core.seed import KHAN_SLUG, SEED_ACTION_MATTER
+
+    user_count = (
+        await session.execute(text("SELECT COUNT(*) FROM users"))
+    ).scalar() or 0
+    if user_count == 0:
+        return CheckResult(
+            "khan.demo_present",
+            "note",
+            "no users yet — seed lands on first signup",
+        )
+
+    matter = await session.scalar(
+        select(Matter).where(Matter.slug == KHAN_SLUG)
+    )
+    if matter is None:
+        return CheckResult(
+            "khan.demo_present",
+            "fail",
+            f"users exist but Khan matter ({KHAN_SLUG}) missing",
+            "register a fresh user via /auth/signin — seeding runs on first signup",
+        )
+
+    seed_row = (
+        await session.execute(
+            text(
+                "SELECT 1 FROM audit_entries WHERE matter_id = :mid "
+                "AND action = :action LIMIT 1"
+            ),
+            {"mid": matter.id, "action": SEED_ACTION_MATTER},
+        )
+    ).first()
+    if seed_row is None:
+        return CheckResult(
+            "khan.demo_present",
+            "fail",
+            f"Khan matter present but no {SEED_ACTION_MATTER} audit row",
+            "delete the matter row and re-register to re-seed, or inspect "
+            "backend logs for seeding failures",
+        )
+    return CheckResult(
+        "khan.demo_present", "ok", f"{KHAN_SLUG} + seed audit row present"
+    )
+
+
+def check_provider_mode() -> CheckResult:
+    """Diagnostic only — never fails."""
+    configured = []
+    if settings.anthropic_api_key:
+        configured.append("anthropic")
+    if settings.openai_api_key:
+        configured.append("openai")
+    # Ollama is reachable-as-a-URL; treat as configured if the URL
+    # is set to something other than the compose default and the
+    # forker may want to know we're not pinging it.
+    configured.append("stub-echo")  # always available, keyless
+    return CheckResult(
+        "provider.mode",
+        "note",
+        f"configured providers: {', '.join(configured)}",
+    )
+
+
+def check_anonymisation_engine() -> CheckResult:
+    """Optional-extra probe — never fails (missing extra is a valid slim
+    install; the endpoints degrade to 503 with install guidance)."""
+    from app.modules.anonymisation import presidio_engine
+
+    if presidio_engine.is_available():
+        return CheckResult(
+            "anonymisation.engine",
+            "ok",
+            "presidio importable (anonymisation extra installed)",
+        )
+    return CheckResult(
+        "anonymisation.engine",
+        "note",
+        "anonymisation extra not installed — anonymise endpoints will 503; "
+        'install with `pip install -e ".[anonymisation]" && '
+        "python -m spacy download en_core_web_sm`",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Runner
+# ---------------------------------------------------------------------------
+
+
+async def _run_all(*, create_bucket: bool) -> int:
+    engine = create_async_engine(settings.postgres_dsn, echo=False)
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    results: list[CheckResult] = []
+
+    async with factory() as session:
+        # DB-bound checks share one session.
+        db_ok = await check_db_reachable(session)
+        results.append(db_ok)
+        if db_ok.status == "ok":
+            results.append(await check_db_migrations_current(session))
+            results.append(await check_db_audit_worm(session))
+            results.append(await check_audit_chain_verifies(session))
+        # Skip downstream DB-needing checks if DB is unreachable.
+
+    # Redis (own client).
+    redis_ok = await check_redis_reachable()
+    results.append(redis_ok)
+    if redis_ok.status == "ok":
+        results.append(await check_worker_heartbeat())
+
+    # S3 endpoint + bucket.
+    endpoint = check_s3_endpoint_reachable()
+    results.append(endpoint)
+    if endpoint.status == "ok":
+        results.append(check_s3_bucket_present(create_bucket=create_bucket))
+
+    # Plugin substrate.
+    results.append(check_registry_discovery())
+    results.append(check_manifests_valid())
+
+    # Khan demo — only meaningful if DB was reachable.
+    if db_ok.status == "ok":
+        async with factory() as session:
+            results.append(await check_khan_demo_present(session))
+        async with factory() as session:
+            results.append(
+                await check_installed_entrypoints_resolvable(session)
+            )
+
+    # Provider mode — diagnostic only.
+    results.append(check_provider_mode())
+
+    # Anonymisation extra — diagnostic only (optional install).
+    results.append(check_anonymisation_engine())
+
+    await engine.dispose()
+
+    for r in results:
+        _print(r)
+
+    failed = [r for r in results if r.status == "fail"]
+    if failed:
+        print(f"\n{len(failed)} check(s) failed.")
+        return EXIT_FAIL
+    print(f"\nall {len(results)} check(s) passed (notes are informational).")
+    return EXIT_OK
+
+
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="doctor",
+        description=(
+            "Inspect a local Legalise stack. Reports one line per check; "
+            "exits non-zero on any failure. Inspection-only by default."
+        ),
+    )
+    parser.add_argument(
+        "--create-bucket",
+        action="store_true",
+        help=(
+            "explicit mutation: if the configured S3 bucket is missing, "
+            "provision it. Without this flag the missing-bucket case "
+            "is a soft note (the storage layer creates the bucket "
+            "lazily on first use)."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    return asyncio.run(_run_all(create_bucket=args.create_bucket))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

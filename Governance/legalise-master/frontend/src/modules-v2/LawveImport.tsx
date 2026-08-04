@@ -1,0 +1,578 @@
+/**
+ * /modules/lawve — Lawve Skill Importer v1.
+ *
+ * Browse `lawve-ai/awesome-legal-skills`, inspect a skill (metadata,
+ * provenance, licence, SKILL.md, refs/scripts), and convert it into a
+ * **governed Legalise module draft** — validated via the existing
+ * validator, never added, scripts never executed. A draft is not a
+ * module until reviewed, validated, signed, and trusted.
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  draftGithubModule,
+  draftLawveModule,
+  getGithubSkill,
+  getLawveSkill,
+  listLawveSkills,
+  startInstall,
+  type LawveDraftResult,
+  type LawveSkillDetail,
+  type LawveSkillRow,
+} from "../lib/api";
+import { useAuth } from "../auth/AuthProvider";
+import { ErrorCallout, LoadingLine, PageHeader } from "../ui/primitives";
+import { LedgerLine, SectionRule } from "../ui/certificate";
+import { RequestSkillButton } from "./RequestSkillButton";
+import {
+  groupSkills,
+  licenceLabel,
+  skillDisplayName,
+} from "./skillDisplay";
+
+type ListQuery =
+  | { status: "loading" }
+  | { status: "ready"; skills: LawveSkillRow[] }
+  | { status: "error"; message: string };
+
+// Derive the headline trust state from validity + warnings. Prompt-only
+// skills now convert to a valid `prompt`-runtime draft, so the common
+// outcome is "Ready to sign" unless a licence/script review is pending.
+function trustState(d: LawveDraftResult): string {
+  if (!d.valid) return "Validation failed";
+  const codes = new Set(d.warnings.map((w) => w.code));
+  if (codes.has("license_review") || codes.has("license_unknown")) return "Needs licence review";
+  if (codes.has("script_review")) return "Needs script review";
+  return "Ready to sign";
+}
+
+export function LawveImport() {
+  const [q, setQ] = useState<ListQuery>({ status: "loading" });
+  const [search, setSearch] = useState("");
+  const [licenseFilter, setLicenseFilter] = useState("");
+  const [scriptsOnly, setScriptsOnly] = useState(false);
+  const [refsOnly, setRefsOnly] = useState(false);
+  const [selected, setSelected] = useState<LawveSkillDetail | null>(null);
+  const [ghUrl, setGhUrl] = useState("");
+  const [selectedGhUrl, setSelectedGhUrl] = useState<string | null>(null);
+  const [selecting, setSelecting] = useState(false);
+  const [draft, setDraft] = useState<LawveDraftResult | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [detailErr, setDetailErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listLawveSkills()
+      .then((res) => {
+        if (!cancelled) setQ({ status: "ready", skills: res.skills });
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setQ({ status: "error", message: String(err) });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const skills = q.status === "ready" ? q.skills : [];
+
+  // Deep-link preselect: /skills/lawve?skill=<slug> (the stocked
+  // library on /skills links straight to a skill's review pane).
+  useEffect(() => {
+    if (q.status !== "ready" || selected || selecting) return;
+    const slug =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("skill")
+        : null;
+    if (slug && q.skills.some((s) => s.slug === slug)) {
+      void openSkill(slug);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q.status]);
+
+  // Deep-link a GitHub source: /skills/lawve?github=<repo url> — the
+  // admin's Review-&-add link for a github-sourced request lands here
+  // and the URL is fetched straight into the GitHub panel.
+  useEffect(() => {
+    const url =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("github")
+        : null;
+    if (url) {
+      setGhUrl(url);
+      void openGithub(url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const licenses = useMemo(
+    () => [...new Set(skills.map((s) => s.license).filter((l): l is string => !!l))].sort(),
+    [skills],
+  );
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return skills.filter((s) => {
+      if (licenseFilter && s.license !== licenseFilter) return false;
+      if (scriptsOnly && !s.has_scripts) return false;
+      if (refsOnly && !s.has_references) return false;
+      if (!term) return true;
+      return (
+        s.name.toLowerCase().includes(term) ||
+        skillDisplayName(s.slug, s.author_name).toLowerCase().includes(term) ||
+        s.description.toLowerCase().includes(term) ||
+        (s.author_name ?? "").toLowerCase().includes(term) ||
+        (s.license ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [skills, search, licenseFilter, scriptsOnly, refsOnly]);
+  // Same what-they-do grouping as the Skill library shelf; a group
+  // with no surviving rows disappears with its header.
+  const grouped = useMemo(() => groupSkills(filtered), [filtered]);
+
+  const openSkill = async (slug: string) => {
+    setSelecting(true);
+    setDetailErr(null);
+    setDraft(null);
+    setSelectedGhUrl(null);
+    try {
+      setSelected(await getLawveSkill(slug));
+    } catch (err) {
+      setDetailErr(String(err));
+    } finally {
+      setSelecting(false);
+    }
+  };
+
+  const openGithub = async (rawUrl?: string) => {
+    const url = (rawUrl ?? ghUrl).trim();
+    if (!url) return;
+    setSelecting(true);
+    setDetailErr(null);
+    setDraft(null);
+    try {
+      setSelected(await getGithubSkill(url));
+      setSelectedGhUrl(url);
+    } catch (err) {
+      setDetailErr(String(err));
+    } finally {
+      setSelecting(false);
+    }
+  };
+
+  const convert = async (slug: string) => {
+    setDrafting(true);
+    try {
+      setDraft(
+        selectedGhUrl
+          ? await draftGithubModule(selectedGhUrl)
+          : await draftLawveModule(slug),
+      );
+    } catch (err) {
+      setDetailErr(String(err));
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  return (
+    <div className="page-shell">
+      <p className="mb-6">
+        <Link
+          to="/skills"
+          className="text-sm text-muted underline underline-offset-4 decoration-rule hover:decoration-seal hover:text-seal"
+        >
+          ← Skills
+        </Link>
+      </p>
+      <PageHeader
+        title="Add a skill"
+        whisper="Before the registrar"
+        description="Import a skill from the Lawve catalogue or any public GitHub repository. A skill cannot be added until it is converted, validated, signed, and trusted — and imported scripts are never executed."
+      />
+
+      {q.status === "error" && (
+        <ErrorCallout message={`Could not load Lawve skills: ${q.message}`} />
+      )}
+      {q.status === "loading" && <LoadingLine label="loading Lawve skills" />}
+
+      {q.status === "ready" && (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.1fr]">
+          {/* List + filters */}
+          <div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void openGithub();
+              }}
+              className="mb-4"
+            >
+              <label className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                From a GitHub repository
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  value={ghUrl}
+                  onChange={(e) => setGhUrl(e.target.value)}
+                  placeholder="https://github.com/owner/repo"
+                  className="w-full rounded-md border border-rule bg-paper px-3 py-2 text-sm"
+                  data-testid="github-url"
+                />
+                <button
+                  type="submit"
+                  disabled={!ghUrl.trim() || selecting}
+                  className="shrink-0 rounded-md border border-rule px-3 py-2 text-sm hover:border-ink disabled:opacity-50"
+                  data-testid="github-fetch"
+                >
+                  Fetch
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-muted">
+                Needs a SKILL.md at the repo root (or pass a /tree/&lt;ref&gt;/&lt;path&gt; URL).
+              </p>
+            </form>
+            <label className="text-[10px] uppercase tracking-[0.18em] text-muted">
+              From the Lawve catalogue
+            </label>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name / description / author / licence"
+              className="w-full rounded-md border border-rule bg-paper px-3 py-2 text-sm"
+              data-testid="lawve-search"
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <select
+                value={licenseFilter}
+                onChange={(e) => setLicenseFilter(e.target.value)}
+                className="rounded-md border border-rule bg-paper px-2 py-1 text-ink"
+                data-testid="lawve-license-filter"
+              >
+                <option value="">any licence</option>
+                {licenses.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+              <label className="flex items-center gap-1 text-muted">
+                <input type="checkbox" checked={scriptsOnly} onChange={(e) => setScriptsOnly(e.target.checked)} />
+                has scripts
+              </label>
+              <label className="flex items-center gap-1 text-muted">
+                <input type="checkbox" checked={refsOnly} onChange={(e) => setRefsOnly(e.target.checked)} />
+                has references
+              </label>
+              <span className="text-muted">{filtered.length} of {skills.length}</span>
+            </div>
+
+            {/* The catalogue ledger — grouped by what the skills do,
+                same scan rhythm and grouping as the Skill library. */}
+            {(() => {
+              let n = 0;
+              return grouped.map((group) => (
+                <div key={group.id} data-testid={`lawve-group-${group.id}`}>
+                  <div className="mt-5 flex items-baseline justify-between border-b border-rule pb-1.5">
+                    <h3 className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                      {group.label}
+                    </h3>
+                    <span className="tech-token text-[11px] text-muted">
+                      {group.skills.length}
+                    </span>
+                  </div>
+                  {group.note && (
+                    <p className="mt-1.5 text-[11px] text-muted">{group.note}</p>
+                  )}
+                  <ul>
+                    {group.skills.map((s) => {
+                      n += 1;
+                      return (
+                        <li key={s.slug}>
+                          <button
+                            type="button"
+                            onClick={() => openSkill(s.slug)}
+                            className={
+                              "group block w-full text-left " +
+                              (selected?.slug === s.slug ? "bg-wash" : "")
+                            }
+                            data-testid={`lawve-card-${s.slug}`}
+                          >
+                            <LedgerLine
+                              index={n}
+                              label={licenceLabel(s.license)}
+                              right={
+                                <span
+                                  aria-hidden="true"
+                                  className="text-sm text-muted group-hover:text-seal"
+                                >
+                                  →
+                                </span>
+                              }
+                            >
+                              <span className="block min-w-0">
+                                <span className="text-ink group-hover:text-seal">
+                                  {skillDisplayName(s.slug, s.author_name)}
+                                </span>
+                                <span className="ml-2 hidden text-[11px] text-muted sm:inline">
+                                  <span className="tech-token">{s.slug}</span>
+                                  {" · "}
+                                  {s.author_name ?? "unknown"}
+                                  {s.has_references ? " · refs" : ""}
+                                  {(s.has_scripts || s.script_review_required) && (
+                                    <span className="text-seal">
+                                      {" · ships scripts — manual review"}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="block truncate text-[12px] text-muted">
+                                  {s.description}
+                                </span>
+                              </span>
+                            </LedgerLine>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ));
+            })()}
+          </div>
+
+          {/* Detail + convert */}
+          <div>
+            {detailErr && <ErrorCallout message={detailErr} compact />}
+            {selecting && <LoadingLine label="loading skill" />}
+            {!selected && !selecting && (
+              <p className="text-sm text-muted">Select a skill to inspect and convert.</p>
+            )}
+            {selected && (
+              <div data-testid="lawve-detail">
+                <SectionRule label="The instrument under review" />
+                <h2 className="mt-3 text-[22px] leading-tight tracking-tight2 text-ink">
+                  {selected.name}
+                </h2>
+                <p className="mt-1 text-xs text-muted">
+                  {selected.author_name ?? "unknown"} · {selected.version ?? "—"} ·{" "}
+                  {selected.license ?? "licence unknown"}
+                </p>
+                <p className="mt-1 text-[11px] text-muted">
+                  Source:{" "}
+                  <a
+                    href={selected.provenance.repo_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-4 decoration-rule hover:decoration-seal hover:text-seal"
+                  >
+                    {selected.repo}
+                  </a>{" "}
+                  @ <span className="tech-token">{(selected.provenance.ref ?? "").slice(0, 8)}</span>{" "}
+                  · {selected.provenance.source_path}
+                </p>
+
+                {selected.has_scripts && (
+                  <p className="mt-3 border border-seal/40 bg-seal/5 p-2 text-xs text-seal" data-testid="lawve-script-flag">
+                    Contains scripts ({selected.scripts.length}) — these are <span className="font-semibold">not imported or executed</span>; review them manually at the source.
+                  </p>
+                )}
+
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-[10px] uppercase tracking-[0.18em] text-muted">
+                    SKILL.md
+                  </summary>
+                  <pre className="mt-2 max-h-[30vh] overflow-auto rounded-md border border-rule bg-paper px-2 py-1 text-[11px] whitespace-pre-wrap">
+                    {selected.skill_markdown}
+                  </pre>
+                </details>
+
+                <button
+                  type="button"
+                  onClick={() => convert(selected.slug)}
+                  disabled={drafting}
+                  className="mt-4 inline-flex items-center rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-seal disabled:opacity-50"
+                  data-testid="convert-draft"
+                >
+                  {drafting ? "Converting…" : "Convert to skill draft"}
+                </button>
+
+                {draft && (
+                  <DraftReview
+                    draft={draft}
+                    slug={selected.slug}
+                    githubUrl={selectedGhUrl}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DraftReview({
+  draft,
+  slug,
+  githubUrl,
+}: {
+  draft: LawveDraftResult;
+  slug: string;
+  /** Set when the skill was fetched from a GitHub URL rather than the
+   * Lawve catalogue — carried on the request so the admin's
+   * Review-&-add link can resolve the source. */
+  githubUrl: string | null;
+}) {
+  const manifestJson = JSON.stringify(draft.manifest, null, 2);
+  const [copied, setCopied] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [installErr, setInstallErr] = useState<string | null>(null);
+  const auth = useAuth();
+  const nav = useNavigate();
+  const isAdmin = auth.user?.is_superuser === true;
+
+  const install = async () => {
+    setInstalling(true);
+    setInstallErr(null);
+    try {
+      const ceremony = await startInstall({
+        source: "manifest",
+        manifest: draft.manifest as Record<string, unknown>,
+      });
+      void nav({
+        to: "/skills/install/$ceremonyId",
+        params: { ceremonyId: ceremony.ceremony_id },
+      });
+    } catch (err) {
+      setInstallErr(String(err));
+      setInstalling(false);
+    }
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(manifestJson);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const download = () => {
+    const blob = new Blob([manifestJson], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-manifest.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="mt-6" data-testid="draft-review">
+      <SectionRule
+        label="Skill draft"
+        right={
+          <span
+            className={draft.valid ? "text-ink" : "text-seal"}
+            data-testid="draft-trust-state"
+          >
+            {trustState(draft)}
+          </span>
+        }
+      />
+
+      {draft.warnings.length > 0 && (
+        <ul className="mt-3 space-y-1 text-xs">
+          {draft.warnings.map((w) => (
+            <li key={w.code} className="text-muted">
+              <span className="tech-token text-seal">{w.code}</span> — {w.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!draft.valid && draft.errors.length > 0 && (
+        <div className="mt-3 text-xs">
+          <p className="text-seal">Validation errors (the human-confirmed mapping must resolve these before signing):</p>
+          <ul className="mt-1 space-y-1">
+            {draft.errors.map((e, i) => (
+              <li key={i}>
+                <span className="tech-token text-muted">{e.path || "/"}</span> — {e.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <pre className="mt-3 max-h-[40vh] overflow-auto rounded-md border border-rule bg-paper px-2 py-1 text-[11px]">
+        {manifestJson}
+      </pre>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" onClick={copy} className="rounded-md border border-rule px-3 py-1.5 text-xs hover:border-ink">
+          {copied ? "Copied" : "Copy manifest"}
+        </button>
+        <button type="button" onClick={download} className="rounded-md border border-rule px-3 py-1.5 text-xs hover:border-ink">
+          Download manifest
+        </button>
+      </div>
+
+      {/* Continuity: a valid draft is added through the trust ceremony
+          directly — no copy-paste into another screen. Adding is
+          admin-gated (the ceremony's enable step is require_admin), so
+          non-admins get a clear ask rather than a dead button. */}
+      <div className="mt-4 border-t border-rule pt-3">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-muted">
+          Imported skill → skill draft → trust ceremony → added skill → enable per matter
+        </p>
+        {draft.valid ? (
+          isAdmin ? (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={install}
+                disabled={installing}
+                className="inline-flex items-center rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-seal disabled:opacity-50"
+                data-testid="install-draft"
+              >
+                {installing ? "Starting ceremony…" : "Add this draft"}
+              </button>
+              <p className="mt-2 text-xs text-muted">
+                Opens the trust ceremony — you review permissions and trust the
+                skill before it is added. The importer never adds it without
+                that confirmation.
+              </p>
+              {installErr && <ErrorCallout message={installErr} compact />}
+            </div>
+          ) : (
+            <div className="mt-2" data-testid="install-admin-note">
+              <p className="text-xs text-muted">
+                Adding a skill is an administrator action. Request it here and
+                your administrator sees it on the Skills page.
+              </p>
+              <div className="mt-2">
+                <RequestSkillButton
+                  moduleId={
+                    typeof draft.manifest.id === "string" && draft.manifest.id
+                      ? draft.manifest.id
+                      : slug
+                  }
+                  source={githubUrl ? "github" : "lawve"}
+                  sourceUrl={githubUrl ?? undefined}
+                />
+              </div>
+            </div>
+          )
+        ) : (
+          <p className="mt-2 text-xs text-muted">
+            Resolve the validation errors above before this draft can be added.
+          </p>
+        )}
+        <ul className="mt-3 list-disc pl-4 text-xs text-muted">
+          {draft.next_steps.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,28 @@
+"""Module catalogue + install + lifecycle endpoints."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.api.module_routes import (
+    catalogue_discovery,
+    catalogue_validate,
+    install_ceremony,
+    installed_listing,
+    installed_revoke,
+    installed_update,
+    requests,
+)
+
+router = APIRouter()
+
+for subrouter in (
+    catalogue_discovery.router,
+    catalogue_validate.router,
+    installed_listing.router,
+    install_ceremony.router,
+    installed_revoke.router,
+    installed_update.router,
+    requests.router,
+):
+    router.include_router(subrouter)

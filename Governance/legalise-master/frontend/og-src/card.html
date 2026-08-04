@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Legalise social card — render at 1200 × 630</title>
+<!--
+  Regenerate from frontend/og-src/:
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+    --disable-gpu --hide-scrollbars --window-size=1200,630 \
+    --force-device-scale-factor=1 \
+    --screenshot=../public/og-card-v5.png "file://$PWD/card.html"
+-->
+<style>
+  @font-face {
+    font-family: "Redaction 35";
+    src: url("../public/fonts/redaction/Redaction_35-Regular.woff2") format("woff2");
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "Redaction 35";
+    src: url("../public/fonts/redaction/Redaction_35-Bold.woff2") format("woff2");
+    font-weight: 700;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #f4f0e7;
+    color: #1a1a18;
+  }
+  .signature {
+    position: absolute;
+    right: -20px;
+    top: -65px;
+    width: 760px;
+    height: 760px;
+    opacity: 0.11;
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    width: 800px;
+    height: 100%;
+    padding: 82px 76px 76px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .wordmark {
+    font-family: "Redaction 35", serif;
+    font-size: 152px;
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+  }
+  .wordmark .dot { color: #8f2016; }
+</style>
+</head>
+<body>
+  <!-- Static form of the existing signature.json path for deterministic renders. -->
+  <svg class="signature" viewBox="0 0 108 106" aria-hidden="true">
+    <path
+      d="M13.55 95.47 C24.82 88.71 34.33 62.41 29.28 32.85 C24.23 3.29 5.87 9.84 15.45 33.87 C24.66 56.98 44.79 77.24 59.24 73.69 C71.66 70.64 70.77 31.40 72.69 42.64 C70.91 32.19 64.22 31.70 66.54 45.30 C68.86 58.90 73.61 62.03 82 59.47 C90.39 55.61 90.91 31.99 92.49 31.72 C94.07 31.45 112.53 41.61 104.28 57.40"
+      fill="none"
+      stroke="#8f2016"
+      stroke-width="4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+  <main class="content">
+    <div class="wordmark">Legalise<span class="dot">.</span></div>
+  </main>
+</body>
+</html>
