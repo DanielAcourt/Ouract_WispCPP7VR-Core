@@ -229,5 +229,144 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         self.assertIn("Simulation Environment & Surroundings:", system_prompt)
         self.assertIn("Nearby_Entity: Antelope", system_prompt)
 
+    def test_unrestricted_roleplay_zone_bypass(self):
+        """Verifies that paths in DND/Roleplay folders bypass AAS checks entirely."""
+        import asyncio
+        from bridge import bridge_governor, AgentCommandPayload
+
+        # Scenario: Low-precedence persona 'Unreal_Simulation' (P=5) attempts to write to a protected node vs roleplay folder
+        protected_payload = AgentCommandPayload(
+            persona="Unreal_Simulation",
+            command="write_file",
+            target_node="AI_Nexus/INDEX.md"
+        )
+        roleplay_payload = AgentCommandPayload(
+            persona="Unreal_Simulation",
+            command="write_file",
+            target_node="E:/IronKnight/RolePlay/DungeonsAndDragons/Aetherion_Cogsworth_Profile.md"
+        )
+
+        # Protected node should be blocked without active handshake
+        import bridge
+        bridge.HANDSHAKE_ACTIVE = False
+        loop = asyncio.get_event_loop()
+        protected_result = loop.run_until_complete(bridge_governor.arbitrate(protected_payload))
+        self.assertEqual(protected_result["status"], "409_CONFLICT_GATE")
+
+        # Roleplay zone should bypass AAS and return 200_OK immediately
+        roleplay_result = loop.run_until_complete(bridge_governor.arbitrate(roleplay_payload))
+        self.assertEqual(roleplay_result["status"], "200_OK")
+        self.assertEqual(roleplay_result["action"], "PROCEED_TO_EXECUTION_ROLEPLAY_BYPASS")
+
+    def test_unreal_create_file_endpoint(self):
+        """Verifies the direct programmatic POST /v1/unreal/create_file endpoint."""
+        if not HAS_TESTCLIENT:
+            self.skipTest("FastAPI TestClient unavailable.")
+            return
+
+        client = TestClient(app)
+
+        # Create a mock file in the Environment folder (which is in standard WRITE_ZONES)
+        payload = {
+            "filepath": "Sovereign_Intelligence/IronOfficer/Environment/test_direct_file.txt",
+            "content": "Direct programmatic creation success!",
+            "persona": "Unreal_Simulation"
+        }
+
+        # Direct creation should bypass conversational LLM but run tool_write_file.
+        # Since 'Environment' is not a roleplay zone, we need HANDSHAKE_ACTIVE to bypass precedence checks.
+        import bridge
+        bridge.HANDSHAKE_ACTIVE = True
+        bridge.PERSISTENT_HANDSHAKE = True # Avoid consumption
+
+        response = client.post("/v1/unreal/create_file", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertEqual(data["status"], "success")
+        self.assertTrue(data["verified"])
+
+        # Verify file exists on disk
+        target_path = os.path.join(self.repo_root, "Sovereign_Intelligence/IronOfficer/Environment/test_direct_file.txt")
+        self.assertTrue(os.path.exists(target_path))
+
+        # Clean up
+        if os.path.exists(target_path):
+            os.remove(target_path)
+
+    @unittest.mock.patch("requests.post")
+    def test_anti_hallucination_guardrails(self, mock_post):
+        """Verifies that the anti-hallucination system prompt injects and retries on success claims after a block."""
+        import asyncio
+        from bridge import process_chat_request
+
+        # Mocking the first response to contain a tool call (write_file), and the second response
+        # to contain a hallucinated success claim despite a block.
+        # The third response should be a corrected response admitting the block.
+        class MockResponse:
+            def __init__(self, json_data):
+                self._json = json_data
+                self.status_code = 200
+            def json(self):
+                return self._json
+            def raise_for_status(self):
+                pass
+
+        # Sequence of Ollama API chat responses
+        # 1. First call: AI returns a tool call to write a file
+        response_1 = MockResponse({
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "function": {
+                            "name": "write_file",
+                            "arguments": {
+                                "filepath": "AI_Nexus/INDEX.md",
+                                "content": "Modified!"
+                            }
+                        }
+                    }
+                ]
+            }
+        })
+
+        # 2. Second call: After receiving the blocked tool results (409 Conflict), the AI tries to hallucinate success
+        response_2 = MockResponse({
+            "message": {
+                "role": "assistant",
+                "content": "The changes have been written successfully to AI_Nexus/INDEX.md."
+            }
+        })
+
+        # 3. Third call (after Symmetrical Guard reprimand retry): The AI correctly admits the block
+        response_3 = MockResponse({
+            "message": {
+                "role": "assistant",
+                "content": "I apologize. My attempt to modify AI_Nexus/INDEX.md was BLOCKED by the AAS Governor due to insufficient authority."
+            }
+        })
+
+        mock_post.side_effect = [response_1, response_2, response_3]
+
+        import bridge
+        bridge.HANDSHAKE_ACTIVE = False
+
+        # Execute chat request
+        messages = [{"role": "user", "content": "Please rewrite the INDEX file."}]
+        tools = [{"type": "function", "function": {"name": "write_file"}}]
+
+        loop = asyncio.get_event_loop()
+        chat_res = loop.run_until_complete(process_chat_request("llama3.1:latest", messages, tools, persona="Unreal_Simulation"))
+
+        # Verify that the final response is indeed the corrected one (response_3)
+        self.assertIn("BLOCKED", chat_res["result"]["message"]["content"])
+        self.assertIn("AAS Governor", chat_res["result"]["message"]["content"])
+
+        # Verify that requests.post was called three times (initial, tool response generation, retry after reprimand)
+        self.assertEqual(mock_post.call_count, 3)
+
 if __name__ == "__main__":
     unittest.main()

@@ -45,6 +45,7 @@ WRITE_ZONES = []
 PERSONA_ZONES = {}
 REMOTE_HISTORY_ENABLED = False
 HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
+PERSISTENT_HANDSHAKE = False
 
 # --- RAG Global Configuration ---
 RAG_ENABLED = True
@@ -104,6 +105,7 @@ TOOL_MIN_PRECEDENCE = {
 def load_config():
     global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
     global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS
+    global PERSISTENT_HANDSHAKE
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -123,6 +125,8 @@ def load_config():
                 PERSONA_ZONES = bridge_cfg.get("persona_zones", {
                     "Iron_Knight": ["Sovereign_Intelligence/IronKnight_Memory", "IronKnight/"]
                 })
+
+                PERSISTENT_HANDSHAKE = bridge_cfg.get("persistent_handshake", False)
 
                 USER_NAME = pref_cfg.get("name", "Dan")
 
@@ -330,6 +334,11 @@ class SovereignBridge:
                 return True
         return False
 
+    def is_roleplay_zone(self, target_node: str) -> bool:
+        """Checks if target node is inside the unrestricted RolePlay/D&D folder."""
+        normalized = to_forward_slash(target_node).lower()
+        return "roleplay/dungeonsanddragons" in normalized or "dungeons and dragons" in normalized
+
     def evaluate_intent_safety(self, payload: AgentCommandPayload) -> bool:
         destructive_keywords = ["delete", "remove", "rm", "unlink", "truncate", "drop"]
         normalized_cmd = payload.command.lower()
@@ -341,8 +350,9 @@ class SovereignBridge:
         # Grant personas full authority within their dedicated memory folder
         is_persona_memory_zone = self.is_persona_in_memory_zone(payload.persona, payload.target_node)
 
-        # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone
-        if not is_persona_memory_zone:
+        # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone or when Handshake is active
+        global HANDSHAKE_ACTIVE
+        if not is_persona_memory_zone and not HANDSHAKE_ACTIVE:
             if persona_p < TOOL_MIN_PRECEDENCE.get(payload.command, 10):
                  logger.critical(f"AAS ALERT: Insufficient precedence for tool '{payload.command}' by {payload.persona}")
                  return False
@@ -389,6 +399,15 @@ class SovereignBridge:
         if payload.persona.startswith("SIM_"):
             payload.persona = "Unreal_Simulation"
 
+        # Check if targeting unrestricted roleplay zones
+        if self.is_roleplay_zone(payload.target_node):
+            logger.info(f"AAS BYPASS: Target node '{payload.target_node}' is within the RolePlay/D&D zone. Bypassing AAS security checks.")
+            return {
+                "status": "200_OK",
+                "confidence_score": 1.0,
+                "action": "PROCEED_TO_EXECUTION_ROLEPLAY_BYPASS"
+            }
+
         confidence_score = self.calculate_psta_viability(payload)
         is_safe_intent = self.evaluate_intent_safety(payload)
         delta_logic = self.calculate_logical_discrepancy(payload)
@@ -425,11 +444,14 @@ class SovereignBridge:
                 "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
             }
 
-        # [AAS v1.3.3] Handshake Consumption: Boost is consumed on a successful mutation.
-        global HANDSHAKE_ACTIVE
+        # [AAS v1.3.3] Handshake Consumption: Boost is consumed on a successful mutation unless persistent handshake is active.
+        global HANDSHAKE_ACTIVE, PERSISTENT_HANDSHAKE
         if HANDSHAKE_ACTIVE and payload.command not in non_destructive_tools:
-            HANDSHAKE_ACTIVE = False
-            logger.info(f"AAS HANDSHAKE: Boost consumed by mutation '{payload.command}' on '{payload.target_node}'.")
+            if not PERSISTENT_HANDSHAKE:
+                HANDSHAKE_ACTIVE = False
+                logger.info(f"AAS HANDSHAKE: Boost consumed by mutation '{payload.command}' on '{payload.target_node}'.")
+            else:
+                logger.info(f"AAS HANDSHAKE: Persistent Handshake Active. Boost retained for mutation '{payload.command}' on '{payload.target_node}'.")
 
         return {
             "status": "200_OK",
@@ -952,6 +974,21 @@ async def get_unreal_mailbox(actor_name: str):
 async def push_chat_manually(payload: PushChatPayload):
     return await tool_push_chat_to_unreal(payload.actor_name, payload.message, persona="Lead")
 
+class UnrealCreateFileRequest(BaseModel):
+    filepath: str
+    content: str
+    persona: str = "Unreal_Simulation"
+
+@app.post("/v1/unreal/create_file")
+async def unreal_create_file(request: UnrealCreateFileRequest):
+    """
+    [07] Simulation file creation endpoint.
+    Bypasses conversational loops to write files directly from Blueprints.
+    """
+    logger.info(f"07 CREATE FILE: Received direct request to create file {request.filepath} from {request.persona}")
+    result = await tool_write_file(request.filepath, request.content, persona=request.persona)
+    return result
+
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
     """
@@ -1287,6 +1324,18 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
                     "name": name,
                     "tool_call_id": call.get("id") # Keep chain intact
                 })
+                # Inject strict anti-hallucination directive immediately after a blocked tool call
+                messages.append({
+                    "role": "system",
+                    "content": (
+                        f"[AAS SYSTEM INTERVENTION] CRITICAL: Your request to execute tool '{name}' was BLOCKED "
+                        f"by the AAS Governor (409 Conflict Gate) due to insufficient authority or out-of-bounds target. "
+                        f"You did NOT write, patch, or modify any files. You MUST explicitly admit this failure to the user "
+                        f"in your reply, state that you were BLOCKED, and explain that they need to execute an AAS Handshake "
+                        f"(such as calling ExecuteAASHandshake in Unreal or /v1/aas/handshake) to grant you authority. "
+                        f"DO NOT pretend you succeeded, DO NOT claim any file was written, and DO NOT make up excuses about honeypots."
+                    )
+                })
             else:
                 tool_outputs.append(tool_result)
                 messages.append({
@@ -1303,6 +1352,16 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
     # --- Symmetrical Guard (v2.4) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
+
+    # Check if a 409 conflict gate occurred in this message sequence
+    has_conflict_gate = any(
+        isinstance(msg, dict) and msg.get("role") == "tool" and "409_CONFLICT_GATE" in str(msg.get("content", ""))
+        for msg in messages
+    )
+    if has_conflict_gate:
+        success_indicators = ["SUCCESS", "WRITTEN", "CREATED", "SAVED", "COMMITTED", "GENERATED", "WROTE", "PROFILE IS READY", "WRITTEN THE FILE"]
+        if any(w in ai_content for w in success_indicators) and "BLOCKED" not in ai_content and "CONFLICT" not in ai_content:
+            violations.append("Claimed successful file modification/creation even though tool execution was blocked by 409 Conflict Gate.")
 
     # [B-028] Lore/Meta-Narrative Exception
     # Allow agents to discuss persona, roleplay, and internal state without physical sensors

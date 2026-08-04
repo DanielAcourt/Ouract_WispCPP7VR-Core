@@ -119,6 +119,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void ExecuteAASHandshake();
 
+    /**
+     * Creates a new file in the specified path with the provided content.
+     * Bypasses the conversational chat LLM loop and directly issues a request to the bridge.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void CreateSimulationFile(const FString& FilePath, const FString& Content);
+
     /** Delegate triggered when a chat response is received from the bridge */
     UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
     FOnSovereignChatResponse OnChatResponseReceived;

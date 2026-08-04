@@ -111,6 +111,42 @@ void USovereignBridgeSubsystem::ExecuteAASHandshake()
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::CreateSimulationFile(const FString& FilePath, const FString& Content)
+{
+    // // [J] Direct programmatic file creation bypassing the conversational LLM. 2026-06-28
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Creating simulation file [%s]..."), *FilePath);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this, FilePath](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: File [%s] created successfully!"), *FilePath);
+        }
+        else
+        {
+            FString ResponseStr = Res.IsValid() ? Res->GetContentAsString() : TEXT("No Response");
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: File [%s] creation failed. Details: %s"), *FilePath, *ResponseStr);
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/create_file"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("filepath"), FilePath);
+    JsonPayload->SetStringField(TEXT("content"), Content);
+    JsonPayload->SetStringField(TEXT("persona"), TEXT("Unreal_Simulation"));
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
+}
+
 void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
 {
     // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18

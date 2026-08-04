@@ -38,14 +38,19 @@
     "bridge": {
         "host": "0.0.0.0",
         "port": 8000,
+        "persistent_handshake": true,
         "read_zones": [
             ".",
-            "E:\\IronKnight"
+            "E:\\IronKnight",
+            "E:\\Dungeons and dragons",
+            "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
         ],
         "write_zones": [
             "Sovereign_Intelligence/IronOfficer/Environment",
             "AI_Nexus",
-            "E:\\IronKnight"
+            "E:\\IronKnight",
+            "E:\\Dungeons and dragons",
+            "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
         ],
         "persona_zones": {
             "Iron_Knight": [
@@ -53,6 +58,10 @@
                 "IronKnight/",
                 "E:\\IronKnight",
                 "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
+            ],
+            "Unreal_Simulation": [
+                "E:\\IronKnight\\RolePlay\\DungeonsAndDragons",
+                "E:\\Dungeons and dragons"
             ]
         }
     }
