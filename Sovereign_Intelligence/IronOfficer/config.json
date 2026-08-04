@@ -37,6 +37,12 @@
             "AI_Nexus",
             "E:\\IronKnight\\RolePlay\\DungeonsAndDragons",
             "E:\\Dungeons and dragons"
+        ],
+        "ignored_dirs": [
+            "protocols",
+            "devops",
+            "admin",
+            "bridge.py"
         ]
     },
     "bridge": {

@@ -56,6 +56,7 @@ RAG_MAX_CHUNKS = 3
 RAG_SIM_THRESHOLD = 0.05
 RAG_CHUNK_SIZE_WORDS = 250
 RAG_INDEX_DIRS = ["AI_Nexus"]
+RAG_IGNORED_DIRS = ["protocols", "devops", "admin", "bridge.py"]
 
 rag_engine = SovereignRAG(REPO_ROOT, chunk_size_words=RAG_CHUNK_SIZE_WORDS)
 
@@ -105,7 +106,7 @@ TOOL_MIN_PRECEDENCE = {
 
 def load_config():
     global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
-    global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS
+    global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS, RAG_IGNORED_DIRS
     global PERSISTENT_HANDSHAKE
     if os.path.exists(CONFIG_PATH):
         try:
@@ -144,6 +145,7 @@ def load_config():
                 RAG_SIM_THRESHOLD = rag_cfg.get("similarity_threshold", 0.05)
                 RAG_CHUNK_SIZE_WORDS = rag_cfg.get("chunk_size_words", 250)
                 RAG_INDEX_DIRS = rag_cfg.get("index_dirs", ["AI_Nexus"])
+                RAG_IGNORED_DIRS = rag_cfg.get("ignored_dirs", ["protocols", "devops", "admin", "bridge.py"])
 
                 # Update the active RAG engine settings dynamically
                 rag_engine.chunk_size_words = RAG_CHUNK_SIZE_WORDS
@@ -1260,7 +1262,8 @@ async def unreal_chat(request: UnrealChatRequest):
                 for chunk, similarity in results:
                     path_lower = chunk['path'].lower()
                     # Filter out technical protocols if we are in active RP context to prevent pollution
-                    if is_rp_context and ("protocols/" in path_lower or "devops/" in path_lower or "admin/" in path_lower or "bridge.py" in path_lower):
+                    global RAG_IGNORED_DIRS
+                    if is_rp_context and any(ignored in path_lower for ignored in RAG_IGNORED_DIRS):
                         continue
                     block_lines.append(f"Source: {chunk['path']} (Level {chunk['level']}) - Section: {chunk['header']} (Relevance: {similarity:.2f})")
                     block_lines.append(chunk['text'])
