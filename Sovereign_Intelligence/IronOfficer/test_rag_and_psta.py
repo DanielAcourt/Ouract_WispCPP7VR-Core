@@ -243,7 +243,7 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         roleplay_payload = AgentCommandPayload(
             persona="Unreal_Simulation",
             command="write_file",
-            target_node="E:/IronKnight/RolePlay/DungeonsAndDragons/Aetherion_Cogsworth_Profile.md"
+            target_node="Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons/Aetherion_Cogsworth_Profile.md"
         )
 
         # Protected node should be blocked without active handshake
@@ -393,7 +393,7 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         self.assertTrue(data["indexed"])
 
         # Verify file exists inside the generated directory
-        target_dir = os.path.join(self.repo_root, "E:/IronKnight/RolePlay/DungeonsAndDragons")
+        target_dir = os.path.join(self.repo_root, "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons")
         profile_path = os.path.join(target_dir, "TestHero_Profile.json")
         index_path = os.path.join(target_dir, "Character_Index.json")
 

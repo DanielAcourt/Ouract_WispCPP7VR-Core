@@ -1084,8 +1084,7 @@ async def unreal_generate_persona(request: GeneratePersonaRequest):
             res_obj = template
 
     # Resolve paths inside RolePlay DND zone
-    # We use a fallback within REPO_ROOT for safe local testing
-    target_dir = os.path.abspath(os.path.join(REPO_ROOT, "E:/IronKnight/RolePlay/DungeonsAndDragons"))
+    target_dir = os.path.abspath(os.path.join(REPO_ROOT, "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"))
     os.makedirs(target_dir, exist_ok=True)
 
     # 1. Write the character JSON profile

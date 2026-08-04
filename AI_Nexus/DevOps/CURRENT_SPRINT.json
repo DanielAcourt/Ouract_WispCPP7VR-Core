@@ -124,5 +124,41 @@
     "Node": "DevOps",
     "Why": "Resolve Windows ValueError crash when calculating relative paths in generate_persona across multiple drive mounts.",
     "What": "try-except fallback implemented to return absolute path on cross-drive relative failure."
+  },
+  {
+    "ID": "B-035",
+    "Task": "C++ Bio: Universal Gestation & Nesting",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Support dragon lifecycle reproduction and egg states in a universal biological module.",
+    "What": "Add GestationProgress, bGestationActive, NestSpatiotemporalVolume, and EggFertilityState to USovereignBioComponent C++."
+  },
+  {
+    "ID": "B-036",
+    "Task": "C++ Qi: Universal Domains & Runes",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Support male territory ownership and rune stone node hierarchies in a universal qi module.",
+    "What": "Add DomainTier, DomainResonanceRadius, and DomainNetworkSaturation properties to USovereignQiComponent C++."
+  },
+  {
+    "ID": "B-037",
+    "Task": "SSoT: Unseen Weave Lore Grounding",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "Research",
+    "Why": "Bake the foundational homebrew rules and dragon subclass metrics into the local RAG database.",
+    "What": "Write Unseen_Weave_Lore.md containing dragon classifications, gestation duration tables, and rune grades."
+  },
+  {
+    "ID": "AD-012",
+    "Task": "Bridge: Portable Roleplay & Gitignore Constraints",
+    "Complexity": "3",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Enable portable out-of-the-box roleplay execution without drive-mount dependencies or git bloat.",
+    "What": "Modify config.json path variables to relative, and update .gitignore to exclude run-time DND campaigns/sessions."
   }
 ]

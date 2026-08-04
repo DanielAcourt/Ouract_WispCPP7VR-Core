@@ -99,6 +99,22 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     float MatingCooldownDuration = 60.0f;
 
+    /** Universal Draconic & Reproduction Gestation [B-035] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    bool bGestationActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    float GestationProgress = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    bool bIsNestCreated = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    float NestSpatiotemporalVolume = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    FString EggFertilityState = TEXT("None");
+
 
     /** --- 4. ENGINE FUNCTIONS --- */
     void UpdateMetabolism(float DeltaTime);
