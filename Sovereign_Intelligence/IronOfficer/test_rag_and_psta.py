@@ -368,5 +368,49 @@ class TestSovereignRAGAndPSTA(unittest.TestCase):
         # Verify that requests.post was called three times (initial, tool response generation, retry after reprimand)
         self.assertEqual(mock_post.call_count, 3)
 
+    def test_unreal_generate_persona_endpoint(self):
+        """Verifies the dynamic persona generation endpoint writes character and index files."""
+        if not HAS_TESTCLIENT:
+            self.skipTest("FastAPI TestClient unavailable.")
+            return
+
+        client = TestClient(app)
+
+        # Scenario: Generate a blank character profile
+        payload = {
+            "character_name": "TestHero",
+            "random_generate": False,
+            "persona": "Unreal_Simulation"
+        }
+
+        response = client.post("/v1/unreal/generate_persona", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["character_name"], "TestHero")
+        self.assertEqual(data["profile_file"], "TestHero_Profile.json")
+        self.assertTrue(data["indexed"])
+
+        # Verify file exists inside the generated directory
+        target_dir = os.path.join(self.repo_root, "E:/IronKnight/RolePlay/DungeonsAndDragons")
+        profile_path = os.path.join(target_dir, "TestHero_Profile.json")
+        index_path = os.path.join(target_dir, "Character_Index.json")
+
+        self.assertTrue(os.path.exists(profile_path))
+        self.assertTrue(os.path.exists(index_path))
+
+        # Verify index was written correctly
+        with open(index_path, "r", encoding="utf-8") as f:
+            index_data = json.load(f)
+        self.assertIn("TestHero", index_data)
+        self.assertEqual(index_data["TestHero"]["file"], "TestHero_Profile.json")
+
+        # Clean up
+        if os.path.exists(profile_path):
+            os.remove(profile_path)
+        if os.path.exists(index_path):
+            os.remove(index_path)
+
 if __name__ == "__main__":
     unittest.main()

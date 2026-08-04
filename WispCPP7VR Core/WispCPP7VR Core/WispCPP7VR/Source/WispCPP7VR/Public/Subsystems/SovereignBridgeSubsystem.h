@@ -126,6 +126,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void CreateSimulationFile(const FString& FilePath, const FString& Content);
 
+    /**
+     * Dynamically generates a new D&D character sheet, updates character index, and indexes RAG on-the-fly.
+     * @param CharacterName     The name of the character to generate.
+     * @param bRandomGenerate   If true, uses the LLM to randomly generate rich, creative attributes and backstory.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void GenerateDNDPersona(const FString& CharacterName, bool bRandomGenerate);
+
     /** Delegate triggered when a chat response is received from the bridge */
     UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
     FOnSovereignChatResponse OnChatResponseReceived;

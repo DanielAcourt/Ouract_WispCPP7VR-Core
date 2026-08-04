@@ -147,6 +147,42 @@ void USovereignBridgeSubsystem::CreateSimulationFile(const FString& FilePath, co
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::GenerateDNDPersona(const FString& CharacterName, bool bRandomGenerate)
+{
+    // // [J] Direct programmatic character sheet generation and indexing. 2026-06-28
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Requesting DND Persona generation for [%s] (Random: %s)..."), *CharacterName, bRandomGenerate ? TEXT("True") : TEXT("False"));
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this, CharacterName](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: DND Persona [%s] generated and indexed successfully!"), *CharacterName);
+        }
+        else
+        {
+            FString ResponseStr = Res.IsValid() ? Res->GetContentAsString() : TEXT("No Response");
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: DND Persona [%s] generation failed. Details: %s"), *CharacterName, *ResponseStr);
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/generate_persona"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("character_name"), CharacterName);
+    JsonPayload->SetBoolField(TEXT("random_generate"), bRandomGenerate);
+    JsonPayload->SetStringField(TEXT("persona"), TEXT("Unreal_Simulation"));
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
+}
+
 void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
 {
     // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18

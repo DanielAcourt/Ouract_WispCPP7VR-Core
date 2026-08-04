@@ -33,7 +33,11 @@
         "max_chunks": 3,
         "similarity_threshold": 0.05,
         "chunk_size_words": 250,
-        "index_dirs": ["AI_Nexus"]
+        "index_dirs": [
+            "AI_Nexus",
+            "E:\\IronKnight\\RolePlay\\DungeonsAndDragons",
+            "E:\\Dungeons and dragons"
+        ]
     },
     "bridge": {
         "host": "0.0.0.0",

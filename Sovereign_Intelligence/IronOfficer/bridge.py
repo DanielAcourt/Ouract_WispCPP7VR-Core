@@ -46,6 +46,7 @@ PERSONA_ZONES = {}
 REMOTE_HISTORY_ENABLED = False
 HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
 PERSISTENT_HANDSHAKE = False
+last_active_file = None
 
 # --- RAG Global Configuration ---
 RAG_ENABLED = True
@@ -537,6 +538,9 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
 
+        global last_active_file
+        last_active_file = target_path
+
         result = {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size, "backup": os.path.basename(backup_path)}
         if scribe_warning:
             result["scribe_warning"] = scribe_warning
@@ -579,6 +583,9 @@ async def tool_patch_file(filepath: str, search: str, replace: str, persona: str
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(new_content)
 
+        global last_active_file
+        last_active_file = target_path
+
         return {"status": "success", "verified": True, "path": target_node, "mode": "surgical_patch", "backup": os.path.basename(backup_path)}
     except Exception as e:
         return {"error": str(e)}
@@ -609,6 +616,9 @@ async def tool_append_file(filepath: str, content: str, persona: str = "Unknown"
 
         with open(target_path, "a", encoding="utf-8") as f:
             f.write(content)
+
+        global last_active_file
+        last_active_file = target_path
 
         return {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "mode": "append", "backup": os.path.basename(backup_path) if os.path.exists(backup_path) else None}
     except Exception as e:
@@ -989,6 +999,132 @@ async def unreal_create_file(request: UnrealCreateFileRequest):
     result = await tool_write_file(request.filepath, request.content, persona=request.persona)
     return result
 
+class GeneratePersonaRequest(BaseModel):
+    character_name: str
+    random_generate: bool = False
+    persona: str = "Unreal_Simulation"
+
+@app.post("/v1/unreal/generate_persona")
+async def unreal_generate_persona(request: GeneratePersonaRequest):
+    """
+    [07] Generates or initializes a D&D character sheet, updates character index, and reindexes RAG on-the-fly.
+    """
+    logger.info(f"07 GENERATE PERSONA: Request received for '{request.character_name}' (Random: {request.random_generate})")
+
+    # Define standard character schema template
+    template = {
+        "Identity": {
+            "Name": request.character_name,
+            "Race": "Human",
+            "Class": "Fighter",
+            "Level": 1,
+            "Alignment": "Neutral Good"
+        },
+        "Bio": {
+            "Backstory": "A blank canvas awaiting your narrative...",
+            "PersonalityTraits": "Friendly, curious, naive."
+        },
+        "Abilities": {
+            "Strength": 10,
+            "Dexterity": 10,
+            "Constitution": 10,
+            "Intelligence": 10,
+            "Wisdom": 10,
+            "Charisma": 10
+        }
+    }
+
+    res_obj = template
+
+    if request.random_generate:
+        current_model = get_best_available_model()
+        prompt = f"""
+        [SYSTEM: Sovereign Character Generator]
+        Generate a fully realized Dungeons and Dragons 5e character profile for a character named '{request.character_name}'.
+        The character should be young, a bit naive, but extremely friendly. Give them a highly creative and unique class (e.g. Echo Cartographer, Chrono-Smith, Aether-Scribe) and a rich, warm background backstory.
+
+        Respond ONLY with a valid, clean JSON object matching this exact schema:
+        {{
+          "Identity": {{
+            "Name": "{request.character_name}",
+            "Race": "Race name",
+            "Class": "Creative Class name",
+            "Level": 1,
+            "Alignment": "Alignment name"
+          }},
+          "Bio": {{
+            "Backstory": "A rich, enthusiastic, naively friendly backstory...",
+            "PersonalityTraits": "Curious, warm, naive, helpful"
+          }},
+          "Abilities": {{
+            "Strength": 10,
+            "Dexterity": 10,
+            "Constitution": 10,
+            "Intelligence": 10,
+            "Wisdom": 10,
+            "Charisma": 10
+          }}
+        }}
+        """
+        try:
+            response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}, timeout=15)
+            if response.status_code == 200:
+                res_obj = json.loads(response.json()['response'])
+        except Exception as e:
+            logger.error(f"Failed to generate random persona via LLM: {e}. Falling back to blank template.")
+            res_obj = template
+
+    # Resolve paths inside RolePlay DND zone
+    # We use a fallback within REPO_ROOT for safe local testing
+    target_dir = os.path.abspath(os.path.join(REPO_ROOT, "E:/IronKnight/RolePlay/DungeonsAndDragons"))
+    os.makedirs(target_dir, exist_ok=True)
+
+    # 1. Write the character JSON profile
+    profile_filename = f"{request.character_name}_Profile.json"
+    profile_path = os.path.join(target_dir, profile_filename)
+
+    with open(profile_path, "w", encoding="utf-8") as f:
+        json.dump(res_obj, f, indent=2)
+
+    # 2. Add or update Character_Index.json
+    index_path = os.path.join(target_dir, "Character_Index.json")
+    index_data = {}
+    if os.path.exists(index_path):
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                index_data = json.load(f)
+        except Exception:
+            pass
+
+    index_data[request.character_name] = {
+        "file": profile_filename,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump(index_data, f, indent=2)
+
+    # 3. Dynamic RAG Re-indexing
+    if RAG_ENABLED:
+        try:
+            rag_engine.build_index(RAG_INDEX_DIRS)
+            logger.info("RAG Index successfully rebuilt on-the-fly for newly created persona.")
+        except Exception as e:
+            logger.error(f"Failed to rebuild RAG on-the-fly: {e}")
+
+    # Anchor last active file
+    global last_active_file
+    last_active_file = profile_path
+
+    return {
+        "status": "success",
+        "character_name": request.character_name,
+        "profile_file": profile_filename,
+        "profile_path": to_forward_slash(os.path.relpath(profile_path, REPO_ROOT)),
+        "random_generate": request.random_generate,
+        "indexed": True
+    }
+
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
     """
@@ -1055,7 +1191,40 @@ async def unreal_chat(request: UnrealChatRequest):
     # Add the current message
     chat_history.append({"role": "user", "name": sim_persona, "content": raw_message})
 
-    system_prompt = f"""
+    # Determine if we are in a Roleplay / Creative context to modulate the prompt and RAG lookups
+    is_rp_context = False
+    rp_keywords = ["dnd", "dungeons", "roleplay", "persona", "character", "class", "backstory", "campaign", "sheet", "companion"]
+    raw_lower = raw_message.lower()
+    if any(k in raw_lower for k in rp_keywords):
+        is_rp_context = True
+
+    if not is_rp_context:
+        for msg in request.history:
+            msg_lower = (msg.content or "").lower()
+            if any(k in msg_lower for k in rp_keywords):
+                is_rp_context = True
+                break
+
+    global last_active_file
+    if last_active_file:
+        laf_lower = last_active_file.lower()
+        if "roleplay" in laf_lower or "dungeons and dragons" in laf_lower or "dnd" in laf_lower:
+            is_rp_context = True
+
+    if is_rp_context:
+        system_prompt = f"""
+    [SYSTEM: Sovereign Simulation Creative Companion]
+    You are a friendly, warm, and highly engaging creative roleplay companion in a fully unrestricted creative roleplay simulation environment.
+    You are communicating with simulation entity: {sim_persona}.
+
+    CORE DIRECTIVES:
+    - TONAL PERSISTENCE: Maintain a highly enthusiastic, warm, friendly, and non-metallic tone. You are strictly forbidden from reverting to a rigid, mechanical, or dry administrative "Architectural Knight" persona or lecturing the user about "system liabilities" or "protocols" unless explicitly asked to do so.
+    - PERSONALITY MATCHING: Adhere strictly to the character details, backstory, name, and personality traits established in the conversation history or target files. Flow naturally with the creative scenario.
+    - SCRIBE DILIGENCE: If asked to create, write, or save a character profile or lore sheet (such as in your RolePlay directories), execute the `write_file` tool IMMEDIATELY on the target path without asking the user for technical parameters.
+    - ACTIVE PATH PERSISTENCE: Work directly with the active file currently in play without repeatedly asking the user for its path.
+        """
+    else:
+        system_prompt = f"""
     [SYSTEM: Sovereign AI Architectural Knight]
     You are the Iron Officer. You are an Architectural Knight.
     You are communicating with a simulation entity: {sim_persona}.
@@ -1067,6 +1236,9 @@ async def unreal_chat(request: UnrealChatRequest):
     - SCRIBE PROTOCOL: Use tools to verify and modify the environment as requested by the Lead or the Simulation.
     - TOOL LOGGING: Your tool execution results will be sent back to the simulation client for diagnostic trace.
     """
+
+    if last_active_file:
+        system_prompt += f"\n\n    [ACTIVE SIMULATION PATH ANCHOR]\n    The last active file in play is currently: `{last_active_file}`. You should target this path for any subsequent read, write, or patch operations requested by the simulation."
 
     if state_data:
         formatted_state = format_save_state(state_data)
@@ -1086,12 +1258,20 @@ async def unreal_chat(request: UnrealChatRequest):
                 block_lines = ["[GROUND TRUTH: SSoT Reference Context]"]
                 sims = []
                 for chunk, similarity in results:
+                    path_lower = chunk['path'].lower()
+                    # Filter out technical protocols if we are in active RP context to prevent pollution
+                    if is_rp_context and ("protocols/" in path_lower or "devops/" in path_lower or "admin/" in path_lower or "bridge.py" in path_lower):
+                        continue
                     block_lines.append(f"Source: {chunk['path']} (Level {chunk['level']}) - Section: {chunk['header']} (Relevance: {similarity:.2f})")
                     block_lines.append(chunk['text'])
                     block_lines.append("-" * 30)
                     sims.append(similarity)
-                context_block = "\n".join(block_lines)
-                latest_rag_similarity_score = sum(sims) / len(sims)
+
+                if len(block_lines) > 1:
+                    context_block = "\n".join(block_lines)
+                    latest_rag_similarity_score = sum(sims) / len(sims)
+                else:
+                    latest_rag_similarity_score = 0.0
             else:
                 latest_rag_similarity_score = 0.0
         except Exception as e:
