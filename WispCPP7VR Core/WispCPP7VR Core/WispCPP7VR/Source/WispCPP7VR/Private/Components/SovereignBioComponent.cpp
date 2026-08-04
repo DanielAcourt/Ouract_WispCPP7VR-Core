@@ -97,6 +97,13 @@ void USovereignBioComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
     BioObj->SetStringField(TEXT("FatherID"), FatherID.ToString());
     BioObj->SetNumberField(TEXT("OffspringCount"), OffspringCount);
 
+    // Draconic Gestation & Nesting [B-035]
+    BioObj->SetBoolField(TEXT("bGestationActive"), bGestationActive);
+    BioObj->SetNumberField(TEXT("GestationProgress"), GestationProgress);
+    BioObj->SetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
+    BioObj->SetNumberField(TEXT("NestSpatiotemporalVolume"), NestSpatiotemporalVolume);
+    BioObj->SetStringField(TEXT("EggFertilityState"), EggFertilityState);
+
     TArray<TSharedPtr<FJsonValue>> MatingArray;
     for (const FGuid& Id : MatingHistory)
     {
@@ -133,6 +140,13 @@ void USovereignBioComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
         if ((*BioObj)->TryGetStringField(TEXT("FatherID"), IdStr)) FGuid::Parse(IdStr, FatherID);
 
         if ((*BioObj)->TryGetNumberField(TEXT("OffspringCount"), TempVal)) OffspringCount = (int32)TempVal;
+
+        // Draconic Gestation & Nesting [B-035]
+        (*BioObj)->TryGetBoolField(TEXT("bGestationActive"), bGestationActive);
+        if ((*BioObj)->TryGetNumberField(TEXT("GestationProgress"), TempVal)) GestationProgress = (float)TempVal;
+        (*BioObj)->TryGetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
+        if ((*BioObj)->TryGetNumberField(TEXT("NestSpatiotemporalVolume"), TempVal)) NestSpatiotemporalVolume = (float)TempVal;
+        (*BioObj)->TryGetStringField(TEXT("EggFertilityState"), EggFertilityState);
 
         const TArray<TSharedPtr<FJsonValue>>* MatingArray;
         if ((*BioObj)->TryGetArrayField(TEXT("MatingHistory"), MatingArray))

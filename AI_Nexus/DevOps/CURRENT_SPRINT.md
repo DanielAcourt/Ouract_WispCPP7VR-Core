@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.8. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
 # Sovereign Framework: CURRENT SPRINT BACKLOG
 
 This file tracks active tickets prioritized for the current iteration. Isolating these tasks optimizes real-time AI context loading and focuses active development.
@@ -33,6 +33,19 @@ The following tickets have been prioritized and added to the active backlog queu
 | AD-009 | Smart RAG Query Filtering | 3 | Done | DevOps | Prevent irrelevant administrative documents from polluting the creative context. | RAG search is bypassed or restricted if the prompt is purely roleplay/conversational. |
 | AD-010 | Transient Path Memory Anchor | 3 | Done | DevOps | Keep the active file path anchored in the system context to stop repetitive parameter loops. | A last_active_file variable is dynamically tracked and injected into the system prompt. |
 | AD-011 | Windows Cross-Drive Endpoint Hardening | 2 | Done | DevOps | Resolve Windows ValueError crash when calculating relative paths in generate_persona across multiple drive mounts. | try-except fallback implemented to return absolute path on cross-drive relative failure. |
+
+---
+
+## 🐉 DND Implementation Tickets (Homebrew Core)
+
+These tickets represent the "DND Implementation" phase, baking the core logic of "The Unseen Weave" and universal draconic biology/spiritual systems into the active Wisp framework:
+
+| ID | Task | Complexity | Status | Node | Why (Context) | What (Completion Outcome) |
+|:---|:---|:---:|:---:|:---|:---|:---|
+| B-035 | C++ Bio: Universal Gestation & Nesting | 5 | Todo | DevOps | Support dragon lifecycle reproduction and egg states in a universal biological module. | Add GestationProgress, bGestationActive, NestSpatiotemporalVolume, and EggFertilityState to USovereignBioComponent C++. |
+| B-036 | C++ Qi: Universal Domains & Runes | 5 | Todo | DevOps | Support male territory ownership and rune stone node hierarchies in a universal qi module. | Add DomainTier, DomainResonanceRadius, and DomainNetworkSaturation properties to USovereignQiComponent C++. |
+| B-037 | SSoT: Unseen Weave Lore Grounding | 3 | Todo | Research | Bake the foundational homebrew rules and dragon subclass metrics into the local RAG database. | Write Unseen_Weave_Lore.md containing dragon classifications, gestation duration tables, and rune grades. |
+| AD-012 | Bridge: Portable Roleplay & Gitignore Constraints | 3 | Todo | DevOps | Enable portable out-of-the-box roleplay execution without drive-mount dependencies or git bloat. | Modify config.json path variables to relative, and update .gitignore to exclude run-time DND campaigns/sessions. |
 
 ---
 

@@ -59,6 +59,19 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Qi")
 	TMap<FName, float> ElementalResonance;
 
+	/** Universal Territory & Domain Rune Systems [B-036] */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi Domain")
+	bool bIsDomainOwner = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi Domain")
+	FString DomainRuneTier = TEXT("None");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi Domain")
+	float DomainResonanceRadius = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Qi Domain")
+	float DomainNetworkSaturation = 0.0f;
+
 
 	/** --- 4. LOGIC --- */
 

@@ -88,6 +88,12 @@ void USovereignQiComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
 	QiObj->SetNumberField(TEXT("QiPurity"), QiPurity);
 	QiObj->SetNumberField(TEXT("TotalQiAccumulated"), TotalQiAccumulated);
 
+	// Universal Domain Rune and Territory parameters [B-036]
+	QiObj->SetBoolField(TEXT("bIsDomainOwner"), bIsDomainOwner);
+	QiObj->SetStringField(TEXT("DomainRuneTier"), DomainRuneTier);
+	QiObj->SetNumberField(TEXT("DomainResonanceRadius"), DomainResonanceRadius);
+	QiObj->SetNumberField(TEXT("DomainNetworkSaturation"), DomainNetworkSaturation);
+
 	TSharedPtr<FJsonObject> ResObj = MakeShareable(new FJsonObject());
 	for (const auto& Elem : ElementalResonance)
 	{
@@ -133,6 +139,12 @@ void USovereignQiComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
 		if ((*QiObj)->TryGetNumberField(TEXT("MaxQiCapacity"), TempVal)) MaxQiCapacity = (float)TempVal;
 		if ((*QiObj)->TryGetNumberField(TEXT("QiPurity"), TempVal)) QiPurity = (float)TempVal;
 		if ((*QiObj)->TryGetNumberField(TEXT("TotalQiAccumulated"), TempVal)) TotalQiAccumulated = (float)TempVal;
+
+		// Universal Domain Rune and Territory parameters [B-036]
+		(*QiObj)->TryGetBoolField(TEXT("bIsDomainOwner"), bIsDomainOwner);
+		(*QiObj)->TryGetStringField(TEXT("DomainRuneTier"), DomainRuneTier);
+		if ((*QiObj)->TryGetNumberField(TEXT("DomainResonanceRadius"), TempVal)) DomainResonanceRadius = (float)TempVal;
+		if ((*QiObj)->TryGetNumberField(TEXT("DomainNetworkSaturation"), TempVal)) DomainNetworkSaturation = (float)TempVal;
 
 		const TSharedPtr<FJsonObject>* ResObj;
 		if ((*QiObj)->TryGetObjectField(TEXT("Resonance"), ResObj))
