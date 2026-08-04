@@ -42,6 +42,7 @@ BRIDGE_PORT = 8000
 USER_NAME = "Dan"
 READ_ZONES = []
 WRITE_ZONES = []
+ROLEPLAY_ZONES = []
 PERSONA_ZONES = {}
 REMOTE_HISTORY_ENABLED = False
 HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
@@ -105,7 +106,7 @@ TOOL_MIN_PRECEDENCE = {
 }
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, ROLEPLAY_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
     global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS, RAG_IGNORED_DIRS
     global PERSISTENT_HANDSHAKE
     if os.path.exists(CONFIG_PATH):
@@ -122,6 +123,7 @@ def load_config():
 
                 READ_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("read_zones", [])]
                 WRITE_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("write_zones", [])]
+                ROLEPLAY_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("roleplay_zones", [])]
 
                 # [B-025] Ingest Persona-Specific Safe Zones
                 PERSONA_ZONES = bridge_cfg.get("persona_zones", {
@@ -338,9 +340,14 @@ class SovereignBridge:
         return False
 
     def is_roleplay_zone(self, target_node: str) -> bool:
-        """Checks if target node is inside the unrestricted RolePlay/D&D folder."""
-        normalized = to_forward_slash(target_node).lower()
-        return "roleplay/dungeonsanddragons" in normalized or "dungeons and dragons" in normalized
+        """Checks if target node is inside any of the configured unrestricted roleplay folders."""
+        abs_target = to_forward_slash(resolve_secure_path(target_node)).lower()
+        global ROLEPLAY_ZONES
+        for zone in ROLEPLAY_ZONES:
+            normalized_zone = to_forward_slash(zone).lower()
+            if abs_target == normalized_zone or abs_target.startswith(normalized_zone + "/"):
+                return True
+        return False
 
     def evaluate_intent_safety(self, payload: AgentCommandPayload) -> bool:
         destructive_keywords = ["delete", "remove", "rm", "unlink", "truncate", "drop"]
