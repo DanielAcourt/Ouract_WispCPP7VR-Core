@@ -174,7 +174,7 @@
     "ID": "B-039",
     "Task": "C++ Bio: Enhanced Gestation & Prestige Condensation",
     "Complexity": "5",
-    "Status": "Todo",
+    "Status": "In Progress",
     "Node": "DevOps",
     "Why": "Implement the Unseen Weave prestige mechanic where female dragons condense eggs to gain attribute boosts.",
     "What": "Add EnhancedGestationTier and PrestigeCondensationCount properties to USovereignBioComponent, with methods to shrink Nest volume and multiply duration."
@@ -187,5 +187,14 @@
     "Node": "DevOps",
     "Why": "Allow wyrmlings to inherit superior attributes based on Mother and Father stats stored in the Save Entity.",
     "What": "Implement attribute copying from parents to egg metadata, granting +1/+2 Ability score modifiers upon hatching."
+  },
+  {
+    "ID": "B-042",
+    "Task": "C++ Bio: Data-Driven Draconic Spawning & Initialization",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Enable individual draconic species traits and gestation attributes to be initialized dynamically from Species Data templates.",
+    "What": "Implement InitializeFromSpeciesTemplate in USovereignBioComponent to parse USovereignSpeciesData traits, map DragonType, and override GestationRate with Gestation.BaseRate dynamic attribute."
   }
 ]
