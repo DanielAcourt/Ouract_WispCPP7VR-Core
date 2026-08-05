@@ -382,6 +382,21 @@ void ASovereignBaseEntity::GetOwnedGameplayTags(FGameplayTagContainer& TagContai
 void ASovereignBaseEntity::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    // If Realtime frequency, simulate biology and Qi flow every frame using DeltaTime to prevent biological freeze
+    if (UpdateFrequency == EUpdateFrequency::Realtime)
+    {
+        if (BioComponent)
+        {
+            BioComponent->MaturityProgress += (BioComponent->MaturityRate * DeltaTime);
+            BioComponent->UpdateMetabolism(DeltaTime);
+        }
+
+        if (QiComponent)
+        {
+            QiComponent->ProcessQiFlow(DeltaTime, 10);
+        }
+    }
 }
 
 

@@ -82,11 +82,11 @@ bool FSovereignBioComponentSerializationTest::RunTest(const FString& Parameters)
     TestNotNull(TEXT("Bio JSON object is valid"), BioObj.Get());
 
     TestEqual(TEXT("bGestationActive serialized correctly"), BioObj->GetBoolField(TEXT("bGestationActive")), true);
-    TestEqual(TEXT("GestationProgress serialized correctly"), BioObj->GetNumberField(TEXT("GestationProgress")), 42.5f);
-    TestEqual(TEXT("GestationRate serialized correctly"), BioObj->GetNumberField(TEXT("GestationRate")), 2.5f);
-    TestEqual(TEXT("EggState serialized correctly"), static_cast<ESovereignEggState>(BioObj->GetIntegerField(TEXT("EggState"))), ESovereignEggState::Gestation);
+    TestEqual(TEXT("GestationProgress serialized correctly"), static_cast<float>(BioObj->GetNumberField(TEXT("GestationProgress"))), 42.5f);
+    TestEqual(TEXT("GestationRate serialized correctly"), static_cast<float>(BioObj->GetNumberField(TEXT("GestationRate"))), 2.5f);
+    TestEqual(TEXT("EggState serialized correctly"), static_cast<ESovereignEggState>(static_cast<uint8>(BioObj->GetNumberField(TEXT("EggState")))), ESovereignEggState::Gestation);
     TestEqual(TEXT("bIsNestCreated serialized correctly"), BioObj->GetBoolField(TEXT("bIsNestCreated")), true);
-    TestEqual(TEXT("NestSpatiotemporalVolume serialized correctly"), BioObj->GetNumberField(TEXT("NestSpatiotemporalVolume")), 1500.75f);
+    TestEqual(TEXT("NestSpatiotemporalVolume serialized correctly"), static_cast<float>(BioObj->GetNumberField(TEXT("NestSpatiotemporalVolume"))), 1500.75f);
     TestEqual(TEXT("EggFertilityState serialized correctly"), BioObj->GetStringField(TEXT("EggFertilityState")), TEXT("Fertilized_Prismatic"));
 
     // Reset/modify the component fields before loading
