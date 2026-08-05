@@ -22,6 +22,9 @@ USovereignBioComponent::USovereignBioComponent()
 
     // B-038: Default gestation rate
     GestationRate = 1.0f;
+
+    // B-039: Initialize Hybrid Enum state
+    EggState = ESovereignEggState::None;
 }
 
 void USovereignBioComponent::BeginPlay()
@@ -69,15 +72,25 @@ void USovereignBioComponent::UpdateMetabolism(float DeltaTime)
 
     WasteLevel += (NetDrain * 0.5f);
 
-    // B-038: Live Gestation Progression (C++ Tick Logic)
+    // B-038 & B-039: Live Gestation Progression with Hybrid Core Enum
     if (bGestationActive)
     {
+        // Auto-transition to Gestation state if currently None
+        if (EggState == ESovereignEggState::None)
+        {
+            EggState = ESovereignEggState::Gestation;
+        }
+
         GestationProgress += GestationRate * DeltaTime;
 
         // Transition to ReadyToLay once threshold is met (if not already laid or customized)
-        if (GestationProgress >= 100.0f && EggFertilityState == TEXT("None"))
+        if (GestationProgress >= 100.0f && EggState == ESovereignEggState::Gestation)
         {
-            EggFertilityState = TEXT("ReadyToLay");
+            EggState = ESovereignEggState::ReadyToLay;
+            if (EggFertilityState == TEXT("None"))
+            {
+                EggFertilityState = TEXT("ReadyToLay");
+            }
         }
     }
 }
@@ -117,6 +130,7 @@ void USovereignBioComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
     BioObj->SetBoolField(TEXT("bGestationActive"), bGestationActive);
     BioObj->SetNumberField(TEXT("GestationProgress"), GestationProgress);
     BioObj->SetNumberField(TEXT("GestationRate"), GestationRate); // B-038
+    BioObj->SetNumberField(TEXT("EggState"), static_cast<double>(EggState)); // B-039
     BioObj->SetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
     BioObj->SetNumberField(TEXT("NestSpatiotemporalVolume"), NestSpatiotemporalVolume);
     BioObj->SetStringField(TEXT("EggFertilityState"), EggFertilityState);
@@ -162,6 +176,7 @@ void USovereignBioComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
         (*BioObj)->TryGetBoolField(TEXT("bGestationActive"), bGestationActive);
         if ((*BioObj)->TryGetNumberField(TEXT("GestationProgress"), TempVal)) GestationProgress = (float)TempVal;
         if ((*BioObj)->TryGetNumberField(TEXT("GestationRate"), TempVal)) GestationRate = (float)TempVal; // B-038
+        if ((*BioObj)->TryGetNumberField(TEXT("EggState"), TempVal)) EggState = static_cast<ESovereignEggState>((uint8)TempVal); // B-039
         (*BioObj)->TryGetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
         if ((*BioObj)->TryGetNumberField(TEXT("NestSpatiotemporalVolume"), TempVal)) NestSpatiotemporalVolume = (float)TempVal;
         (*BioObj)->TryGetStringField(TEXT("EggFertilityState"), EggFertilityState);
