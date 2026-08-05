@@ -20,6 +20,7 @@ This file tracks active tickets prioritized for the current iteration. Isolating
 | AD-005a | Spatial Sense: Save State Ingestion | 5 | Done | Research/DevOps | Map serialized JSON save payloads to the LLM's system context prompt framing. | Serialized component save packet (Identity, Bio, Qi, etc.) is injected during `/v1/unreal/chat` calls. |
 | AD-005d | E2E Dialogue Console Logging | 2 | Done | DevOps | Enable immediate trace logging of the AI's response content in the bridge and client subsystem. | AI response is logged with prefix trace on both Python and C++ consoles. |
 | B-035 | C++ Bio: Universal Gestation & Nesting | 5 | Done | DevOps | Support dragon lifecycle reproduction and egg states in a universal biological module. | Add GestationProgress, bGestationActive, NestSpatiotemporalVolume, and EggFertilityState to USovereignBioComponent C++. |
+| B-038 | C++ Bio: Live Gestation Progression | 3 | Done | DevOps | Advance the internal egg formation cycle during the entity heartbeat without double-ticking component logic. | Integrate GestationProgress incrementing within USovereignBioComponent's metabolism update loop, capping at 100.0f and transitioning EggFertilityState. |
 
 ---
 
@@ -45,7 +46,6 @@ These tickets represent the "DND Implementation" phase, baking the core logic of
 |:---|:---|:---:|:---:|:---|:---|:---|
 | B-036 | C++ Qi: Universal Domains & Runes | 5 | Todo | DevOps | Support male territory ownership and rune stone node hierarchies in a universal qi module. | Add DomainTier, DomainResonanceRadius, and DomainNetworkSaturation properties to USovereignQiComponent C++. |
 | B-037 | SSoT: Unseen Weave Lore Grounding | 3 | Todo | Research | Bake the foundational homebrew rules and dragon subclass metrics into the local RAG database. | Write Unseen_Weave_Lore.md containing dragon classifications, gestation duration tables, and rune grades. |
-| B-038 | C++ Bio: Live Gestation Progression | 3 | Todo | DevOps | Advance the internal egg formation cycle during the entity heartbeat without double-ticking component logic. | Integrate GestationProgress incrementing within USovereignBioComponent's metabolism update loop, capping at 100.0f and transitioning EggFertilityState. |
 | B-039 | C++ Bio: Enhanced Gestation & Prestige Condensation | 5 | Todo | DevOps | Implement the Unseen Weave prestige mechanic where female dragons condense eggs to gain attribute boosts. | Add EnhancedGestationTier and PrestigeCondensationCount properties to USovereignBioComponent, with methods to shrink Nest volume and multiply duration. |
 | B-040 | C++ Bio: Progenitor Attribute Imbuement | 5 | Todo | DevOps | Allow wyrmlings to inherit superior attributes based on Mother and Father stats stored in the Save Entity. | Implement attribute copying from parents to egg metadata, granting +1/+2 Ability score modifiers upon hatching. |
 | AD-012 | Bridge: Portable Roleplay & Gitignore Constraints | 3 | Todo | DevOps | Enable portable out-of-the-box roleplay execution without drive-mount dependencies or git bloat. | Modify config.json path variables to relative, and update .gitignore to exclude run-time DND campaigns/sessions. |

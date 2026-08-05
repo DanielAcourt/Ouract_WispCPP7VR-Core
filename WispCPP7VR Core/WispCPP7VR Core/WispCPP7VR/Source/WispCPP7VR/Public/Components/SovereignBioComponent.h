@@ -106,6 +106,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     float GestationProgress = 0.0f;
 
+    /** Live Gestation Progression rate [B-038] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    float GestationRate = 1.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     bool bIsNestCreated = false;
 
