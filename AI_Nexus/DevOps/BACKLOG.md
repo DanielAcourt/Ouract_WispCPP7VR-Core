@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.9. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-08-04
 # Sovereign Framework: PRODUCT BACKLOG
 
 This backlog tracks long-term product tasks using Fibonacci scoring. To optimize context loading during active cycles, all currently active/prioritized tickets have been moved to `CURRENT_SPRINT.md`.
@@ -41,6 +41,7 @@ This backlog tracks long-term product tasks using Fibonacci scoring. To optimize
 | AD-005a | Spatial Sense: Save State Ingestion | 5 | Todo | Research/DevOps | Ingest the serialized component save packet during `/v1/unreal/chat` calls. | Map serialized JSON save payloads to the LLM's system context prompt framing. |
 | AD-005b | Spatial Sense: Unreal Agent Manifestation | 8 | Todo | DevOps | Create a 3D representation of the Iron Knight agent inside the levels. | Blueprint actor capable of requesting handshakes and rendering dynamic UI status. |
 | AD-005c | Spatial Sense: Paradox Visualizer (AFI) | 5 | Todo | Research | Reconcile local state discrepancy reports to drive visual particles. | Drive material parameters and Niagara particles based on live `ParadoxDensity` ($\Xi$). |
+| B-041 | C++ Bio: Diminished Draconic Beast Fallback | 8 | Todo | DevOps | Penalize premature egg laying or parental death during gestation by regressing the offspring into a lesser beast. | Implement biological regression resolving early eggs to Wyvern/Pygmy Wyvern classifications with restricted stats and no legendary actions. |
 
 ---
 
