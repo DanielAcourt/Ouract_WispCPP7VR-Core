@@ -334,6 +334,12 @@ void ASovereignPlayerWisp::EjectFromHost()
 		PC = Cast<APlayerController>(HostPawn->GetController());
 	}
 
+	// B-039: Fallback to the Wisp's own controller if the Host Pawn has no controller (e.g. for Interactables)
+	if (!PC)
+	{
+		PC = Cast<APlayerController>(GetController());
+	}
+
 	// 3. THE GREAT DETACHMENT
 	// Break physical parent-child link while keeping the Wisp's current world coordinates.
 
