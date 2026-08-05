@@ -8,7 +8,6 @@ public class WispCPP7VRTests : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false; // Disable Unity builds for faster iteration on tests
-        bUsePCHFiles = false; // B-039: Disable precompiled headers to resolve MSVC C3859 paging file memory exhaustion on Windows
 
         PublicDependencyModuleNames.AddRange(new string[] {
             "Core",

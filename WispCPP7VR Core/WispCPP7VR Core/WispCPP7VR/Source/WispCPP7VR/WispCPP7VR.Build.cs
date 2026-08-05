@@ -7,7 +7,6 @@ public class WispCPP7VR : ModuleRules
     public WispCPP7VR(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUsePCHFiles = false; // B-039: Disable precompiled headers to resolve MSVC C3859 paging file memory exhaustion on Windows
 
         PublicDependencyModuleNames.AddRange(new string[] {
             "Core",
