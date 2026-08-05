@@ -26,6 +26,7 @@ void USovereignBridgeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void USovereignBridgeSubsystem::Deinitialize()
 {
     UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Subsystem Deinitializing. Clearing %d registered entities."), RegisteredSovereignEntities.Num());
+    StopMailboxPolling();
     RegisteredSovereignEntities.Empty();
 
     Super::Deinitialize();
@@ -84,6 +85,104 @@ void USovereignBridgeSubsystem::Perform07CheckIn()
     Request->ProcessRequest();
 }
 
+void USovereignBridgeSubsystem::ExecuteAASHandshake()
+{
+    // // [J] Requests a temporary +0.5 VSS authority boost from the bridge to dynamically clear 409 Conflict Gates.
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Executing AAS Handshake..."));
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            bHandshakeActive = true;
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AAS Handshake successful! Global Authority Boost Active."));
+            FlushTelemetryQueue();
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: AAS Handshake failed."));
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/aas/handshake"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+    Request->ProcessRequest();
+}
+
+void USovereignBridgeSubsystem::CreateSimulationFile(const FString& FilePath, const FString& Content)
+{
+    // // [J] Direct programmatic file creation bypassing the conversational LLM. 2026-06-28
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Creating simulation file [%s]..."), *FilePath);
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this, FilePath](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: File [%s] created successfully!"), *FilePath);
+        }
+        else
+        {
+            FString ResponseStr = Res.IsValid() ? Res->GetContentAsString() : TEXT("No Response");
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: File [%s] creation failed. Details: %s"), *FilePath, *ResponseStr);
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/create_file"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("filepath"), FilePath);
+    JsonPayload->SetStringField(TEXT("content"), Content);
+    JsonPayload->SetStringField(TEXT("persona"), TEXT("Unreal_Simulation"));
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
+}
+
+void USovereignBridgeSubsystem::GenerateDNDPersona(const FString& CharacterName, bool bRandomGenerate)
+{
+    // // [J] Direct programmatic character sheet generation and indexing. 2026-06-28
+    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Requesting DND Persona generation for [%s] (Random: %s)..."), *CharacterName, bRandomGenerate ? TEXT("True") : TEXT("False"));
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindLambda([this, CharacterName](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bWasSucc)
+    {
+        if (bWasSucc && Res.IsValid() && EHttpResponseCodes::IsOk(Res->GetResponseCode()))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: DND Persona [%s] generated and indexed successfully!"), *CharacterName);
+        }
+        else
+        {
+            FString ResponseStr = Res.IsValid() ? Res->GetContentAsString() : TEXT("No Response");
+            UE_LOG(LogTemp, Error, TEXT("SovereignBridge: DND Persona [%s] generation failed. Details: %s"), *CharacterName, *ResponseStr);
+        }
+    });
+
+    Request->SetURL(BridgeBaseUrl + TEXT("/v1/unreal/generate_persona"));
+    Request->SetVerb(TEXT("POST"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+    TSharedPtr<FJsonObject> JsonPayload = MakeShareable(new FJsonObject());
+    JsonPayload->SetStringField(TEXT("character_name"), CharacterName);
+    JsonPayload->SetBoolField(TEXT("random_generate"), bRandomGenerate);
+    JsonPayload->SetStringField(TEXT("persona"), TEXT("Unreal_Simulation"));
+
+    FString RequestBody;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+    FJsonSerializer::Serialize(JsonPayload.ToSharedRef(), Writer);
+
+    Request->SetContentAsString(RequestBody);
+    Request->ProcessRequest();
+}
+
 void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History)
 {
     // // [J] Bridging the simulation's voice to the Lead's AI. 2025-06-18
@@ -99,6 +198,38 @@ void USovereignBridgeSubsystem::SendSimulationChat(const FString& ActorName, con
     JsonPayload->SetStringField(TEXT("actor_name"), ActorName);
     JsonPayload->SetStringField(TEXT("message"), Message);
     JsonPayload->SetBoolField(TEXT("enable_remote_history"), bEnableRemoteHistory);
+
+    // Look up the active registered saveable entity component associated with this Actor
+    TSharedPtr<FJsonObject> SaveStateObj;
+    for (const TWeakObjectPtr<USovereignSaveableEntityComponent>& EntityPtr : RegisteredSovereignEntities)
+    {
+        if (EntityPtr.IsValid())
+        {
+            AActor* Owner = EntityPtr->GetOwner();
+            if (Owner)
+            {
+                FString OwnerName = Owner->GetName();
+                FString CleanActorName = ActorName.Replace(TEXT("SIM_"), TEXT(""));
+                FString CleanOwnerName = OwnerName.Replace(TEXT("SIM_"), TEXT(""));
+
+                // Suffix-agnostic matching for Unreal transient spawn names (e.g., BP_PlayerWisp_C_0 matching BP_PlayerWisp)
+                if (OwnerName == ActorName ||
+                    CleanOwnerName == CleanActorName ||
+                    CleanOwnerName.StartsWith(CleanActorName) ||
+                    CleanActorName.StartsWith(CleanOwnerName))
+                {
+                    SaveStateObj = EntityPtr->CaptureFullEntityState();
+                    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Found Registered Entity [%s] for Actor [%s]. Ingesting save state."), *OwnerName, *ActorName);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (SaveStateObj.IsValid())
+    {
+        JsonPayload->SetObjectField(TEXT("save_state"), SaveStateObj);
+    }
 
     // Serialize History
     TArray<TSharedPtr<FJsonValue>> HistoryArray;
@@ -313,6 +444,7 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
             }
 
             UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Chat Response Received (%d tools executed)"), ChatResponse.ToolLogs.Num());
+            UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AI Response: %s"), *ChatResponse.Content);
             OnChatResponseReceived.Broadcast(ChatResponse);
         }
     }
@@ -320,5 +452,92 @@ void USovereignBridgeSubsystem::OnChatResponse(FHttpRequestPtr Request, FHttpRes
     {
         FString ErrorDetail = Response.IsValid() ? FString::Printf(TEXT("Code: %d"), Response->GetResponseCode()) : TEXT("Network Error");
         UE_LOG(LogTemp, Error, TEXT("SovereignBridge: Simulation Chat FAILED. %s"), *ErrorDetail);
+    }
+}
+
+void USovereignBridgeSubsystem::StartMailboxPolling(const FString& ActorName)
+{
+    if (ActorName.StartsWith(TEXT("SIM_")))
+    {
+        PollingActorName = ActorName;
+    }
+    else
+    {
+        PollingActorName = FString::Printf(TEXT("SIM_%s"), *ActorName);
+    }
+
+    // Stop any active polling first to avoid redundant timer accumulation
+    StopMailboxPolling();
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        World->GetTimerManager().SetTimer(
+            MailboxTimerHandle,
+            this,
+            &USovereignBridgeSubsystem::QueryMailbox,
+            MailboxPollInterval,
+            true
+        );
+        UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: Started Mailbox Polling loop for [%s] every %f seconds."), *PollingActorName, MailboxPollInterval);
+    }
+}
+
+void USovereignBridgeSubsystem::StopMailboxPolling()
+{
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        World->GetTimerManager().ClearTimer(MailboxTimerHandle);
+    }
+
+    TSharedPtr<IHttpRequest, ESPMode::ThreadSafe> RequestPtr = ActiveMailboxRequest.Pin();
+    if (RequestPtr.IsValid())
+    {
+        RequestPtr->CancelRequest();
+        UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Canceled active in-flight mailbox request."));
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("SovereignBridge: Stopped Mailbox Polling."));
+}
+
+void USovereignBridgeSubsystem::QueryMailbox()
+{
+    if (PollingActorName.IsEmpty()) return;
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+    Request->OnProcessRequestComplete().BindUObject(this, &USovereignBridgeSubsystem::OnMailboxResponse);
+
+    ActiveMailboxRequest = Request;
+
+    // Use string concatenation (+) to avoid path separator operator compilation ambiguity
+    FString TargetURL = BridgeBaseUrl + TEXT("/v1/unreal/mailbox?actor_name=") + PollingActorName;
+    Request->SetURL(TargetURL);
+    Request->SetVerb(TEXT("GET"));
+    Request->ProcessRequest();
+}
+
+void USovereignBridgeSubsystem::OnMailboxResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (bWasSuccessful && Response.IsValid() && EHttpResponseCodes::IsOk(Response->GetResponseCode()))
+    {
+        TSharedPtr<FJsonObject> JsonObject;
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+        if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* MessagesArray;
+            if (JsonObject->TryGetArrayField(TEXT("messages"), MessagesArray))
+            {
+                for (const TSharedPtr<FJsonValue>& MsgVal : *MessagesArray)
+                {
+                    FString PushedMessage = MsgVal->AsString();
+                    UE_LOG(LogTemp, Warning, TEXT("SovereignBridge: AI Pushed Proactive Chat: %s"), *PushedMessage);
+
+                    // Broadcast to UI Widgets, subtitles, or character dialogue systems
+                    OnAIChatPushed.Broadcast(PushedMessage);
+                }
+            }
+        }
     }
 }

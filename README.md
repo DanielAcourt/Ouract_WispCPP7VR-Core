@@ -1,8 +1,23 @@
-// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.1. Licensed under GPLv3 (See LICENSE). Last Updated: 2025-05-22
-# Sovereign Framework: WispCPP7VR
+// Copyright (c) 2013-2025 Daniel Acourt. Version 36.4.7. Licensed under GPLv3 (See LICENSE). Last Updated: 2026-06-28
+# Sovereign Framework: WispCPP7VR (v36.4.7-Knight-AAS)
 
 ## 🌌 Overview
-The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ architecture for Unreal Engine, designed for immersive VR experiences. It provides a robust foundation for entity possession, data-driven simulations, and real-time environmental telemetry. The framework blends rigorous technical standards with a spiritual, meditative theme centered around "Wisps," "Souls," and "Possession."
+The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ architecture for Unreal Engine designed for immersive VR experiences. It provides a robust foundation for entity possession, data-driven simulations, and real-time environmental telemetry. The framework blends rigorous technical standards with a spiritual, meditative theme centered around "Wisps," "Souls," and "Possession."
+
+---
+
+## 🤖 Sovereign Intelligence: The Iron Knight Bridge (`Sovereign_Intelligence/`)
+The `Sovereign_Intelligence/` folder is the administrative and cognitive engine of the framework, running locally to interface your Unreal Engine simulation directly with local hardware acceleration (e.g. your GTX 5090).
+
+*   **`IronOfficer/bridge.py` (The Bridge):** A local high-performance FastAPI server. It acts as the gatekeeper for system telemetry, AAS (Agency Arbitration Schema) protocol validation, and PSTA (Provable Trust) evaluation.
+*   **`IronOfficer/vessel.py` (The HMI):** A lightweight console chat medium allowing you to communicate directly with the local AI model (using Ollama and Llama3.1) and issue `/report` commands.
+
+### 🔌 Iron Knight Simulation API
+The bridge exposes specialized REST endpoints for real-time simulation synchronization:
+*   `POST /v1/unreal/checkin`: Performs a 07 Protocol check-in handshake to verify connectivity and initialize the global authority boost.
+*   `POST /v1/unreal/telemetry`: Ingests multi-component BlackBox telemetry data and PSTA viability parameters from simulation souls.
+*   `POST /v1/unreal/chat`: Supports stateful/stateless dialogue between simulation-born actors (e.g. starting with `SIM_`) and the AI, returning detailed diagnostic tool execution logs.
+*   `POST /v1/aas/handshake`: Dynamically re-arms a single-use global authority boost (`+0.5` VSS) to clear administrative logical barriers.
 
 ---
 
@@ -10,25 +25,29 @@ The **Sovereign Framework** (WispCPP7VR) is a high-performance, modular C++ arch
 The project adheres to a strict **Single Source of Truth (SSoT)** hierarchy, managed within the `AI_Nexus/` directory to ensure alignment between high-level intent and low-level implementation. Refer to the [AI Nexus Master Index](AI_Nexus/INDEX.md) for a complete file map.
 
 *   **Level 0:** [Timeline & Evolution](AI_Nexus/Timeline/MD.md). Tracks the project's historical context and long-term vision.
-*   **Level 1:** [The Rulebook](AI_Nexus/Protocols/AGENTS.md). Standard operating procedures, multi-agent coordination protocols, and architectural constraints.
-*   **Level 2:** [Identity & Internal Logic](AI_Nexus/Identity/identity.json). Defines the "Current Truth" for every actor in the world via the `USovereignSaveableEntityComponent` (The Soul).
+*   **Level 1:** [The Rulebook](AI_Nexus/Protocols/Agent_Workflow.md). Standard operating procedures, multi-agent coordination protocols, and architectural constraints.
+*   **Level 2:** [Identity & Internal Logic](AI_Nexus/Identity/IDENTITY.json). Defines the "Current Truth" for every actor in the world via the `USovereignSaveableEntityComponent` (The Soul).
 
 ---
 
-## 🤖 AI Nexus & Multi-Agent Setup
-The `AI_Nexus/` directory is the central hub for coordination between **Jules** (DevOps & Structural Lead) and **Claude** (IDE Architect):
-- **[DevOps](AI_Nexus/DevOps/_AGENT_CONTEXT.md):** Active sprint status and communication logs.
-- **[Memories](AI_Nexus/Memories/data_driven_spawning_analysis.md):** Long-term context and technical analyses.
-- **[Protocols](AI_Nexus/Protocols/AGENTS.md):** Coding standards and SOPs.
-- **[Timeline](AI_Nexus/Timeline/MD.md):** Historical evolution of the framework.
+## 👻 The "Modular Soul" Architecture (`USovereignSaveableEntityComponent`)
+Evolved from a monolithic entity component, the **Sovereign Soul** operates on a decoupled, **Mediator-based Hub** pattern (The Soul Hub):
+
+*   **Central Mediator:** `USovereignSaveableEntityComponent` registers specialized brokers on `BeginPlay` and orchestrates all serialization and Bridge transmission.
+*   **Specialized Components:**
+    *   `USovereignBioComponent` (Biology, Lineage, Maturity, Metabolism)
+    *   `USovereignQiComponent` (Core Cultivation, Qi Capacity, Alignment, Resonance)
+    *   `USovereignElementComponent` (Body Sockets, Resistance, Affinities)
+    *   `USovereignAttributeComponent` (Core RPG attributes, Health)
+*   **Categorized Truth:** All telemetry is organized into clean named root categories (`Identity`, `Bio`, `Qi`, `Elements`, `Attributes`, `UnknownTags`) preventing data pollution.
 
 ---
 
-## 👻 The "Soul" Architecture (`USovereignSaveableEntityComponent`)
-The core of every entity in the Sovereign Framework is the **Soul**. This actor component serves as the **Primary Brain** and central data container.
-
-*   **Identity Persistence:** Ensures that an entity's identity, attributes, and state persist across serialization (JSON/Binary) and possession cycles.
-*   **Single Point of Truth:** All systems (Possession, Growth, Save/Load) interact with the Soul component rather than the Actor directly, ensuring class-agnostic compatibility.
+## 🎨 Sovereign Nested UI & Blueprint Handshake
+To support flexible, non-blocking visual feedback during active VR play sessions:
+*   **`USovereignMasterHUD`:** Handles automated runtime discovery of registered specialized component brokers and injects the Soul Hub pointer into nested sub-widgets.
+*   **`USovereignBaseWidget`:** Automates UI element show/hide logic based on active category brokers and converts serialized states to simple C++-handled `TMap<FString, FString>` maps for safe, robust Blueprint binding.
+*   **`USovereignBridgeSubsystem::ExecuteAASHandshake`:** Exposes a `BlueprintCallable` action to request an authority boost directly from Unreal. This enables actors to dynamically lift `409 CONFLICT` gates when telemetry pushes collide with single-use handshake tokens during concurrent world-initialization.
 
 ---
 

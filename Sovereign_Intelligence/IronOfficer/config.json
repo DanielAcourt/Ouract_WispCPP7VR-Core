@@ -1,6 +1,6 @@
 {
     "identity": "Iron Officer",
-    "version": "36.4.7",
+    "version": "36.4.8",
     "initialization_message": "Archivist Persona \u0398 online. Thoughts scrambled; ready to structure them.",
     "user_preference": {
         "name": "Dan",
@@ -26,24 +26,48 @@
             "OLLAMA_MODELS": "C:\\Users\\Danie\\.ollama\\models"
         }
     },
+    "rag_settings": {
+        "enabled": true,
+        "enabled_on_startup": true,
+        "rag_context_weight": 0.5,
+        "max_chunks": 3,
+        "similarity_threshold": 0.05,
+        "chunk_size_words": 250,
+        "index_dirs": [
+            "AI_Nexus",
+            "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
+        ],
+        "ignored_dirs": [
+            "protocols",
+            "devops",
+            "admin",
+            "bridge.py"
+        ]
+    },
     "bridge": {
         "host": "0.0.0.0",
         "port": 8000,
+        "persistent_handshake": true,
+        "roleplay_zones": [
+            "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
+        ],
         "read_zones": [
             ".",
-            "E:\\IronKnight"
+            "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
         ],
         "write_zones": [
             "Sovereign_Intelligence/IronOfficer/Environment",
             "AI_Nexus",
-            "E:\\IronKnight"
+            "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
         ],
         "persona_zones": {
             "Iron_Knight": [
                 "Sovereign_Intelligence/IronKnight_Memory",
                 "IronKnight/",
-                "E:\\IronKnight",
-                "E:\\IronKnight\\RolePlay\\DungeonsAndDragons"
+                "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
+            ],
+            "Unreal_Simulation": [
+                "Sovereign_Intelligence/IronOfficer/RolePlay/DungeonsAndDragons"
             ]
         }
     }

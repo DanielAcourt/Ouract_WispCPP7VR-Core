@@ -2,8 +2,11 @@
 
 #include "Entities/SovereignSaveableEntityComponent.h"
 #include "Entities/SovereignBrokerInterface.h"
+#include "Entities/SovereignDiagnosticBroker.h"
+#include "Entities/SovereignCultivationBroker.h"
 #include "Subsystems/SovereignBridgeSubsystem.h"
 #include "SaveSystem/SovereignActorRegistry.h"
+#include "Interaction/SovereignSaveInterface.h"
 #include "JsonObjectConverter.h"
 #include "Serialization/JsonSerializer.h"
 #include "Engine/World.h"
@@ -11,6 +14,24 @@
 USovereignSaveableEntityComponent::USovereignSaveableEntityComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void USovereignSaveableEntityComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	// Instantiate the brokers dynamically at runtime and register them to our RegisteredBrokers list
+	if (!DiagnosticBroker)
+	{
+		DiagnosticBroker = NewObject<UDiagnosticBroker>(this);
+	}
+	RegisterBroker(DiagnosticBroker);
+
+	if (!CultivationBroker)
+	{
+		CultivationBroker = NewObject<UCultivationBroker>(this);
+	}
+	RegisterBroker(CultivationBroker);
 }
 
 void USovereignSaveableEntityComponent::BeginPlay()
@@ -149,6 +170,19 @@ TSharedPtr<FJsonObject> USovereignSaveableEntityComponent::CaptureFullEntityStat
 		}
 	}
 
+	// 4. OWNER FLAT SAVE DATA (ISovereignSaveInterface)
+	if (AActor* Owner = GetOwner())
+	{
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
+		{
+			TMap<FString, FString> SaveData = SaveInterface->GetSaveData();
+			for (const auto& Elem : SaveData)
+			{
+				RootObj->SetStringField(Elem.Key, Elem.Value);
+			}
+		}
+	}
+
 	return RootObj;
 }
 
@@ -189,6 +223,33 @@ void USovereignSaveableEntityComponent::ApplyStateFromJsonObject(const TSharedPt
 		if (Broker.GetInterface())
 		{
 			Broker->OnLoad(JsonData);
+		}
+	}
+
+	// 4. RESTORE OWNER FLAT SAVE DATA (ISovereignSaveInterface)
+	if (AActor* Owner = GetOwner())
+	{
+		if (ISovereignSaveInterface* SaveInterface = Cast<ISovereignSaveInterface>(Owner))
+		{
+			TMap<FString, FString> FlatData;
+			for (const auto& Elem : JsonData->Values)
+			{
+				if (Elem.Value.IsValid())
+				{
+					if (Elem.Value->Type == EJson::String)
+					{
+						FlatData.Add(Elem.Key, Elem.Value->AsString());
+					}
+					else if (Elem.Value->Type == EJson::Number)
+					{
+						FlatData.Add(Elem.Key, FString::SanitizeFloat(Elem.Value->AsNumber()));
+					}
+				}
+			}
+			if (FlatData.Num() > 0)
+			{
+				SaveInterface->RestoreSaveData(FlatData);
+			}
 		}
 	}
 
@@ -260,6 +321,20 @@ FString USovereignSaveableEntityComponent::SerializeJsonToString(TSharedPtr<FJso
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
 	FJsonSerializer::Serialize(JsonObj.ToSharedRef(), Writer);
 	return JsonString;
+}
+
+float USovereignSaveableEntityComponent::GetSystemConfidence_Implementation() const
+{
+	float BaseConfidence = 1.0f - ParadoxDensity;
+
+	// Coupling with the Diagnostic Broker's curation status (VettedBy indicator)
+	if (DiagnosticBroker && !DiagnosticBroker->VettedBy.IsEmpty())
+	{
+		// Curator validation mitigates 80% of current paradox/uncertainty density, boosting the system confidence.
+		BaseConfidence = 1.0f - (ParadoxDensity * 0.2f);
+	}
+
+	return FMath::Clamp(BaseConfidence, 0.0f, 1.0f);
 }
 
 #if WITH_EDITOR

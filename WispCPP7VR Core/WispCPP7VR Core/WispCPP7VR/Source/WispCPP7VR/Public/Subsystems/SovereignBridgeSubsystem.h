@@ -71,6 +71,9 @@ struct FSovereignChatMessage
 /** Delegate broadcasted when the bridge responds to a chat request */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignChatResponse, const FSovereignChatResponse&, Response);
 
+/** Delegate triggered when a proactive AI message is received from the mailbox */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSovereignAIChatPushed, const FString&, Message);
+
 /**
  * USovereignBridgeSubsystem: Manages communication between Unreal and the Iron Officer Bridge.
  * Implements the 07 Protocol, Telemetry pipelines, and Simulation Chat.
@@ -109,9 +112,47 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
     void SendSimulationChat(const FString& ActorName, const FString& Message, const TArray<FSovereignChatMessage>& History);
 
+    /**
+     * Executes the AAS Handshake to request a temporary authority boost (+0.5 VSS).
+     * // [J] Exposing the handshake directly to Blueprints allows simulation entities to dynamically request clearance.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void ExecuteAASHandshake();
+
+    /**
+     * Creates a new file in the specified path with the provided content.
+     * Bypasses the conversational chat LLM loop and directly issues a request to the bridge.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void CreateSimulationFile(const FString& FilePath, const FString& Content);
+
+    /**
+     * Dynamically generates a new D&D character sheet, updates character index, and indexes RAG on-the-fly.
+     * @param CharacterName     The name of the character to generate.
+     * @param bRandomGenerate   If true, uses the LLM to randomly generate rich, creative attributes and backstory.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void GenerateDNDPersona(const FString& CharacterName, bool bRandomGenerate);
+
     /** Delegate triggered when a chat response is received from the bridge */
     UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
     FOnSovereignChatResponse OnChatResponseReceived;
+
+    /** Triggered whenever the polling loop retrieves a message from the mailbox */
+    UPROPERTY(BlueprintAssignable, Category = "Sovereign|Bridge")
+    FOnSovereignAIChatPushed OnAIChatPushed;
+
+    /** Polling Interval in seconds (default: 5.0f) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
+    float MailboxPollInterval = 5.0f;
+
+    /** Starts the automated mailbox polling loop */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void StartMailboxPolling(const FString& ActorName);
+
+    /** Stops the mailbox polling loop */
+    UFUNCTION(BlueprintCallable, Category = "Sovereign|Bridge")
+    void StopMailboxPolling();
 
     /** If true, the bridge will store a permanent copy of the chat in AI_Nexus/Memories/ */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bridge")
@@ -165,6 +206,16 @@ private:
     FString BridgeBaseUrl = TEXT("http://127.0.0.1:8000");
 
     /** Indicates if the handshake has been established */
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sovereign|Bridge", meta = (AllowPrivateAccess = "true"))
     bool bHandshakeActive = false;
+
+    FTimerHandle MailboxTimerHandle;
+    FString PollingActorName;
+
+    /** Tracks the active in-flight request so we can cancel it if needed */
+    TWeakPtr<IHttpRequest, ESPMode::ThreadSafe> ActiveMailboxRequest;
+
+    /** Executes the HTTP GET request to check the mailbox */
+    void QueryMailbox();
+    void OnMailboxResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 };

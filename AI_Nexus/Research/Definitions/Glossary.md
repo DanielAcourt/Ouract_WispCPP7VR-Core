@@ -9,6 +9,12 @@ This glossary defines the core technical and thematic terminology of the Soverei
 ### **The Soul (USovereignSaveableEntityComponent)**
 The primary data hub and Single Source of Truth for an entity. It persists across possession cycles and manages the entity's GUID, state, and identity.
 
+### **The Soul Hub (The Mediator)**
+An architectural design pattern where `USovereignSaveableEntityComponent` serves as a central mediator, orchestrating specialized autonomous components (Bio, Qi, Elements, Attributes) and centralizing Bridge communications while delegating domain-specific logic to registered brokers.
+
+### **Sovereign Nested UI**
+A decoupled UI rendering framework that uses `USovereignMasterHUD` for automated runtime discovery and pointer injection of the Soul Hub into nested `USovereignBaseWidget` sub-modules. It automates widget visibility based on the presence of registered category brokers and provides simple C++ string mappings (`GetCategoryDataAsMap`) for safe, robust Blueprint binding.
+
 ### **The Vessel (Actor/Pawn/Character)**
 The physical or digital body that houses a Soul. Vessels can be possessed by the Spirit (Wisp) or operate autonomously.
 
@@ -19,6 +25,9 @@ The player-controlled entity capable of possessing and unpossessing different Ve
 
 ## ⚡ Energy & State
 
+### **Paradox Density ($\Xi$)**
+A mathematical metric clamped between $[0.0, 1.0]$ that quantifies the logical stress and narrative/structural contradictions of an entity (e.g. ingesting unhandled or 'unknown' meta-tags). System confidence is calculated as $1.0 - \Xi$, directly affecting VSS and downstream gameplay systems.
+
 ### **Qi (Elemental Energy)**
 A **Simulated/Gamified State** variable used for evolution and possession mechanics. It represents a fantasy result of user interaction and time, distinct from real-world telemetry truth. Tracked via the `SovereignQi.Qi.*` namespace.
 
@@ -28,6 +37,15 @@ A measure of a Soul's evolution. Progression is triggered by elemental input, ev
 ---
 
 ## 🌐 Systems & Protocols
+
+### **Agency Arbitration Schema (AAS)**
+A decentralized security governance framework that enforces precedence, credibility weights, and dual VSS safety thresholds (0.4 for read-only, 0.7 for mutation) on AI agent operations. It generates self-regulating diagnostic error responses (`409_CONFLICT_GATE`) when VSS safety bounds are violated.
+
+### **Adaptive Field Interpolator (AFI)**
+A specialized actor component that utilizes a Logic Interpolator Kernel to reconcile incompatible data streams (Historical vs. Contextual) into emergent VFX and physics manifestations based on local PSTA discrepancy reports.
+
+### **Distributed Ingestion Engine (DIE)**
+A high-performance tiered storage partitioning strategy that separates high-frequency RAG assets on local SSD drives ('Spirit') from long-term Lidar scans, historical logs, and LLM fine-tuning datasets on high-capacity HDD archives ('Body').
 
 ### **Digital Twin**
 A high-fidelity digital representation of a physical object or volume (e.g., the Fish Tank). Parity is maintained via real-time JSON/Binary telemetry.

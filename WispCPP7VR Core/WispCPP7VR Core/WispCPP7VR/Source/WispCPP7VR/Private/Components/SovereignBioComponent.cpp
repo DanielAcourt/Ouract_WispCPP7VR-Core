@@ -6,7 +6,8 @@
 
 USovereignBioComponent::USovereignBioComponent()
 {
-    PrimaryComponentTick.bCanEverTick = true;
+    // B-038: Disable general frame-based ticking by default to rely solely on the entity heartbeat
+    PrimaryComponentTick.bCanEverTick = false;
 
     // Default Vitals
     Hunger = 50.0f;
@@ -18,6 +19,12 @@ USovereignBioComponent::USovereignBioComponent()
     Entropy = 0.0f;
     Mass = 1;
     MassExperience = 1.0;
+
+    // B-038: Default gestation rate
+    GestationRate = 1.0f;
+
+    // B-039: Initialize Hybrid Enum state
+    EggState = ESovereignEggState::None;
 }
 
 void USovereignBioComponent::BeginPlay()
@@ -64,6 +71,28 @@ void USovereignBioComponent::UpdateMetabolism(float DeltaTime)
     }
 
     WasteLevel += (NetDrain * 0.5f);
+
+    // B-038 & B-039: Live Gestation Progression with Hybrid Core Enum
+    if (bGestationActive)
+    {
+        // Auto-transition to Gestation state if currently None
+        if (EggState == ESovereignEggState::None)
+        {
+            EggState = ESovereignEggState::Gestation;
+        }
+
+        GestationProgress += GestationRate * DeltaTime;
+
+        // Transition to ReadyToLay once threshold is met (if not already laid or customized)
+        if (GestationProgress >= 100.0f && EggState == ESovereignEggState::Gestation)
+        {
+            EggState = ESovereignEggState::ReadyToLay;
+            if (EggFertilityState == TEXT("None"))
+            {
+                EggFertilityState = TEXT("ReadyToLay");
+            }
+        }
+    }
 }
 
 void USovereignBioComponent::HandleBiologicalTransition(float DeltaTime)
@@ -96,6 +125,15 @@ void USovereignBioComponent::OnSave(TSharedPtr<FJsonObject>& OutJson)
     BioObj->SetStringField(TEXT("MotherID"), MotherID.ToString());
     BioObj->SetStringField(TEXT("FatherID"), FatherID.ToString());
     BioObj->SetNumberField(TEXT("OffspringCount"), OffspringCount);
+
+    // Draconic Gestation & Nesting [B-035]
+    BioObj->SetBoolField(TEXT("bGestationActive"), bGestationActive);
+    BioObj->SetNumberField(TEXT("GestationProgress"), GestationProgress);
+    BioObj->SetNumberField(TEXT("GestationRate"), GestationRate); // B-038
+    BioObj->SetNumberField(TEXT("EggState"), static_cast<double>(EggState)); // B-039
+    BioObj->SetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
+    BioObj->SetNumberField(TEXT("NestSpatiotemporalVolume"), NestSpatiotemporalVolume);
+    BioObj->SetStringField(TEXT("EggFertilityState"), EggFertilityState);
 
     TArray<TSharedPtr<FJsonValue>> MatingArray;
     for (const FGuid& Id : MatingHistory)
@@ -133,6 +171,15 @@ void USovereignBioComponent::OnLoad(const TSharedPtr<FJsonObject>& InJson)
         if ((*BioObj)->TryGetStringField(TEXT("FatherID"), IdStr)) FGuid::Parse(IdStr, FatherID);
 
         if ((*BioObj)->TryGetNumberField(TEXT("OffspringCount"), TempVal)) OffspringCount = (int32)TempVal;
+
+        // Draconic Gestation & Nesting [B-035]
+        (*BioObj)->TryGetBoolField(TEXT("bGestationActive"), bGestationActive);
+        if ((*BioObj)->TryGetNumberField(TEXT("GestationProgress"), TempVal)) GestationProgress = (float)TempVal;
+        if ((*BioObj)->TryGetNumberField(TEXT("GestationRate"), TempVal)) GestationRate = (float)TempVal; // B-038
+        if ((*BioObj)->TryGetNumberField(TEXT("EggState"), TempVal)) EggState = static_cast<ESovereignEggState>((uint8)TempVal); // B-039
+        (*BioObj)->TryGetBoolField(TEXT("bIsNestCreated"), bIsNestCreated);
+        if ((*BioObj)->TryGetNumberField(TEXT("NestSpatiotemporalVolume"), TempVal)) NestSpatiotemporalVolume = (float)TempVal;
+        (*BioObj)->TryGetStringField(TEXT("EggFertilityState"), EggFertilityState);
 
         const TArray<TSharedPtr<FJsonValue>>* MatingArray;
         if ((*BioObj)->TryGetArrayField(TEXT("MatingHistory"), MatingArray))
