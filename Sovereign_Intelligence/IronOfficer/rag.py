@@ -106,7 +106,11 @@ class SovereignRAG:
 
     def index_file(self, filepath: str):
         """Chunks and registers a single file's content with Level mappings."""
-        rel_path = os.path.relpath(filepath, self.repo_root)
+        try:
+            rel_path = os.path.relpath(filepath, self.repo_root)
+        except ValueError:
+            # Handle Windows cross-drive path relativity
+            rel_path = filepath
         level = determine_ssot_level(rel_path)
 
         with open(filepath, "r", encoding="utf-8", errors="ignore") as f:

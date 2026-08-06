@@ -42,9 +42,12 @@ BRIDGE_PORT = 8000
 USER_NAME = "Dan"
 READ_ZONES = []
 WRITE_ZONES = []
+ROLEPLAY_ZONES = []
 PERSONA_ZONES = {}
 REMOTE_HISTORY_ENABLED = False
 HISTORY_DIR = os.path.join(REPO_ROOT, "AI_Nexus", "Memories", "ChatHistory")
+PERSISTENT_HANDSHAKE = False
+last_active_file = None
 
 # --- RAG Global Configuration ---
 RAG_ENABLED = True
@@ -54,6 +57,7 @@ RAG_MAX_CHUNKS = 3
 RAG_SIM_THRESHOLD = 0.05
 RAG_CHUNK_SIZE_WORDS = 250
 RAG_INDEX_DIRS = ["AI_Nexus"]
+RAG_IGNORED_DIRS = ["protocols", "devops", "admin", "bridge.py"]
 
 rag_engine = SovereignRAG(REPO_ROOT, chunk_size_words=RAG_CHUNK_SIZE_WORDS)
 
@@ -102,8 +106,9 @@ TOOL_MIN_PRECEDENCE = {
 }
 
 def load_config():
-    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
-    global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS
+    global OLLAMA_HOST, TARGET_MODEL, BRIDGE_PORT, USER_NAME, READ_ZONES, WRITE_ZONES, ROLEPLAY_ZONES, PERSONA_ZONES, REMOTE_HISTORY_ENABLED, HISTORY_DIR
+    global RAG_ENABLED, RAG_ENABLED_ON_STARTUP, RAG_CONTEXT_WEIGHT, RAG_MAX_CHUNKS, RAG_SIM_THRESHOLD, RAG_CHUNK_SIZE_WORDS, RAG_INDEX_DIRS, RAG_IGNORED_DIRS
+    global PERSISTENT_HANDSHAKE
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r") as f:
@@ -118,11 +123,14 @@ def load_config():
 
                 READ_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("read_zones", [])]
                 WRITE_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("write_zones", [])]
+                ROLEPLAY_ZONES = [os.path.abspath(os.path.join(REPO_ROOT, p)) for p in bridge_cfg.get("roleplay_zones", [])]
 
                 # [B-025] Ingest Persona-Specific Safe Zones
                 PERSONA_ZONES = bridge_cfg.get("persona_zones", {
                     "Iron_Knight": ["Sovereign_Intelligence/IronKnight_Memory", "IronKnight/"]
                 })
+
+                PERSISTENT_HANDSHAKE = bridge_cfg.get("persistent_handshake", False)
 
                 USER_NAME = pref_cfg.get("name", "Dan")
 
@@ -139,6 +147,7 @@ def load_config():
                 RAG_SIM_THRESHOLD = rag_cfg.get("similarity_threshold", 0.05)
                 RAG_CHUNK_SIZE_WORDS = rag_cfg.get("chunk_size_words", 250)
                 RAG_INDEX_DIRS = rag_cfg.get("index_dirs", ["AI_Nexus"])
+                RAG_IGNORED_DIRS = rag_cfg.get("ignored_dirs", ["protocols", "devops", "admin", "bridge.py"])
 
                 # Update the active RAG engine settings dynamically
                 rag_engine.chunk_size_words = RAG_CHUNK_SIZE_WORDS
@@ -330,6 +339,16 @@ class SovereignBridge:
                 return True
         return False
 
+    def is_roleplay_zone(self, target_node: str) -> bool:
+        """Checks if target node is inside any of the configured unrestricted roleplay folders."""
+        abs_target = to_forward_slash(resolve_secure_path(target_node)).lower()
+        global ROLEPLAY_ZONES
+        for zone in ROLEPLAY_ZONES:
+            normalized_zone = to_forward_slash(zone).lower()
+            if abs_target == normalized_zone or abs_target.startswith(normalized_zone + "/"):
+                return True
+        return False
+
     def evaluate_intent_safety(self, payload: AgentCommandPayload) -> bool:
         destructive_keywords = ["delete", "remove", "rm", "unlink", "truncate", "drop"]
         normalized_cmd = payload.command.lower()
@@ -341,8 +360,9 @@ class SovereignBridge:
         # Grant personas full authority within their dedicated memory folder
         is_persona_memory_zone = self.is_persona_in_memory_zone(payload.persona, payload.target_node)
 
-        # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone
-        if not is_persona_memory_zone:
+        # 1. Global Tool Precedence Check (All Tools) - Bypassed in Persona Memory Zone or when Handshake is active
+        global HANDSHAKE_ACTIVE
+        if not is_persona_memory_zone and not HANDSHAKE_ACTIVE:
             if persona_p < TOOL_MIN_PRECEDENCE.get(payload.command, 10):
                  logger.critical(f"AAS ALERT: Insufficient precedence for tool '{payload.command}' by {payload.persona}")
                  return False
@@ -389,6 +409,15 @@ class SovereignBridge:
         if payload.persona.startswith("SIM_"):
             payload.persona = "Unreal_Simulation"
 
+        # Check if targeting unrestricted roleplay zones
+        if self.is_roleplay_zone(payload.target_node):
+            logger.info(f"AAS BYPASS: Target node '{payload.target_node}' is within the RolePlay/D&D zone. Bypassing AAS security checks.")
+            return {
+                "status": "200_OK",
+                "confidence_score": 1.0,
+                "action": "PROCEED_TO_EXECUTION_ROLEPLAY_BYPASS"
+            }
+
         confidence_score = self.calculate_psta_viability(payload)
         is_safe_intent = self.evaluate_intent_safety(payload)
         delta_logic = self.calculate_logical_discrepancy(payload)
@@ -425,11 +454,14 @@ class SovereignBridge:
                 "reason": f"Persona '{payload.persona}' failed authority validation for target '{payload.target_node}'."
             }
 
-        # [AAS v1.3.3] Handshake Consumption: Boost is consumed on a successful mutation.
-        global HANDSHAKE_ACTIVE
+        # [AAS v1.3.3] Handshake Consumption: Boost is consumed on a successful mutation unless persistent handshake is active.
+        global HANDSHAKE_ACTIVE, PERSISTENT_HANDSHAKE
         if HANDSHAKE_ACTIVE and payload.command not in non_destructive_tools:
-            HANDSHAKE_ACTIVE = False
-            logger.info(f"AAS HANDSHAKE: Boost consumed by mutation '{payload.command}' on '{payload.target_node}'.")
+            if not PERSISTENT_HANDSHAKE:
+                HANDSHAKE_ACTIVE = False
+                logger.info(f"AAS HANDSHAKE: Boost consumed by mutation '{payload.command}' on '{payload.target_node}'.")
+            else:
+                logger.info(f"AAS HANDSHAKE: Persistent Handshake Active. Boost retained for mutation '{payload.command}' on '{payload.target_node}'.")
 
         return {
             "status": "200_OK",
@@ -515,6 +547,9 @@ async def tool_write_file(filepath: str, content: str, persona: str = "Unknown")
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(content)
 
+        global last_active_file
+        last_active_file = target_path
+
         result = {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "bytes_written": new_size, "backup": os.path.basename(backup_path)}
         if scribe_warning:
             result["scribe_warning"] = scribe_warning
@@ -557,6 +592,9 @@ async def tool_patch_file(filepath: str, search: str, replace: str, persona: str
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(new_content)
 
+        global last_active_file
+        last_active_file = target_path
+
         return {"status": "success", "verified": True, "path": target_node, "mode": "surgical_patch", "backup": os.path.basename(backup_path)}
     except Exception as e:
         return {"error": str(e)}
@@ -587,6 +625,9 @@ async def tool_append_file(filepath: str, content: str, persona: str = "Unknown"
 
         with open(target_path, "a", encoding="utf-8") as f:
             f.write(content)
+
+        global last_active_file
+        last_active_file = target_path
 
         return {"status": "success", "verified": os.path.exists(target_path), "path": target_node, "mode": "append", "backup": os.path.basename(backup_path) if os.path.exists(backup_path) else None}
     except Exception as e:
@@ -952,6 +993,152 @@ async def get_unreal_mailbox(actor_name: str):
 async def push_chat_manually(payload: PushChatPayload):
     return await tool_push_chat_to_unreal(payload.actor_name, payload.message, persona="Lead")
 
+class UnrealCreateFileRequest(BaseModel):
+    filepath: str
+    content: str
+    persona: str = "Unreal_Simulation"
+
+@app.post("/v1/unreal/create_file")
+async def unreal_create_file(request: UnrealCreateFileRequest):
+    """
+    [07] Simulation file creation endpoint.
+    Bypasses conversational loops to write files directly from Blueprints.
+    """
+    logger.info(f"07 CREATE FILE: Received direct request to create file {request.filepath} from {request.persona}")
+    result = await tool_write_file(request.filepath, request.content, persona=request.persona)
+    return result
+
+class GeneratePersonaRequest(BaseModel):
+    character_name: str
+    random_generate: bool = False
+    persona: str = "Unreal_Simulation"
+
+@app.post("/v1/unreal/generate_persona")
+async def unreal_generate_persona(request: GeneratePersonaRequest):
+    """
+    [07] Generates or initializes a D&D character sheet, updates character index, and reindexes RAG on-the-fly.
+    """
+    logger.info(f"07 GENERATE PERSONA: Request received for '{request.character_name}' (Random: {request.random_generate})")
+
+    # Define standard character schema template
+    template = {
+        "Identity": {
+            "Name": request.character_name,
+            "Race": "Human",
+            "Class": "Fighter",
+            "Level": 1,
+            "Alignment": "Neutral Good"
+        },
+        "Bio": {
+            "Backstory": "A blank canvas awaiting your narrative...",
+            "PersonalityTraits": "Friendly, curious, naive."
+        },
+        "Abilities": {
+            "Strength": 10,
+            "Dexterity": 10,
+            "Constitution": 10,
+            "Intelligence": 10,
+            "Wisdom": 10,
+            "Charisma": 10
+        }
+    }
+
+    res_obj = template
+
+    if request.random_generate:
+        current_model = get_best_available_model()
+        prompt = f"""
+        [SYSTEM: Sovereign Character Generator]
+        Generate a fully realized Dungeons and Dragons 5e character profile for a character named '{request.character_name}'.
+        The character should be young, a bit naive, but extremely friendly. Give them a highly creative and unique class (e.g. Echo Cartographer, Chrono-Smith, Aether-Scribe) and a rich, warm background backstory.
+
+        Respond ONLY with a valid, clean JSON object matching this exact schema:
+        {{
+          "Identity": {{
+            "Name": "{request.character_name}",
+            "Race": "Race name",
+            "Class": "Creative Class name",
+            "Level": 1,
+            "Alignment": "Alignment name"
+          }},
+          "Bio": {{
+            "Backstory": "A rich, enthusiastic, naively friendly backstory...",
+            "PersonalityTraits": "Curious, warm, naive, helpful"
+          }},
+          "Abilities": {{
+            "Strength": 10,
+            "Dexterity": 10,
+            "Constitution": 10,
+            "Intelligence": 10,
+            "Wisdom": 10,
+            "Charisma": 10
+          }}
+        }}
+        """
+        try:
+            response = requests.post(f"{OLLAMA_HOST}/api/generate", json={"model": current_model, "prompt": prompt, "stream": False, "format": "json"}, timeout=15)
+            if response.status_code == 200:
+                res_obj = json.loads(response.json()['response'])
+        except Exception as e:
+            logger.error(f"Failed to generate random persona via LLM: {e}. Falling back to blank template.")
+            res_obj = template
+
+    # Resolve paths inside RolePlay DND zone
+    # We use a fallback within REPO_ROOT for safe local testing
+    target_dir = os.path.abspath(os.path.join(REPO_ROOT, "E:/IronKnight/RolePlay/DungeonsAndDragons"))
+    os.makedirs(target_dir, exist_ok=True)
+
+    # 1. Write the character JSON profile
+    profile_filename = f"{request.character_name}_Profile.json"
+    profile_path = os.path.join(target_dir, profile_filename)
+
+    with open(profile_path, "w", encoding="utf-8") as f:
+        json.dump(res_obj, f, indent=2)
+
+    # 2. Add or update Character_Index.json
+    index_path = os.path.join(target_dir, "Character_Index.json")
+    index_data = {}
+    if os.path.exists(index_path):
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                index_data = json.load(f)
+        except Exception:
+            pass
+
+    index_data[request.character_name] = {
+        "file": profile_filename,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump(index_data, f, indent=2)
+
+    # 3. Dynamic RAG Re-indexing
+    if RAG_ENABLED:
+        try:
+            rag_engine.build_index(RAG_INDEX_DIRS)
+            logger.info("RAG Index successfully rebuilt on-the-fly for newly created persona.")
+        except Exception as e:
+            logger.error(f"Failed to rebuild RAG on-the-fly: {e}")
+
+    # Anchor last active file
+    global last_active_file
+    last_active_file = profile_path
+
+    try:
+        rel_profile_path = os.path.relpath(profile_path, REPO_ROOT)
+    except ValueError:
+        rel_profile_path = profile_path
+
+    return {
+        "status": "success",
+        "character_name": request.character_name,
+        "profile_file": profile_filename,
+        "profile_path": to_forward_slash(rel_profile_path),
+        "random_generate": request.random_generate,
+        "indexed": True
+    }
+
 @app.post("/v1/unreal/telemetry")
 async def unreal_telemetry(request: UnrealTelemetryPayload):
     """
@@ -1018,7 +1205,40 @@ async def unreal_chat(request: UnrealChatRequest):
     # Add the current message
     chat_history.append({"role": "user", "name": sim_persona, "content": raw_message})
 
-    system_prompt = f"""
+    # Determine if we are in a Roleplay / Creative context to modulate the prompt and RAG lookups
+    is_rp_context = False
+    rp_keywords = ["dnd", "dungeons", "roleplay", "persona", "character", "class", "backstory", "campaign", "sheet", "companion"]
+    raw_lower = raw_message.lower()
+    if any(k in raw_lower for k in rp_keywords):
+        is_rp_context = True
+
+    if not is_rp_context:
+        for msg in request.history:
+            msg_lower = (msg.content or "").lower()
+            if any(k in msg_lower for k in rp_keywords):
+                is_rp_context = True
+                break
+
+    global last_active_file
+    if last_active_file:
+        laf_lower = last_active_file.lower()
+        if "roleplay" in laf_lower or "dungeons and dragons" in laf_lower or "dnd" in laf_lower:
+            is_rp_context = True
+
+    if is_rp_context:
+        system_prompt = f"""
+    [SYSTEM: Sovereign Simulation Creative Companion]
+    You are a friendly, warm, and highly engaging creative roleplay companion in a fully unrestricted creative roleplay simulation environment.
+    You are communicating with simulation entity: {sim_persona}.
+
+    CORE DIRECTIVES:
+    - TONAL PERSISTENCE: Maintain a highly enthusiastic, warm, friendly, and non-metallic tone. You are strictly forbidden from reverting to a rigid, mechanical, or dry administrative "Architectural Knight" persona or lecturing the user about "system liabilities" or "protocols" unless explicitly asked to do so.
+    - PERSONALITY MATCHING: Adhere strictly to the character details, backstory, name, and personality traits established in the conversation history or target files. Flow naturally with the creative scenario.
+    - SCRIBE DILIGENCE: If asked to create, write, or save a character profile or lore sheet (such as in your RolePlay directories), execute the `write_file` tool IMMEDIATELY on the target path without asking the user for technical parameters.
+    - ACTIVE PATH PERSISTENCE: Work directly with the active file currently in play without repeatedly asking the user for its path.
+        """
+    else:
+        system_prompt = f"""
     [SYSTEM: Sovereign AI Architectural Knight]
     You are the Iron Officer. You are an Architectural Knight.
     You are communicating with a simulation entity: {sim_persona}.
@@ -1030,6 +1250,9 @@ async def unreal_chat(request: UnrealChatRequest):
     - SCRIBE PROTOCOL: Use tools to verify and modify the environment as requested by the Lead or the Simulation.
     - TOOL LOGGING: Your tool execution results will be sent back to the simulation client for diagnostic trace.
     """
+
+    if last_active_file:
+        system_prompt += f"\n\n    [ACTIVE SIMULATION PATH ANCHOR]\n    The last active file in play is currently: `{last_active_file}`. You should target this path for any subsequent read, write, or patch operations requested by the simulation."
 
     if state_data:
         formatted_state = format_save_state(state_data)
@@ -1049,12 +1272,21 @@ async def unreal_chat(request: UnrealChatRequest):
                 block_lines = ["[GROUND TRUTH: SSoT Reference Context]"]
                 sims = []
                 for chunk, similarity in results:
+                    path_lower = chunk['path'].lower()
+                    # Filter out technical protocols if we are in active RP context to prevent pollution
+                    global RAG_IGNORED_DIRS
+                    if is_rp_context and any(ignored in path_lower for ignored in RAG_IGNORED_DIRS):
+                        continue
                     block_lines.append(f"Source: {chunk['path']} (Level {chunk['level']}) - Section: {chunk['header']} (Relevance: {similarity:.2f})")
                     block_lines.append(chunk['text'])
                     block_lines.append("-" * 30)
                     sims.append(similarity)
-                context_block = "\n".join(block_lines)
-                latest_rag_similarity_score = sum(sims) / len(sims)
+
+                if len(block_lines) > 1:
+                    context_block = "\n".join(block_lines)
+                    latest_rag_similarity_score = sum(sims) / len(sims)
+                else:
+                    latest_rag_similarity_score = 0.0
             else:
                 latest_rag_similarity_score = 0.0
         except Exception as e:
@@ -1287,6 +1519,18 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
                     "name": name,
                     "tool_call_id": call.get("id") # Keep chain intact
                 })
+                # Inject strict anti-hallucination directive immediately after a blocked tool call
+                messages.append({
+                    "role": "system",
+                    "content": (
+                        f"[AAS SYSTEM INTERVENTION] CRITICAL: Your request to execute tool '{name}' was BLOCKED "
+                        f"by the AAS Governor (409 Conflict Gate) due to insufficient authority or out-of-bounds target. "
+                        f"You did NOT write, patch, or modify any files. You MUST explicitly admit this failure to the user "
+                        f"in your reply, state that you were BLOCKED, and explain that they need to execute an AAS Handshake "
+                        f"(such as calling ExecuteAASHandshake in Unreal or /v1/aas/handshake) to grant you authority. "
+                        f"DO NOT pretend you succeeded, DO NOT claim any file was written, and DO NOT make up excuses about honeypots."
+                    )
+                })
             else:
                 tool_outputs.append(tool_result)
                 messages.append({
@@ -1303,6 +1547,16 @@ async def process_chat_request(model: str, messages: List[Dict], tools: List[Dic
     # --- Symmetrical Guard (v2.4) ---
     ai_content = result.get("message", {}).get("content", "").upper()
     violations = []
+
+    # Check if a 409 conflict gate occurred in this message sequence
+    has_conflict_gate = any(
+        isinstance(msg, dict) and msg.get("role") == "tool" and "409_CONFLICT_GATE" in str(msg.get("content", ""))
+        for msg in messages
+    )
+    if has_conflict_gate:
+        success_indicators = ["SUCCESS", "WRITTEN", "CREATED", "SAVED", "COMMITTED", "GENERATED", "WROTE", "PROFILE IS READY", "WRITTEN THE FILE"]
+        if any(w in ai_content for w in success_indicators) and "BLOCKED" not in ai_content and "CONFLICT" not in ai_content:
+            violations.append("Claimed successful file modification/creation even though tool execution was blocked by 409 Conflict Gate.")
 
     # [B-028] Lore/Meta-Narrative Exception
     # Allow agents to discuss persona, roleplay, and internal state without physical sensors
