@@ -304,5 +304,14 @@
     "Node": "Research",
     "Why": "Reconcile local state discrepancy reports to drive visual particles.",
     "What": "Drive material parameters and Niagara particles based on live `ParadoxDensity` ($\\Xi$)."
+  },
+  {
+    "ID": "B-041",
+    "Task": "C++ Bio: Diminished Draconic Beast Fallback",
+    "Complexity": "8",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Penalize premature egg laying or parental death during gestation by regressing the offspring into a lesser beast.",
+    "What": "Implement biological regression resolving early eggs to Wyvern/Pygmy Wyvern classifications with restricted stats and no legendary actions."
   }
 ]

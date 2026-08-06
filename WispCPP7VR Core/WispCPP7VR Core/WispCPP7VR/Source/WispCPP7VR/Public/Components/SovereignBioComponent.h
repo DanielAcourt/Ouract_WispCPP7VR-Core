@@ -18,6 +18,16 @@ enum class ESovereignNutrient : uint8
     MAX         UMETA(Hidden)
 };
 
+UENUM(BlueprintType)
+enum class ESovereignEggState : uint8
+{
+    None        UMETA(DisplayName = "None / Inactive"),
+    Gestation   UMETA(DisplayName = "Egg Forming (Gestation)"),
+    ReadyToLay  UMETA(DisplayName = "Ready to Lay"),
+    Laid        UMETA(DisplayName = "Laid (Incubating)"),
+    Dormant     UMETA(DisplayName = "Dormant / Stone")
+};
+
 /**
  * USovereignBioComponent: Handles metabolism, growth, and reproduction.
  * Now acts as a specialized Broker for the Sovereign Soul Hub.
@@ -106,6 +116,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     float GestationProgress = 0.0f;
 
+    /** Live Gestation Progression rate [B-038] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    float GestationRate = 1.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     bool bIsNestCreated = false;
 
@@ -114,6 +128,10 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
     FString EggFertilityState = TEXT("None");
+
+    /** Hybrid Core Lifecycle State Enum [B-039] */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sovereign|Bio Lineage")
+    ESovereignEggState EggState = ESovereignEggState::None;
 
 
     /** --- 4. ENGINE FUNCTIONS --- */

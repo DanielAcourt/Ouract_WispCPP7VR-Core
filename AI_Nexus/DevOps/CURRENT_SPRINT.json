@@ -28,7 +28,7 @@
   },
   {
     "ID": "E-001a",
-    "Task": "Epic: Soul – Dynamic Broker Instantiation",
+    "Task": "Epic: Soul \u2013 Dynamic Broker Instantiation",
     "Complexity": "8",
     "Status": "Done",
     "Node": "DevOps",
@@ -37,7 +37,7 @@
   },
   {
     "ID": "E-001b",
-    "Task": "Epic: Soul – Domain Namespace Isolation",
+    "Task": "Epic: Soul \u2013 Domain Namespace Isolation",
     "Complexity": "5",
     "Status": "Done",
     "Node": "DevOps",
@@ -46,7 +46,7 @@
   },
   {
     "ID": "E-001c",
-    "Task": "Epic: Soul – VSS & Paradox Coupling",
+    "Task": "Epic: Soul \u2013 VSS & Paradox Coupling",
     "Complexity": "8",
     "Status": "Done",
     "Node": "Research/DevOps",
@@ -129,7 +129,7 @@
     "ID": "B-035",
     "Task": "C++ Bio: Universal Gestation & Nesting",
     "Complexity": "5",
-    "Status": "Todo",
+    "Status": "Done",
     "Node": "DevOps",
     "Why": "Support dragon lifecycle reproduction and egg states in a universal biological module.",
     "What": "Add GestationProgress, bGestationActive, NestSpatiotemporalVolume, and EggFertilityState to USovereignBioComponent C++."
@@ -160,5 +160,41 @@
     "Node": "DevOps",
     "Why": "Enable portable out-of-the-box roleplay execution without drive-mount dependencies or git bloat.",
     "What": "Modify config.json path variables to relative, and update .gitignore to exclude run-time DND campaigns/sessions."
+  },
+  {
+    "ID": "B-038",
+    "Task": "C++ Bio: Live Gestation Progression",
+    "Complexity": "3",
+    "Status": "Done",
+    "Node": "DevOps",
+    "Why": "Advance the internal egg formation cycle during the entity heartbeat without double-ticking component logic.",
+    "What": "Integrate GestationProgress incrementing within USovereignBioComponent's metabolism update loop, capping at 100.0f and transitioning EggFertilityState."
+  },
+  {
+    "ID": "B-039",
+    "Task": "C++ Bio: Enhanced Gestation & Prestige Condensation",
+    "Complexity": "5",
+    "Status": "In Progress",
+    "Node": "DevOps",
+    "Why": "Implement the Unseen Weave prestige mechanic where female dragons condense eggs to gain attribute boosts.",
+    "What": "Add EnhancedGestationTier and PrestigeCondensationCount properties to USovereignBioComponent, with methods to shrink Nest volume and multiply duration."
+  },
+  {
+    "ID": "B-040",
+    "Task": "C++ Bio: Progenitor Attribute Imbuement",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Allow wyrmlings to inherit superior attributes based on Mother and Father stats stored in the Save Entity.",
+    "What": "Implement attribute copying from parents to egg metadata, granting +1/+2 Ability score modifiers upon hatching."
+  },
+  {
+    "ID": "B-042",
+    "Task": "C++ Bio: Data-Driven Draconic Spawning & Initialization",
+    "Complexity": "5",
+    "Status": "Todo",
+    "Node": "DevOps",
+    "Why": "Enable individual draconic species traits and gestation attributes to be initialized dynamically from Species Data templates.",
+    "What": "Implement InitializeFromSpeciesTemplate in USovereignBioComponent to parse USovereignSpeciesData traits, map DragonType, and override GestationRate with Gestation.BaseRate dynamic attribute."
   }
 ]
